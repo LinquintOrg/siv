@@ -28,7 +28,7 @@
         "googleMobileAdsAppId": "ca-app-pub-3940256099942544~3347511713"
       },
       "package": "com.rsds.steaminventoryvalue",
-      "versionCode": "2010000110"
+      "versionCode": 2010000110
     },
     "web": {
       "favicon": "./assets/favicon.png"

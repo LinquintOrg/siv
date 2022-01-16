@@ -41,6 +41,7 @@ const styles = StyleSheet.create({
         display: 'flex',
         flexDirection: 'row',
         backgroundColor: '#0E273E',
+        elevation: 3,
     },
     profilePicture: {
         width:  48,

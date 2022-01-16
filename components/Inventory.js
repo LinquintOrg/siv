@@ -155,7 +155,7 @@ export default function Inventory(props) {
         if (!loaded) {
             setLoading(true)
             for (let i = 0; i < props.games.length; i++) {
-                getInventory(props.games[i], i === props.games.length - 1).then(r => console.log('yes'))
+                getInventory(props.games[i], i === props.games.length - 1).then(null)
                 await sleep(7000);
             }
         }
@@ -169,22 +169,7 @@ export default function Inventory(props) {
         }
     }
 
-    const bottomSheetRef = useRef()
-
-    let timeout = null
     const [alert, setAlert] = useState('')
-    const [alertVisible, setAlertVisible] = useState(false)
-    const showAlert = (msg) => {
-        LayoutAnimation.easeInEaseOut()
-        setAlertVisible(true)
-        setAlert(msg)
-        if (timeout) { clearTimeout(timeout) }
-        timeout = setTimeout(() => {
-            LayoutAnimation.easeInEaseOut()
-            setAlertVisible(false)
-        }, 600)
-    }
-
     const [renderUnsellable, setRenderUnsellable] = useState(false)
     const scrollRef = useRef();
 
@@ -215,11 +200,11 @@ export default function Inventory(props) {
                 <ScrollView ref={scrollRef} style={{marginBottom: 46}}>
                     {
                         (loaded) ?
-                            inventory.map((item, index) => (
+                            inventory.map((item) => (
                                 <View>
                                     <Text style={styles.gameName}>{item.game}</Text>
                                     {
-                                        item.descriptions.map((inv, index) => (
+                                        item.descriptions.map((inv) => (
                                             (renderUnsellable) ? <Item inv={inv} rate={rate} curr={curr} /> : (inv.tradable === 1 || inv.marketable === 1) ? <Item inv={inv} rate={rate} curr={curr} /> : null
                                         ))
                                     }
@@ -405,6 +390,7 @@ const styles = StyleSheet.create ({
         flexDirection: 'column',
         borderRadius: 8,
         alignSelf: 'center',
+        elevation: 3,
     },
     containerCollapsable: {
         width: '95%',
