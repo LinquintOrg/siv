@@ -2,7 +2,7 @@
   "expo": {
     "name": "siv",
     "slug": "siv",
-    "version": "1.0.0",
+    "version": "2.5.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -27,7 +27,8 @@
       "config": {
         "googleMobileAdsAppId": "ca-app-pub-3940256099942544~3347511713"
       },
-      "package": "xyz.domr.steaminventoryvalue"
+      "package": "com.rsds.steaminventoryvalue",
+      "versionCode": "2010000110"
     },
     "web": {
       "favicon": "./assets/favicon.png"
