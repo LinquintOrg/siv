@@ -1,7 +1,7 @@
 import React, {useCallback, useMemo, useRef, useState} from "react";
 import {Pressable, Text, View, StyleSheet, TextInput, Dimensions, ScrollView, ActivityIndicator} from "react-native";
 import BottomSheet from '@gorhom/bottom-sheet'
-import {CheckBox, Icon} from "react-native-elements";
+import {Icon} from "react-native-elements";
 import FilterSheet from 'react-native-raw-bottom-sheet'
 
 export default function (props) {

@@ -6,12 +6,11 @@ import {
     ScrollView,
     ActivityIndicator,
     LayoutAnimation,
-    Pressable, Platform, UIManager, Image, Dimensions, Clipboard
+    Pressable, Platform, UIManager, Image, Dimensions
 } from "react-native";
 import React, {useCallback, useEffect, useMemo, useRef} from "react";
 import {useState} from "react";
 import gamesJson from '../assets/inv-games.json'
-import BottomSheet from 'react-native-raw-bottom-sheet'
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import {Icon} from "react-native-elements";
 import BSheet from '@gorhom/bottom-sheet'

@@ -1,17 +1,12 @@
 import {
-    ActivityIndicator,
-    Dimensions,
     Image,
-    Pressable,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from "react-native";
-import React, {useState} from "react";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Icon} from "react-native-elements";
+import React from "react";
 
 export default function (props) {
     let users = props.users

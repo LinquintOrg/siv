@@ -1,5 +1,5 @@
 import {Text, TouchableOpacity, View, StyleSheet, Image, ScrollView, Pressable} from "react-native";
-import React, { Component } from "react";
+import React from "react";
 import {useState} from "react";
 import gamesJson from '../assets/inv-games.json'
 import {Icon} from "react-native-elements";

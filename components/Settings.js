@@ -1,8 +1,6 @@
 import React, {useRef} from "react";
 import {Dimensions, Pressable, ScrollView, Text, TouchableOpacity, View, StyleSheet, Image} from "react-native";
 import BottomSheet from 'react-native-raw-bottom-sheet'
-import {Touchable} from "react-native-web";
-import Flag from "react-flagpack";
 
 export default function (props) {
     const rates = props.rates

@@ -1,7 +1,7 @@
 import {ActivityIndicator, Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View} from "react-native";
 import React, {useState} from "react";
 import {Audio} from 'expo-av';
-import {AdMobBanner, AdMobRewarded, PublisherBanner} from "expo-ads-admob";
+import {AdMobRewarded} from "expo-ads-admob";
 
 export default function MusicKits(props) {
     const [loading, setLoading] = useState(true)
