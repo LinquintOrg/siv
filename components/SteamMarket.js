@@ -27,7 +27,7 @@ export default function (props) {
     const fSelectRef = useRef();
     const sortSelectRef = useRef();
 
-    const snapPoints = useMemo(() => [70, 400], []);
+    const snapPoints = useMemo(() => [70, 420], []);
     const handleSheetChanges = useCallback((index: number) => {
         console.log('handleSheetChanges', index);
     }, []);
@@ -144,7 +144,8 @@ export default function (props) {
                 index={0}
                 snapPoints={snapPoints}
                 onChange={handleSheetChanges}
-                detached={false}>
+                detached={false}
+                handleIndicatorStyle={{backgroundColor: '#555', elevation: 8, height: 10, width: 48}}>
                 <View style={styles.contentContainer}>
                     <Text style={styles.sheetTitle}>Search</Text>
 
@@ -200,6 +201,8 @@ export default function (props) {
     )
 }
 
+
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -208,6 +211,7 @@ const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
         alignItems: 'center',
+        elevation: 5,
     },
     sheetTitle: {
         fontSize: 24,

@@ -18,7 +18,7 @@ export default function InvGamesList(props) {
         await AsyncStorage.getAllKeys((err, keys) => {
             AsyncStorage.multiGet(keys, (err, stores) => {
                 const values = []
-                stores.map((result, i, store) => {
+                stores.map((result/*, i, store*/) => {
                     if (result[0].includes('prevGames' + props.steamID)) {
                         values.push(JSON.parse(result[1]))
                     }
@@ -43,14 +43,7 @@ export default function InvGamesList(props) {
 
     return(
         <View style={{height: '100%'}}>
-            <Text style={styles.title}>Select games that you want to load</Text>
-            <TouchableOpacity style={styles.buttonProceed} onPress={() => {
-                let id = 'prevGames' + props.steamID
-                saveLoadedGames(id, props.state).then(() => props.proceed())
-            }}>
-                <Text style={styles.buttonMediumText}>Proceed</Text>
-            </TouchableOpacity>
-
+            <Text style={[styles.title, {fontSize: 24}]}>Choose games to load</Text>
             <Text style={styles.title}>Use previously loaded games</Text>
             {
                 (prevGames.length === 0) ? <Text style={styles.previousGamesSubtitle}>You will be able to see previous games next time you use this profile</Text> :
@@ -66,9 +59,9 @@ export default function InvGamesList(props) {
             }
 
             <Text style={styles.title}>Select games from the list</Text>
-            <ScrollView>
+            <ScrollView style={{borderRadius: 8}}>
                 {
-                    gj.games.map((item, index) => (
+                    gj.games.map((item) => (
                         <TouchableOpacity key={item.name} style={styles.container} onPress={() => {
                             if (props.hasState(item.appid)) {
                                 props.removeState(item.appid)
@@ -89,28 +82,36 @@ export default function InvGamesList(props) {
                     ))
                 }
             </ScrollView>
+
+            <TouchableOpacity style={styles.buttonProceed} onPress={() => {
+                let id = 'prevGames' + props.steamID
+                saveLoadedGames(id, props.state).then(() => props.proceed())
+            }}>
+                <Text style={styles.buttonMediumText}>Proceed</Text>
+                <Icon type={'font-awesome-5'} name={'angle-double-right'} size={32} color={'#F73D4A'} />
+            </TouchableOpacity>
         </View>
     )
 }
 
 const styles = StyleSheet.create ({
     container: {
-        marginTop: 4,
-        marginBottom: 4,
+        marginVertical: 6,
         width: '95%',
-        backgroundColor: '#aaa',
+        backgroundColor: '#ccc',
         alignItems: 'center',
         display: 'flex',
         flexDirection: 'row',
         borderRadius: 8,
         alignSelf: 'center',
+        elevation: 3,
     },
     gameTitle: {
-        color: '#222',
+        color: '#333',
         fontWeight: "bold"
     },
     appID: {
-        color: '#222'
+        color: '#777'
     },
     containerSelected: {
         borderWidth: 1.0,
@@ -124,17 +125,22 @@ const styles = StyleSheet.create ({
     },
     buttonProceed: {
         alignSelf: "center",
-        backgroundColor: '#122334',
-        width: '36%',
-        height: 40,
+        backgroundColor: '#201253',
+        width: '80%',
+        height: 42,
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 8,
-        marginVertical: 8,
+        borderRadius: 16,
+        marginVertical: 4,
+        display: 'flex',
+        flexDirection: 'row',
     },
     buttonMediumText: {
         fontSize: 24,
-        color: '#fff',
+        color: '#F73D4A',
+        fontWeight: "bold",
+        marginHorizontal: 8,
+        width: '75%',
     },
     previousGames: {
         width: '80%',
@@ -142,6 +148,10 @@ const styles = StyleSheet.create ({
         alignItems: 'center',
         display: 'flex',
         flexDirection: 'row',
+        justifyContent: 'center',
+        backgroundColor: '#ddd',
+        borderRadius: 8,
+        padding: 4,
     },
     previousGamesSubtitle: {
         width: '90%',

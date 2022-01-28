@@ -1,7 +1,18 @@
-import {ActivityIndicator, Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View} from "react-native";
+import {
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
+} from "react-native";
 import React, {useState} from "react";
 import {Audio} from 'expo-av';
 import {AdMobRewarded} from "expo-ads-admob";
+import {Icon} from "react-native-elements";
 
 export default function MusicKits(props) {
     const [loading, setLoading] = useState(true)
@@ -12,6 +23,7 @@ export default function MusicKits(props) {
     const imgNotFound = 'https://domr.xyz/api/Files/img/no-photo.png'
     const [numPlays, setNumPlays] = useState(5)
     const [playbackTimeout, setPlaybackTimeout] = useState(false)
+    const [search, setSearch] = useState('')
 
     if (loading) {
         fetch('https://domr.xyz/api/Steam/rq/music_kits.json')
@@ -111,37 +123,48 @@ export default function MusicKits(props) {
     }
 
     return (
-        <View>
-            <View style={{marginVertical: 8}}>
-                <Text style={styles.title}>Music Kits</Text>
-                <Text style={styles.subTitle}>Tap to play MVP anthem</Text>
-                <Text style={styles.subTitle}>Available playbacks: <Text style={[numPlays === 0 ? {color: '#a00'} : {color: '#0a0'}, {fontWeight: 'bold'}]}>{ numPlays }</Text></Text>
-            </View>
-            <ScrollView>
-                {
-                    (loading) ?
-                        <View style={[styles.containerCol, {alignSelf: 'center'}]}>
-                            <ActivityIndicator style={{marginTop: Dimensions.get('window').height / 2 - 36}} size="large" color='#000' />
-                            <Text style={{textAlign: 'center'}}>Loading</Text>
-                        </View> :
-                        (loadingPrices) ?
-                            <View>
-                                <ActivityIndicator style={{marginTop: Dimensions.get('window').height / 2 - 36}} size="large" color='#000' />
-                                <Text style={{textAlign: 'center'}}>Downloading music kit prices</Text>
-                            </View> :
+        (loading) ?
+            <View style={[styles.containerCol, {alignSelf: 'center'}]}>
+                <ActivityIndicator style={{marginTop: Dimensions.get('window').height / 2 - 36}} size="large" color='#000' />
+                <Text style={{textAlign: 'center'}}>Loading</Text>
+            </View> :
+            (loadingPrices) ?
+                <View>
+                    <ActivityIndicator style={{marginTop: Dimensions.get('window').height / 2 - 36}} size="large" color='#000' />
+                    <Text style={{textAlign: 'center'}}>Downloading music kit prices</Text>
+                </View> :
+                <View style={{height: '100%'}}>
+                    <View style={{marginVertical: 8}}>
+                        <Text style={styles.title}>Music Kits</Text>
+                        <Text style={styles.subTitle}>Tap to play MVP anthem</Text>
+                        <Text style={styles.subTitle}>Available playbacks: <Text style={[numPlays === 0 ? {color: '#a00'} : {color: '#0a0'}, {fontWeight: 'bold'}]}>{ numPlays }</Text></Text>
+                    </View>
+
+                    <View style={styles.inputView}>
+                        <Icon color='#333' name='filter' type='font-awesome' size={20}/>
+                        <TextInput
+                            style={{marginHorizontal: 8, borderBottomWidth: 1.0, flex: 1}}
+                            placeholder='Filter by artist or song name'
+                            onChangeText={text => setSearch(text)}
+                        />
+                    </View>
+
+                    <ScrollView>
+                        {
                             kits.musickit.map((item) => (
-                                <Pressable style={styles.container} onPress={() => playSound(item.dir)}>
-                                    <Image style={{width: 48, aspectRatio: 1, marginRight: 8}} source={{uri: (item.img || imgNotFound)}} />
-                                    <View style={styles.containerCol}>
-                                        <Text style={styles.song}>{item.song}</Text>
-                                        <Text style={styles.artist}>{item.artist}</Text>
-                                    </View>
-                                    { getMusicKitPrice(item) }
-                                </Pressable>
+                                (item.song.includes(search) || item.artist.includes(search)) ?
+                                    <Pressable style={styles.container} onPress={() => playSound(item.dir)}>
+                                        <Image style={{width: 48, aspectRatio: 1, marginRight: 8}} source={{uri: (item.img || imgNotFound)}} />
+                                        <View style={styles.containerCol}>
+                                            <Text style={styles.song}>{item.song}</Text>
+                                            <Text style={styles.artist}>{item.artist}</Text>
+                                        </View>
+                                        { getMusicKitPrice(item) }
+                                    </Pressable> : null
                             ))
-                }
-            </ScrollView>
-        </View>
+                        }
+                    </ScrollView>
+                </View>
     )
 }
 
@@ -191,5 +214,16 @@ const styles = StyleSheet.create({
     subTitle: {
         textAlign: 'center',
         fontSize: 13,
+    },
+    inputView: {
+        width: '90%',
+        height: 44,
+        backgroundColor: '#f1f3f6',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        display: "flex",
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: "center",
     },
 })

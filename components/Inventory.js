@@ -13,7 +13,7 @@ import {useState} from "react";
 import gamesJson from '../assets/inv-games.json'
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import {Icon} from "react-native-elements";
-import BSheet from '@gorhom/bottom-sheet'
+import BSheet, {BottomSheetScrollView} from '@gorhom/bottom-sheet'
 
 if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental(true)
@@ -38,7 +38,8 @@ export default function Inventory(props) {
         'expensive': {
             'name': '',
             'price': 0
-        }
+        },
+        'games': []
     })
     const games = gamesJson.games
     const rates = props.rates
@@ -82,14 +83,16 @@ export default function Inventory(props) {
                 }
                 tempArray[i].descriptions[j]['amount'] = num
                 stats['owned'] += num
-                if (items[j].marketable === 1 && items[j].tradable === 1) stats['ownedTradeable'] += num
+                if (items[j].marketable === 1 && items[j].tradable === 1) {
+                    stats['ownedTradeable'] += num
+                }
             }
             query = query.substring(0, query.length - 1)
             queries.push(query)
         }
 
         for (let i = 0; i < queries.length; i++) {
-            console.log(queries[i])
+            const gameStats = { 'name': tempArray[i].game, 'value': 0, 'items': 0, 'avg24': 0, 'avg7': 0, 'avg30': 0 }
             let skipped = 0;
             fetch(queries[i])
                 .then((response) => response.json())
@@ -104,9 +107,14 @@ export default function Inventory(props) {
                             tempArray[i].descriptions[j + skipped]['avg7'] = p.avg7
                             tempArray[i].descriptions[j + skipped]['avg30'] = p.avg30
                             stats['price'] += tempArray[i].descriptions[j + skipped]['amount'] * p.Price
+                            gameStats['value'] += tempArray[i].descriptions[j + skipped]['amount'] * p.Price
                             stats['avg24'] += tempArray[i].descriptions[j + skipped]['amount'] * p.avg24
+                            gameStats['avg24'] += tempArray[i].descriptions[j + skipped]['amount'] * p.avg24
                             stats['avg7'] += tempArray[i].descriptions[j + skipped]['amount'] * p.avg7
+                            gameStats['avg7'] += tempArray[i].descriptions[j + skipped]['amount'] * p.avg7
                             stats['avg30'] += tempArray[i].descriptions[j + skipped]['amount'] * p.avg30
+                            gameStats['avg30'] += tempArray[i].descriptions[j + skipped]['amount'] * p.avg30
+                            gameStats['items'] += tempArray[i].descriptions[j + skipped]['amount']
 
                             if (stats['cheapest'].price === 0) {
                                 stats['cheapest'].price = p.Price
@@ -134,12 +142,14 @@ export default function Inventory(props) {
                         }
                     }
 
+                    stats.games.push(gameStats)
+
                     if (i === queries.length - 1) {
                         setInventory(tempArray)
                         setLoaded(true)
                         setFetching(false)
                     } else {
-                        await sleep(500)
+                        await sleep(8000)
                     }
                 })
         }
@@ -156,7 +166,6 @@ export default function Inventory(props) {
             setLoading(true)
             for (let i = 0; i < props.games.length; i++) {
                 getInventory(props.games[i], i === props.games.length - 1).then(null)
-                await sleep(7000);
             }
         }
     }, [])
@@ -320,61 +329,99 @@ function Summary(props) {
             onChange={handleSheetChanges}
             detached={false}
             ref={sumRef}>
-            <ScrollView style={{width: '100%', height: '100%', backgroundColor: '#fff', paddingVertical: 8}}>
+            <BottomSheetScrollView style={{width: '100%', height: '100%', backgroundColor: '#fff', paddingVertical: 8}}>
                 <View style={{alignItems: 'center'}}>
                     <Text style={[styles.gameTitle, {fontSize: 20, marginBottom: 8}]}>Inventory Details</Text>
                     <Text>SteamID: <Text style={{fontWeight: 'bold'}}>{props.steam}</Text></Text>
                     <Text>Games loaded (appid): <Text style={{fontWeight: 'bold'}}>{JSON.stringify(props.games)}</Text></Text>
-                    <Text style={{fontWeight: "bold", fontSize: 16}}>Inventory Stats</Text>
 
                     <View style={[styles.column, {width: '95%'}]}>
-                        <View style={styles.row}>
-                            <Text style={styles.statsTitle}>Total value</Text>
-                            <Text style={styles.statsDetails}>{curr} {Math.round(stats['price'] * rate * 100) / 100} ({stats['ownedTradeable']} items)</Text>
-                        </View>
 
-                        <View style={styles.row}>
-                            <Text style={styles.statsTitle}>Average item price</Text>
-                            <Text style={styles.statsDetails}>{curr} {(Math.round(stats['price'] / stats['ownedTradeable'] * rate * 100) / 100)} / item</Text>
-                        </View>
+                        <View style={styles.summarySection}>
+                            <View style={styles.row}>
+                                <Text style={styles.statsTitle}>Total value</Text>
+                                <Text style={styles.statsDetails}>{curr} {Math.round(stats['price'] * rate * 100) / 100} ({stats['ownedTradeable']} items)</Text>
+                            </View>
 
-                        <Text> </Text>
-
-                        <View style={styles.row}>
-                            <Text style={styles.statsTitle}>24 hour average value</Text>
-                            <Text style={styles.statsDetails}>{curr} {Math.round(stats['avg24'] * rate * 1000) / 1000}</Text>
-                        </View>
-
-                        <View style={styles.row}>
-                            <Text style={styles.statsTitle}>7 day average value</Text>
-                            <Text style={styles.statsDetails}>{curr} {Math.round(stats['avg7'] * rate * 1000) / 1000}</Text>
-                        </View>
-
-                        <View style={styles.row}>
-                            <Text style={styles.statsTitle}>30 day average value</Text>
-                            <Text style={styles.statsDetails}>{curr} {Math.round(stats['avg30'] * rate * 1000) / 1000}</Text>
-                        </View>
-
-                        <Text> </Text>
-
-                        <View style={styles.row}>
-                            <Text style={styles.statsTitle}>Most expensive item</Text>
-                            <View style={[styles.column, {width: '55%'}]}>
-                                <Text style={[styles.statsDetailsS, {width: '100%'}]}>{stats['expensive'].name}</Text>
-                                <Text style={[styles.statsDetails, {width: '100%'}]}>{curr} {Math.round(stats['expensive'].price * rate * 100) / 100}</Text>
+                            <View style={styles.row}>
+                                <Text style={styles.statsTitle}>Average item price</Text>
+                                <Text style={styles.statsDetails}>{curr} {(Math.round(stats['price'] / stats['ownedTradeable'] * rate * 100) / 100)} / item</Text>
                             </View>
                         </View>
 
-                        <View style={styles.row}>
-                            <Text style={styles.statsTitle}>Cheapest item</Text>
-                            <View style={[styles.column, {width: '55%'}]}>
-                                <Text style={[styles.statsDetailsS, {width: '100%'}]}>{stats['cheapest'].name}</Text>
-                                <Text style={[styles.statsDetails, {width: '100%'}]}>{curr} {Math.round(stats['cheapest'].price * rate * 100) / 100}</Text>
+                        <View style={styles.summarySection}>
+                            <View style={styles.row}>
+                                <Text style={styles.statsTitle}>24 hour average value</Text>
+                                <Text style={styles.statsDetails}>{curr} {Math.round(stats['avg24'] * rate * 1000) / 1000}</Text>
+                            </View>
+
+                            <View style={styles.row}>
+                                <Text style={styles.statsTitle}>7 day average value</Text>
+                                <Text style={styles.statsDetails}>{curr} {Math.round(stats['avg7'] * rate * 1000) / 1000}</Text>
+                            </View>
+
+                            <View style={styles.row}>
+                                <Text style={styles.statsTitle}>30 day average value</Text>
+                                <Text style={styles.statsDetails}>{curr} {Math.round(stats['avg30'] * rate * 1000) / 1000}</Text>
                             </View>
                         </View>
+
+                        <View style={styles.summarySection}>
+                            <View style={styles.row}>
+                                <Text style={styles.statsTitle}>Most expensive item</Text>
+                                <View style={[styles.column, {width: '55%'}]}>
+                                    <Text style={[styles.statsDetailsS, {width: '100%'}]}>{stats['expensive'].name}</Text>
+                                    <Text style={[styles.statsDetails, {width: '100%'}]}>{curr} {Math.round(stats['expensive'].price * rate * 100) / 100}</Text>
+                                </View>
+                            </View>
+
+                            <View style={styles.row}>
+                                <Text style={styles.statsTitle}>Cheapest item</Text>
+                                <View style={[styles.column, {width: '55%'}]}>
+                                    <Text style={[styles.statsDetailsS, {width: '100%'}]}>{stats['cheapest'].name}</Text>
+                                    <Text style={[styles.statsDetails, {width: '100%'}]}>{curr} {Math.round(stats['cheapest'].price * rate * 100) / 100}</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        <Text style={styles.gameName}>Game stats</Text>
+
+                        {
+                            stats.games.map((data) => (
+                                <View style={styles.summarySection}>
+                                    <Text>{ data.name }</Text>
+
+                                    <View style={styles.row}>
+                                        <Text style={styles.statsTitle}>Value</Text>
+                                        <Text style={styles.statsDetails}>{curr} {Math.round(data.value * rate * 100) / 100}</Text>
+                                    </View>
+
+                                    <View style={styles.row}>
+                                        <Text style={styles.statsTitle}>Items owned</Text>
+                                        <Text style={styles.statsDetails}>{data.items}</Text>
+                                    </View>
+
+                                    <View style={styles.row}>
+                                        <Text style={styles.statsTitle}>Average 24 hour</Text>
+                                        <Text style={styles.statsDetails}>{curr} {Math.round(data.avg24 * rate * 1000) / 1000}</Text>
+                                    </View>
+
+                                    <View style={styles.row}>
+                                        <Text style={styles.statsTitle}>Average 7 day</Text>
+                                        <Text style={styles.statsDetails}>{curr} {Math.round(data.avg7 * rate * 1000) / 1000}</Text>
+                                    </View>
+
+                                    <View style={styles.row}>
+                                        <Text style={styles.statsTitle}>Average 30 day</Text>
+                                        <Text style={styles.statsDetails}>{curr} {Math.round(data.avg30 * rate * 1000) / 1000}</Text>
+                                    </View>
+                                </View>
+                            ))
+                        }
+
                     </View>
                 </View>
-            </ScrollView>
+            </BottomSheetScrollView>
         </BSheet>
     )
 }
@@ -496,13 +543,13 @@ const styles = StyleSheet.create ({
         marginVertical: 8,
     },
     statsTitle: {
-        fontSize: 14,
+        fontSize: 13,
         textAlignVertical: 'center',
         textAlign: 'left',
         width: '45%',
     },
     statsDetails: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: 'bold',
         textAlign: 'right',
         width: '55%',
@@ -521,5 +568,13 @@ const styles = StyleSheet.create ({
         margin: 8,
         backgroundColor: '#fff',
         borderRadius: 16,
+        elevation: 7,
     },
+    summarySection: {
+        borderWidth: 1.0,
+        borderRadius: 8,
+        padding: 4,
+        marginVertical: 6,
+        alignSelf: 'center',
+    }
 })

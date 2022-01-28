@@ -20,6 +20,7 @@ import UserSaves from "./components/UserSaves";
 import Settings from "./components/Settings";
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import SteamMarket from "./components/SteamMarket";
+import {ColorfulTabBar} from "react-navigation-tabbar-collection";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -77,7 +78,7 @@ export default function App() {
         await AsyncStorage.getAllKeys((err, keys) => {
             AsyncStorage.multiGet(keys, (err, stores) => {
                 const values = []
-                stores.map((result, i, store) => {
+                stores.map((result/*, i, store*/) => {
                     if (result[0] === 'currency') {
                         setRate(JSON.parse(result[1]).val)
                     } else {
@@ -92,7 +93,7 @@ export default function App() {
         });
     }
 
-    function TabProfile({ navigation }) {
+    function TabProfile(/*{ navigation }*/) {
         return (
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 <Stack.Screen name='ProfilesAndInv' component={StackProfilesMain} />
@@ -196,7 +197,7 @@ export default function App() {
         )
     }
 
-    function StackGames({ route, navigation }, props) {
+    function StackGames({ route, navigation }) {
         const [selState, setSelState] = useState([])
 
         function hasState(state) {
@@ -257,10 +258,10 @@ export default function App() {
         );
     }
 
-    function TabPremium() {
+    function TabLoadout() {
         return (
             <View>
-                <Text style={styles.title}>Premium is coming soon!</Text>
+                <Text style={styles.title}>Loadouts will be available in the future version!</Text>
             </View>
         );
     }
@@ -275,80 +276,62 @@ export default function App() {
 
     return (
     <NavigationContainer>
-          <StatusBar backgroundColor='#fff' translucent={false} />
-          <Tab.Navigator screenOptions={ { tabBarActiveTintColor: '#3059ab', headerShown: false } }>
+          <StatusBar backgroundColor='#fff' translucent={false} style={"dark"} />
+          <Tab.Navigator tabBar={(props) => <ColorfulTabBar {...props} />}>
               <Tab.Screen name="Profiles" component={TabProfile}
                   options={{
-                      tabBarIcon: ({ color, size }) => (
-                        <Icon name="home" type='font-awesome' color={color} size={size} />
-                      )
+                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
+                      tabBarActiveTintColor: '#30BF8E',
+                      icon: () => (
+                        <Icon name="home" type='font-awesome' color={'#194D5C'} size={24} />
+                      ),
+                      headerShown: false
                   }}
               />
               <Tab.Screen name="Steam Market" component={TabSteamMarket}
                   options={{
-                      tabBarIcon: ({ color, size }) => (
-                      <Icon name="steam" type='font-awesome' color={color} size={size} />
-                      )
+                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
+                      tabBarActiveTintColor: '#30BF8E',
+                      tabBarIcon: () => (
+                      <Icon name="steam" type='font-awesome' color={'#194D5C'} size={24} />
+                      ),
+                      headerShown: false
                   }}
               />
               <Tab.Screen name="Music Kits" component={TabMusicKit}
                   options={{
-                      tabBarIcon: ({ color, size }) => (
-                      <Icon name="music" type='font-awesome' color={color} size={size} />
-                      )
+                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
+                      tabBarActiveTintColor: '#30BF8E',
+                      tabBarIcon: () => (
+                      <Icon name="music" type='font-awesome' color={'#194D5C'} size={24} />
+                      ),
+                      headerShown: false
                   }}
               />
-              <Tab.Screen name="Premium" component={TabPremium}
+              <Tab.Screen name="Loadout" component={TabLoadout}
                   options={{
-                      tabBarIcon: ({ color, size }) => (
-                      <Icon name="diamond" type='font-awesome' color={color} size={size} />
-                      )
+                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
+                      tabBarActiveTintColor: '#30BF8E',
+                      tabBarIcon: () => (
+                      <Icon name="diamond" type='font-awesome' color={'#194D5C'} size={24} />
+                      ),
+                      headerShown: false
                   }}
               />
               <Tab.Screen name="Settings" component={TabSettings}
                   options={{
-                      tabBarIcon: ({ color, size }) => (
-                      <Icon name="wrench" type='font-awesome' color={color} size={size} />
-                      )
+                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
+                      tabBarActiveTintColor: '#30BF8E',
+                      tabBarIcon: () => (
+                      <Icon name="wrench" type='font-awesome' color={'#194D5C'} size={24} />
+                      ),
+                      headerShown: false
                   }}
               />
           </Tab.Navigator>
       </NavigationContainer>
     );
 }
-
-/*const HomeScreen = ({ navigation }) => {
-  return (
-      <View>
-          <Text style={styles.title}>Steam Inventory Value</Text>
-          <Button title="Profiles" onPress={() => navigation.navigate('Profile')} />
-          <Button title="Steam Community Market" onPress={() => navigation.navigate('Profile')} />
-          <Button title="Music Kits" onPress={() => navigation.navigate('Profile')} />
-          <Button title="Premium" onPress={() => navigation.navigate('Profile')} />
-          <Button title="Settings" onPress={() => navigation.navigate('Profile')} />
-      </View>
-  );
-};
-
-const ProfileScreen = ({ navigation, route }) => {
-  return (
-      <View>
-        <Text style={styles.title}>Find Steam profile:</Text>
-          <Text style={styles.warning}>Search by SteamID64 or Custom URL</Text>
-          <TextInput style={styles.input} />
-        <Button
-          title="Music Kits"
-          onPress={() =>
-              navigation.navigate('MusicKitsScreen', { name: 'Darude'})
-          }
-        />
-      </View>
-  );
-}
-
-const MusicKitsScreen = ({ navigation, route }) => {
-    return <Text>Here you'll find all the CSGO music kits!</Text>;
-};*/
 
 const styles = StyleSheet.create({
     container: {
