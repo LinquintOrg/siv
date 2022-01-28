@@ -50,8 +50,14 @@ export default function Inventory(props) {
     const getInventory = async (id, end) => {
         setAlert('Loading data from Steam')
         fetch('https://steamcommunity.com/inventory/' + props.steam + '/' + id + '/2')
-            .then((response) => response.json())
+            .then((response) => {
+                console.log("Steam response: " + JSON.stringify(response))
+                return response.json()
+            })
             .then((json) => {
+
+                console.log("JSON response: " + JSON.stringify(json))
+
                 json['appid'] = id
                 json['game'] = gameName(id)
                 tempArray.push(json)
@@ -68,6 +74,7 @@ export default function Inventory(props) {
         let queries = []
         for (let i = 0; i < tempArray.length; i++) {
             let query = 'https://domr.xyz/api/Steam/rq/prices.php?appid=' + tempArray[i].appid + '&hashes='
+
             let assets = tempArray[i].assets
             let items = tempArray[i].descriptions
 
@@ -75,7 +82,10 @@ export default function Inventory(props) {
                 let num = 0
                 let id = items[j].classid + items[j].instanceid
 
-                if (items[j].marketable === 1) query += items[j].market_name + ','
+                if (items[j].marketable === 1) {
+                    let item_hash = items[j].market_name.replace(',', ';')
+                    query += item_hash + ','
+                }
 
                 for (let k = 0; k < assets.length; k++) {
                     let aID = assets[k].classid + assets[k].instanceid
@@ -95,7 +105,10 @@ export default function Inventory(props) {
             const gameStats = { 'name': tempArray[i].game, 'value': 0, 'items': 0, 'avg24': 0, 'avg7': 0, 'avg30': 0 }
             let skipped = 0;
             fetch(queries[i])
-                .then((response) => response.json())
+                .then((response) => {
+                    console.log("DOMR response: " + JSON.stringify(response))
+                    return response.json()
+                })
                 .then(async (json) => {
                     for (let j = 0; j < json.length; j++) {
                         if (tempArray[i].descriptions[j + skipped].marketable === 1) {
