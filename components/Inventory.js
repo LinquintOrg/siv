@@ -568,7 +568,7 @@ const styles = StyleSheet.create ({
         margin: 8,
         backgroundColor: '#fff',
         borderRadius: 16,
-        elevation: 7,
+        elevation: 5,
     },
     summarySection: {
         borderWidth: 1.0,
