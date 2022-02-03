@@ -4,11 +4,13 @@ import {useState} from "react";
 import gamesJson from '../assets/inv-games.json'
 import {Icon} from "react-native-elements";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Snackbar } from "react-native-paper";
 
 export default function InvGamesList(props) {
     const gj = gamesJson;
     const [loadedPrevGames, setLoadedPrevGames] = useState(false)
     const [prevGames, setPrevGames] = useState([]);
+    const [snackbarVisible, setSnackbarVisible] = useState(false)
 
     if (!loadedPrevGames) getAllKeys().then(() => {
         setLoadedPrevGames(true)
@@ -84,12 +86,24 @@ export default function InvGamesList(props) {
             </ScrollView>
 
             <TouchableOpacity style={styles.buttonProceed} onPress={() => {
-                let id = 'prevGames' + props.steamID
-                saveLoadedGames(id, props.state).then(() => props.proceed())
+                if (props.state.length > 0) {
+                    let id = 'prevGames' + props.steamID
+                    saveLoadedGames(id, props.state).then(() => props.proceed())
+                } else {
+                    setSnackbarVisible(true)
+                }
             }}>
                 <Text style={styles.buttonMediumText}>Proceed</Text>
                 <Icon type={'font-awesome-5'} name={'angle-double-right'} size={32} color={'#F73D4A'} />
             </TouchableOpacity>
+
+            <Snackbar
+                visible={snackbarVisible}
+                onDismiss={() => setSnackbarVisible(false)}
+                style={{backgroundColor: "blue"}}
+            >
+                <View><Text>Choose at least one game.</Text></View>
+            </Snackbar>
         </View>
     )
 }
@@ -125,7 +139,7 @@ const styles = StyleSheet.create ({
     },
     buttonProceed: {
         alignSelf: "center",
-        backgroundColor: '#201253',
+        backgroundColor: '#FFF',
         width: '80%',
         height: 42,
         alignItems: 'center',

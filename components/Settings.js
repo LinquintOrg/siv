@@ -1,64 +1,51 @@
-import React, {useRef} from "react";
-import {Dimensions, Pressable, ScrollView, Text, TouchableOpacity, View, StyleSheet, Image} from "react-native";
-import BottomSheet from 'react-native-raw-bottom-sheet'
+import React, {useRef, useState} from "react";
+import {Text, View, StyleSheet, Image} from "react-native";
+import {Dropdown} from 'react-native-element-dropdown';
 
 export default function (props) {
     const rates = props.rates
     let rate = props.rate
-    const ratesSheetRef = useRef()
-    const defNonMarketable = useRef()
+
+    const [valuesInitialized, setValuesInitialized] = useState(false)
+    const [ratesData] = useState([])
+
+    if (!valuesInitialized) {
+        setValuesInitialized(true)
+        rates.forEach((item, index) => {
+            ratesData.push({ label: item.abb + ' - ' + item.full, value: index })
+        })
+    }
+
+    const _renderItem = item => {
+        return (
+            <View style={styles.item}>
+                <Text style={styles.textItem}>{item.label}</Text>
+            </View>
+        );
+    };
 
     return (
         <View>
-            <BottomSheet ref={ratesSheetRef} closeOnDragDown={false} height={Dimensions.get('window').height / 1.667} customStyles={{
-                wrapper: {backgroundColor: '#00000089'},
-                container: {borderRadius: 8, width: '90%', marginBottom: 24, alignSelf: 'center'},
-                draggableIcon: {borderRadius: 24}}}
-            >
-                <ScrollView>
-                    {rates.map((item, index) => (
-                        <Pressable style={styles.currencySheetRow} onPress={() => {
-                            props.saveSetting('currency', index)
-                            props.setRate(index)
-                        }}>
-                            <Text style={styles.currencyShort}>{item.abb}</Text>
-                            <Text style={styles.currencyLong}>{item.full}</Text>
-                        </Pressable>
-                    ))}
-                </ScrollView>
-            </BottomSheet>
-
-            <BottomSheet ref={defNonMarketable} closeOnDragDown={false} height={Dimensions.get('window').height / 4.20} customStyles={{
-                wrapper: {backgroundColor: '#00000089'},
-                container: {borderRadius: 8, width: '90%', marginBottom: 24, alignSelf: 'center'},
-                draggableIcon: {borderRadius: 24}}}>
-
-                <View>
-                    <Pressable style={styles.currencySheetRow}>
-                        <Text style={styles.singleSelect}>Enabled</Text>
-                    </Pressable>
-                    <Pressable style={styles.currencySheetRow}>
-                        <Text style={styles.singleSelect}>Disabled</Text>
-                    </Pressable>
-                </View>
-            </BottomSheet>
-
             <Text style={styles.title}>Settings</Text>
-            <TouchableOpacity style={styles.optionRow} onPress={() => ratesSheetRef.current.open()}>
-                <View style={styles.optionColumn}>
-                    <Text style={styles.optionName}>Currency</Text>
-                    <Text style={styles.optionDescription}>Choose your preferred currency.</Text>
-                </View>
-                <Text style={styles.optionChoice}>{ rates[rate].abb }</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity style={styles.optionRow} onPress={() => defNonMarketable.current.open()}>
-                <View style={styles.optionColumn}>
-                    <Text style={styles.optionName}>Display non-tradable items</Text>
-                    <Text style={styles.optionDescription}>Display non-tradable items by default.</Text>
-                </View>
-                <Text style={styles.optionChoice}>Disabled</Text>
-            </TouchableOpacity>
+            <Text style={styles.settingTitle}>Currency</Text>
+            <Dropdown
+                style={styles.dropdown}
+                containerStyle={styles.shadow}
+                data={ratesData}
+                search
+                label="Currency"
+                searchPlaceholder={"Search"}
+                labelField="label"
+                valueField="value"
+                placeholder="Select item"
+                value={rate}
+                onChange={item => {
+                    props.saveSetting('currency', item.value)
+                    console.log('selected', item);
+                }}
+                renderItem={item => _renderItem(item)}
+            />
 
             <Text style={styles.title}>Credits</Text>
             <View>
@@ -186,5 +173,44 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         width: '100%',
+    },
+    dropdown: {
+        backgroundColor: 'white',
+        borderColor: '#22A',
+        borderWidth: 2,
+        width: '96%',
+        alignSelf: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    shadow: {
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+        elevation: 2,
+    },
+    item: {
+        paddingVertical: 17,
+        paddingHorizontal: 4,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    textItem: {
+        flex: 1,
+        fontSize: 16,
+    },
+    settingTitle: {
+        fontWeight: 'bold',
+        fontSize: 18,
+        marginLeft: 16,
+        marginTop: 8,
+        marginBottom: 4,
+        color: '#333',
     }
 })

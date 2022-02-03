@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "siv",
+    "name": "Steam Inventory Value",
     "slug": "siv",
-    "version": "2.5.0-t3",
+    "version": "2.5.0-t4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#091b53"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -21,14 +21,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#FFFFFF"
       },
       "config": {
         "googleMobileAdsAppId": "ca-app-pub-3940256099942544~3347511713"
       },
       "package": "com.rsds.steaminventoryvalue",
-      "versionCode": 2010000112
+      "versionCode": 2010000113
     },
     "web": {
       "favicon": "./assets/favicon.png"

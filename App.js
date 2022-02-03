@@ -226,7 +226,15 @@ export default function App() {
 
         return (
             <View style={{height: '100%'}}>
-                <InvGamesList removeState={removeState} hasState={hasState} setState={setState} steamID={route.params.steamId} proceed={proceedLoading} state={selState} setPrevState={setPrevGamesState} />
+                <InvGamesList
+                    removeState={removeState}
+                    hasState={hasState}
+                    setState={setState}
+                    steamID={route.params.steamId}
+                    proceed={proceedLoading}
+                    state={selState}
+                    setPrevState={setPrevGamesState}
+                />
             </View>
         )
     }
