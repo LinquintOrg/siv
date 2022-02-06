@@ -1,4 +1,4 @@
-import React, {useRef, useState} from "react";
+import React, {useState} from "react";
 import {Text, View, StyleSheet, Image} from "react-native";
 import {Dropdown} from 'react-native-element-dropdown';
 
@@ -61,8 +61,7 @@ export default function (props) {
                     <Text style={styles.iconCreditTitle}>Icon made by <Text style={styles.iconCreditAuthorURL}>Pixelmeetup</Text><Text style={styles.iconCreditSubtitle}> | source <Text style={styles.iconCreditAuthorURL}>www.flaticon.com</Text></Text></Text>
                 </View>
             </View>
-            <Text style={styles.title}>About</Text>
-            <Text style={styles.title}>Disclaimers</Text>
+            <Text style={styles.title}>Other</Text>
             <View style={styles.textColumn}>
                 <Text>Steam Inventory Value is not affiliated with Steam or Valve Corp.</Text>
             </View>
@@ -178,7 +177,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderColor: '#22A',
         borderWidth: 2,
-        width: '96%',
+        width: '90%',
         alignSelf: 'center',
         paddingHorizontal: 8,
         paddingVertical: 4,
@@ -208,9 +207,10 @@ const styles = StyleSheet.create({
     settingTitle: {
         fontWeight: 'bold',
         fontSize: 18,
-        marginLeft: 16,
         marginTop: 8,
         marginBottom: 4,
         color: '#333',
+        width: '90%',
+        alignSelf: 'center',
     }
 })

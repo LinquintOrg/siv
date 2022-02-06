@@ -21,11 +21,24 @@ import Settings from "./components/Settings";
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import SteamMarket from "./components/SteamMarket";
 import {ColorfulTabBar} from "react-navigation-tabbar-collection";
+import * as Sentry from 'sentry-expo';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-export default function App() {
+function App() {
+    Sentry.init({
+        dsn: 'https://755f445790cc440eb625404426d380d7@o1136798.ingest.sentry.io/6188926',
+        enableInExpoDevelopment: true,
+        debug: true, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending the event. Set it to `false` in production
+        tracesSampleRate: 1.0,
+        integrations: [
+            new Sentry.Native.ReactNativeTracing({
+                tracingOrigins: ["domr.xyz"],
+            }),
+        ],
+    });
+
     const [rate, setRate] = useState(0)         // selected currency
     const [rates, setRates] = useState()        // downloaded rates from database
     const [loadedRates, setLoadedRates] = useState(false)       // Are rates loaded?
@@ -444,3 +457,5 @@ const styles = StyleSheet.create({
         justifyContent: 'space-evenly',
     },
 });
+
+export default Sentry.Native.wrap(App);

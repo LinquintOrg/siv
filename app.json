@@ -2,7 +2,7 @@
   "expo": {
     "name": "Steam Inventory Value",
     "slug": "siv",
-    "version": "2.5.0-t4",
+    "version": "3.0-t5",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -28,13 +28,25 @@
         "googleMobileAdsAppId": "ca-app-pub-3940256099942544~3347511713"
       },
       "package": "com.rsds.steaminventoryvalue",
-      "versionCode": 2010000113
+      "versionCode": 2010000114
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-ads-admob"
-    ]
+      "sentry-expo"
+    ],
+    "hooks": {
+      "postPublish": [
+        {
+          "file": "sentry-expo/upload-sourcemaps",
+          "config": {
+            "organization": "domr",
+            "project": "domr",
+            "authToken": "32896b340c8f4d3689d68d2f0b7174ecd57e6ba09cf44f1fb63fa9f6d571950e"
+          }
+        }
+      ]
+    }
   }
 }

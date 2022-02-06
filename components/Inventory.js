@@ -6,7 +6,7 @@ import {
     ScrollView,
     ActivityIndicator,
     LayoutAnimation,
-    Pressable, Platform, UIManager, Image, Dimensions
+    Pressable, Platform, UIManager, Image, Dimensions, TextInput
 } from "react-native";
 import React, {useCallback, useEffect, useMemo, useRef} from "react";
 import {useState} from "react";
@@ -14,6 +14,7 @@ import gamesJson from '../assets/inv-games.json'
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import {Icon} from "react-native-elements";
 import BSheet, {BottomSheetScrollView} from '@gorhom/bottom-sheet'
+import {Dropdown} from "react-native-element-dropdown";
 
 if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental(true)
@@ -24,7 +25,7 @@ export default function Inventory(props) {
     const [loading, setLoading] = useState(false)
     const [inventory, setInventory] = useState([])
     const [fetching, setFetching] = useState(false)
-    const [stats, setStats] = useState({
+    const [stats] = useState({
         'price': 0,
         'owned': 0,
         'ownedTradeable': 0,
@@ -46,6 +47,14 @@ export default function Inventory(props) {
     let rate = rates[props.rate].exc
     let curr = rates[props.rate].abb
     let tempArray = []
+    const [search, setSearch] = useState('')
+    const [sort, setSort] = useState(0)
+
+    const sortOptionsData = [
+        { label: 'Default', value: 0 },
+        { label: 'Price', value: 1 },
+        { label: 'Name', value: 2 }
+    ]
 
     const getInventory = async (id, end) => {
         setAlert('Loading data from Steam')
@@ -195,6 +204,27 @@ export default function Inventory(props) {
     const [renderUnsellable, setRenderUnsellable] = useState(false)
     const scrollRef = useRef();
 
+    function displayItem(item) {
+        let render = true
+
+        if (search !== '') {
+            render = (item.market_name.toLowerCase().includes(search.toLowerCase()) || item.type.toLowerCase().includes(search.toLowerCase()))
+        }
+
+        if (renderUnsellable) {
+            return (render && renderUnsellable)
+        }
+        return (render && (item.tradable === 1 || item.marketable === 1))
+    }
+
+    const _renderItem = item => {
+        return (
+            <View style={styles.item}>
+                <Text style={styles.textItem}>{item.label}</Text>
+            </View>
+        );
+    };
+
     return(
         <View style={{paddingBottom: 24}}>
             <View style={{height: '100%'}}>
@@ -217,6 +247,46 @@ export default function Inventory(props) {
                             fillColor={'#229'}
                             iconStyle={{borderWidth:2}}
                         />
+                        <View style={styles.inputView}>
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder={'Search for items'}
+                                onChangeText={text => setSearch(text)}
+                            />
+                        </View>
+                        <View style={styles.fsRow}>
+                            <View style={styles.fsCell}>
+                                <Pressable style={styles.sIcon}>
+                                    <Icon type={'font-awesome'} name={'unsorted'} color={'#229'} size={24} />
+                                </Pressable>
+
+                                <Dropdown
+                                    style={styles.dropdown}
+                                    containerStyle={styles.shadow}
+                                    data={sortOptionsData}
+                                    label="Sort order"
+                                    labelField="label"
+                                    valueField="value"
+                                    placeholder="Select sort order"
+                                    value={sort}
+                                    onChange={item => {
+                                        setSort(item.value)
+                                        console.log('selected', item);
+                                    }}
+                                    renderItem={item => _renderItem(item)}
+                                    maxHeight={180}
+                                    activeColor={'#dde'}
+                                />
+                            </View>
+
+                            <View style={styles.fsCell}>
+                                <Pressable style={styles.filterPressable}>
+                                    <Icon name={'filter'} type={'feather'} size={20} color={'#229'} />
+                                    <Text style={styles.filterPressableText}>Filter options</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+
                     </View>
                 }
                 <ScrollView ref={scrollRef} style={{marginBottom: 46}}>
@@ -227,7 +297,7 @@ export default function Inventory(props) {
                                     <Text style={styles.gameName}>{item.game}</Text>
                                     {
                                         item.descriptions.map((inv) => (
-                                            (renderUnsellable) ? <Item inv={inv} rate={rate} curr={curr} /> : (inv.tradable === 1 || inv.marketable === 1) ? <Item inv={inv} rate={rate} curr={curr} /> : null
+                                            (displayItem(inv)) ? <Item inv={inv} rate={rate} curr={curr} /> : null
                                         ))
                                     }
                                 </View>
@@ -444,7 +514,7 @@ const styles = StyleSheet.create ({
         marginTop: 6,
         marginBottom: 6,
         width: '95%',
-        backgroundColor: '#ccc',
+        backgroundColor: '#fff',
         alignItems: 'center',
         display: 'flex',
         flexDirection: 'column',
@@ -531,7 +601,7 @@ const styles = StyleSheet.create ({
     alert: {
         position: "absolute",
         top: 8,
-        backgroundColor: '#1221ff',
+        backgroundColor: '#229',
         width: '90%',
         overflow: "hidden",
         alignSelf: "center",
@@ -589,5 +659,94 @@ const styles = StyleSheet.create ({
         padding: 4,
         marginVertical: 6,
         alignSelf: 'center',
+    },
+    inputView: {
+        width: '90%',
+        backgroundColor: '#fff',
+        paddingVertical: 2,
+        paddingHorizontal: 8,
+        display: "flex",
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: "center",
+        borderWidth: 2.0,
+        borderColor: '#229',
+        borderRadius: 8,
+        marginTop: 8,
+    },
+    searchInput: {
+        fontSize: 14,
+        width: '100%',
+    },
+    fsRow: {
+        width: '96%',
+        alignSelf: 'center',
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        marginTop: 8,
+    },
+    fsCell: {
+        width: '48%',
+        alignItems: 'center',
+        display: 'flex',
+        flexDirection: 'row',
+    },
+    sIcon: {
+        borderWidth: 2,
+        borderColor: '#229',
+        padding: 4,
+        borderRadius: 8,
+        marginRight: 4,
+        height: 36,
+        width: '18%',
+    },
+    dropdown: {
+        backgroundColor: 'white',
+        borderColor: '#229',
+        borderWidth: 2,
+        width: '80%',
+        alignSelf: 'center',
+        paddingHorizontal: 8,
+        borderRadius: 8,
+    },
+    shadow: {
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+        elevation: 2,
+        borderRadius: 8,
+    },
+    item: {
+        paddingVertical: 16,
+        paddingHorizontal: 4,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    textItem: {
+        flex: 1,
+        fontSize: 16,
+    },
+    filterPressable: {
+        display: 'flex',
+        flexDirection: 'row',
+        backgroundColor: 'white',
+        borderColor: '#229',
+        borderWidth: 2,
+        borderRadius: 8,
+        alignItems: 'center',
+        width: '100%',
+        height: 38.5,
+        justifyContent: 'center',
+    },
+    filterPressableText: {
+        fontSize: 18,
+        textAlignVertical: 'center',
+        height: '100%',
     }
 })

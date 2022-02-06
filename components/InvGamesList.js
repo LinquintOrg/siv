@@ -94,15 +94,21 @@ export default function InvGamesList(props) {
                 }
             }}>
                 <Text style={styles.buttonMediumText}>Proceed</Text>
-                <Icon type={'font-awesome-5'} name={'angle-double-right'} size={32} color={'#F73D4A'} />
+                <Icon type={'font-awesome-5'} name={'angle-double-right'} size={32} color={'#193C6E'} />
             </TouchableOpacity>
 
             <Snackbar
                 visible={snackbarVisible}
                 onDismiss={() => setSnackbarVisible(false)}
-                style={{backgroundColor: "blue"}}
+                style={{backgroundColor: "#193C6E"}}
+                action={{
+                    label: 'OKAY',
+                    onPress: () => {
+                        setSnackbarVisible(false)
+                    },
+                }}
             >
-                <View><Text>Choose at least one game.</Text></View>
+                <View><Text style={styles.snackbarText}>Choose at least one game.</Text></View>
             </Snackbar>
         </View>
     )
@@ -148,10 +154,12 @@ const styles = StyleSheet.create ({
         marginVertical: 4,
         display: 'flex',
         flexDirection: 'row',
+        borderWidth: 2.0,
+        borderColor: '#193C6E',
     },
     buttonMediumText: {
         fontSize: 24,
-        color: '#F73D4A',
+        color: '#193C6E',
         fontWeight: "bold",
         marginHorizontal: 8,
         width: '75%',
@@ -172,6 +180,10 @@ const styles = StyleSheet.create ({
         alignSelf: 'center',
         textAlign: 'center',
         fontSize: 15
+    },
+    snackbarText: {
+        fontSize: 15,
+        color: '#ddd'
     }
 
 })
