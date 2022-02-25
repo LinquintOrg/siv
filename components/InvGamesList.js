@@ -106,8 +106,7 @@ export default function InvGamesList(props) {
                     onPress: () => {
                         setSnackbarVisible(false)
                     },
-                }}
-            >
+                }}>
                 <View><Text style={styles.snackbarText}>Choose at least one game.</Text></View>
             </Snackbar>
         </View>
