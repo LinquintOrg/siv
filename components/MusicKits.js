@@ -6,13 +6,13 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
+    TextInput, TouchableOpacity,
     View
 } from "react-native";
 import React, {useState} from "react";
 import {Audio} from 'expo-av';
 import {AdMobRewarded} from "expo-ads-admob";
-import {Icon} from "react-native-elements";
+import {Divider, Icon} from "react-native-elements";
 import {Snackbar} from "react-native-paper";
 
 export default function MusicKits(props) {
@@ -64,7 +64,7 @@ export default function MusicKits(props) {
                     {shouldPlay: true}
                 )
 
-                setSnackError(<Text>Now Playing <Text style={{fontWeight: 'bold', color: '#fff'}}>{song}</Text> by <Text style={{color: '#fff'}}>{artist}</Text></Text>)
+                setSnackError(<Text>Now Playing <Text style={{fontWeight: 'bold', color: '#6FC8F7'}}>{song}</Text> by <Text style={{color: '#6FC8F7'}}>{artist}</Text></Text>)
                 setSnackbarVisible(true)
                 await sleep(5000)
                 setSnackbarVisible(false)
@@ -190,19 +190,23 @@ export default function MusicKits(props) {
 
                     <ScrollView>
                         {
-                            kits.musickit.map((item) => (
+                            kits.musickit.map((item, index) => (
                                 (item.song.includes(search) || item.artist.includes(search)) ?
-                                    <Pressable style={styles.container} onPress={async () => {
-                                        await playSound(item.dir, item.artist, item.song)
-                                    }}>
-                                        <Image style={{width: 48, aspectRatio: 1, marginRight: 8}}
-                                               source={{uri: (item.img || imgNotFound)}}/>
-                                        <View style={styles.containerCol}>
-                                            <Text style={styles.song}>{item.song}</Text>
-                                            <Text style={styles.artist}>{item.artist}</Text>
-                                        </View>
-                                        {getMusicKitPrice(item)}
-                                    </Pressable> : null
+                                    <View>
+                                        <TouchableOpacity style={styles.container} onPress={async () => {
+                                            await playSound(item.dir, item.artist, item.song)
+                                        }}>
+                                            <Image style={{width: 48, aspectRatio: 1, marginRight: 8}}
+                                                   source={{uri: (item.img || imgNotFound)}}/>
+                                            <View style={styles.containerCol}>
+                                                <Text style={styles.song}>{item.song}</Text>
+                                                <Text style={styles.artist}>{item.artist}</Text>
+                                            </View>
+                                            {getMusicKitPrice(item)}
+                                        </TouchableOpacity>
+
+                                        { (kits.musickit.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center',}} /> : null }
+                                    </View> : null
                             ))
                         }
                     </ScrollView>
@@ -224,7 +228,7 @@ export default function MusicKits(props) {
                                 await playRewardAd().then(r => null)
                             },
                         }}>
-                        <View><Text style={styles.snackbarText}>Watch an <Text style={{fontWeight: 'bold', color: '#fff'}}>AD</Text> to get more playbacks</Text></View>
+                        <View><Text style={styles.snackbarText}>Watch an <Text style={{fontWeight: 'bold', color: '#6FC8F7'}}>AD</Text> to get more playbacks</Text></View>
                     </Snackbar>
                 </View>
     )
@@ -235,14 +239,12 @@ const styles = StyleSheet.create({
         marginTop: 6,
         marginBottom: 6,
         width: '95%',
-        backgroundColor: '#ddd',
         alignItems: 'center',
         display: 'flex',
         flexDirection: 'row',
         borderRadius: 8,
         alignSelf: 'center',
         padding: 8,
-        elevation: 3,
     },
     containerCol: {
         display: 'flex',
@@ -280,7 +282,6 @@ const styles = StyleSheet.create({
     inputView: {
         width: '90%',
         height: 44,
-        backgroundColor: '#f1f3f6',
         borderRadius: 8,
         paddingHorizontal: 10,
         display: "flex",
@@ -290,6 +291,6 @@ const styles = StyleSheet.create({
     },
     snackbarText: {
         fontSize: 15,
-        color: '#ddd'
+        color: '#fff'
     }
 })
