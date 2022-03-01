@@ -2,7 +2,7 @@ import {Text, TouchableOpacity, View, StyleSheet, Image, ScrollView, Pressable} 
 import React from "react";
 import {useState} from "react";
 import gamesJson from '../assets/inv-games.json'
-import {Icon} from "react-native-elements";
+import {Divider, Icon} from "react-native-elements";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Snackbar } from "react-native-paper";
 
@@ -63,24 +63,29 @@ export default function InvGamesList(props) {
             <Text style={styles.title}>Select games from the list</Text>
             <ScrollView style={{borderRadius: 8}}>
                 {
-                    gj.games.map((item) => (
-                        <TouchableOpacity key={item.name} style={styles.container} onPress={() => {
-                            if (props.hasState(item.appid)) {
-                                props.removeState(item.appid)
-                            } else {
-                                props.setState([item.appid])
-                            }
-                        }}>
-                            <Image style={{ height: 48, width: 48, borderRadius: 8, marginRight: 8 }} source={{uri: item.url} } />
+                    gj.games.map((item, index) => (
+                        <View>
+                            <TouchableOpacity key={item.name} style={styles.container} onPress={() => {
+                                if (props.hasState(item.appid)) {
+                                    props.removeState(item.appid)
+                                } else {
+                                    props.setState([item.appid])
+                                }
+                            }}>
+                                <Image style={{ height: 48, width: 48, borderRadius: 8, marginRight: 8 }} source={{uri: item.url} } />
 
-                            <View style={{ display: 'flex', flexDirection: 'column', width: '77%' }}>
-                            <Text style={styles.gameTitle}>{item.name}</Text>
-                            <Text style={styles.appID}>{item.appid}</Text>
-                            </View>
+                                <View style={{ display: 'flex', flexDirection: 'column', width: '77%' }}>
+                                    <Text style={styles.gameTitle}>{item.name}</Text>
+                                    <Text style={styles.appID}>{item.appid}</Text>
+                                </View>
 
-                            <Icon name={ (props.hasState(item.appid)) ? 'check-square-o' : 'square-o' } type='font-awesome' size={25}
-                            style={{alignSelf: 'center'}} />
-                        </TouchableOpacity>
+                                <Icon name={ (props.hasState(item.appid)) ? 'check-square-o' : 'square-o' } type='font-awesome' size={25}
+                                      style={{alignSelf: 'center'}} />
+                            </TouchableOpacity>
+
+                            { (gj.games.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center',}} /> : null }
+                        </View>
+
                     ))
                 }
             </ScrollView>
@@ -117,13 +122,11 @@ const styles = StyleSheet.create ({
     container: {
         marginVertical: 6,
         width: '95%',
-        backgroundColor: '#ccc',
         alignItems: 'center',
         display: 'flex',
         flexDirection: 'row',
         borderRadius: 8,
         alignSelf: 'center',
-        elevation: 3,
     },
     gameTitle: {
         color: '#333',

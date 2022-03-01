@@ -2,7 +2,7 @@
   "expo": {
     "name": "Steam Inventory Value",
     "slug": "siv",
-    "version": "3.0-t7",
+    "version": "3.0-t8",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -28,7 +28,7 @@
         "googleMobileAdsAppId": "ca-app-pub-3940256099942544~3347511713"
       },
       "package": "com.rsds.steaminventoryvalue",
-      "versionCode": 2010000117
+      "versionCode": 2010000118
     },
     "web": {
       "favicon": "./assets/favicon.png"

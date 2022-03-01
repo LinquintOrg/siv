@@ -27,7 +27,7 @@ export default function (props) {
     const fSelectRef = useRef();
     const sortSelectRef = useRef();
 
-    const snapPoints = useMemo(() => [70, 420], []);
+    const snapPoints = useMemo(() => [70, 420, '100%'], []);
     const handleSheetChanges = useCallback((index: number) => {
         console.log('handleSheetChanges', index);
     }, []);
@@ -90,7 +90,7 @@ export default function (props) {
             <Text style={{textAlign: 'center'}}>Loading market search results</Text>
         </View> :
         <View style={styles.container}>
-            <ScrollView style={{marginBottom: 46}}>
+            <ScrollView>
                 {
                     searchResults.map(item => (
                         <View style={styles.listingRow}>
@@ -145,7 +145,9 @@ export default function (props) {
                 snapPoints={snapPoints}
                 onChange={handleSheetChanges}
                 detached={false}
-                handleIndicatorStyle={{backgroundColor: '#555', elevation: 8, height: 10, width: 48}}>
+                handleIndicatorStyle={{backgroundColor: '#555', elevation: 8, height: 10, width: 48}}
+                handleStyle={{borderRadius: 16, padding: 12, borderWidth: 2, width: '40%', alignSelf: 'center', marginBottom: 8, backgroundColor: '#fff',}}
+                backgroundStyle={{backgroundColor: '#ffffff00'}}>
                 <View style={styles.contentContainer}>
                     <Text style={styles.sheetTitle}>Search</Text>
 
@@ -188,7 +190,7 @@ export default function (props) {
                         <Pressable style={{marginHorizontal: 4, borderWidth: 1.0, borderRadius: 8, flex: 1, padding: 4}} onPress={() => {
                             searchMarket().then(async () => {
                                 setSearchTimeout(true)
-                                await sleep(12000)
+                                await sleep(15000)
                                 setSearchTimeout(false)
                             })
                         }}>
@@ -206,12 +208,17 @@ export default function (props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingBottom: 24,
     },
     contentContainer: {
         flex: 1,
         alignItems: 'center',
-        elevation: 5,
+        elevation: -5,
+        borderTopRightRadius: 16,
+        borderTopLeftRadius: 16,
+        borderTopWidth: 2,
+        borderLeftWidth: 2,
+        borderRightWidth: 2,
+        backgroundColor: '#fff',
     },
     sheetTitle: {
         fontSize: 24,

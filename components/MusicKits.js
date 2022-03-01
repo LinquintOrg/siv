@@ -2,7 +2,6 @@ import {
     ActivityIndicator,
     Dimensions,
     Image,
-    Pressable,
     ScrollView,
     StyleSheet,
     Text,
@@ -19,10 +18,10 @@ export default function MusicKits(props) {
     const [loading, setLoading] = useState(true)
     const [loadingPrices, setLoadingPrices] = useState(false);
     const [kits, setKits] = useState({})
-    const [sound, setSound] = useState();
+    // const [sound, setSound] = useState();
     const [prices, setPrices] = useState([]);
     const imgNotFound = 'https://domr.xyz/api/Files/img/no-photo.png'
-    const [numPlays, setNumPlays] = useState(5)
+    const [numPlays, setNumPlays] = useState(5)                         // Save @numPlays to prevent app relaunch to get more plays
     const [playbackTimeout, setPlaybackTimeout] = useState(false)
     const [search, setSearch] = useState('')
     const [snackbarVisible, setSnackbarVisible] = useState(false)
@@ -110,7 +109,7 @@ export default function MusicKits(props) {
         });
     }
 
-    function getMusicKitPrice(kit) {
+    const getMusicKitPrice = (kit) => {
         const title = (kit.artist + ',' + kit.song).toLowerCase()
         const stTitle = 'st ' + title
 
@@ -202,7 +201,7 @@ export default function MusicKits(props) {
                                                 <Text style={styles.song}>{item.song}</Text>
                                                 <Text style={styles.artist}>{item.artist}</Text>
                                             </View>
-                                            {getMusicKitPrice(item)}
+                                            {(!loadingPrices) ? getMusicKitPrice(item) : null}
                                         </TouchableOpacity>
 
                                         { (kits.musickit.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center',}} /> : null }

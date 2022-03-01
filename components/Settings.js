@@ -1,6 +1,7 @@
 import React, {useState} from "react";
-import {Text, View, StyleSheet, Image} from "react-native";
+import {Text, View, StyleSheet, Image, ScrollView} from "react-native";
 import {Dropdown} from 'react-native-element-dropdown';
+import {Divider} from "react-native-elements";
 
 export default function (props) {
     const rates = props.rates
@@ -25,8 +26,9 @@ export default function (props) {
     };
 
     return (
-        <View>
+        <ScrollView>
             <Text style={styles.title}>Settings</Text>
+            <Text style={{fontSize: 14, alignSelf: 'center', color: '#777', width: '90%', marginTop: 8,}}>After pressing on dropdown, please wait for it to load</Text>
 
             <Text style={styles.settingTitle}>Currency</Text>
             <Dropdown
@@ -62,10 +64,23 @@ export default function (props) {
                 </View>
             </View>
             <Text style={styles.title}>Other</Text>
+
+            <Text style={styles.settingTitle}>Timeouts</Text>
+            <Text style={{
+                textAlign: 'center',
+                width: '90%',
+                alignSelf: 'center',
+            }}>Steam Market allows only <Text style={{fontWeight: 'bold'}}>20</Text> request every <Text style={{fontWeight: 'bold'}}>5</Text> minutes, therefore you can conduct search across Steam Market once every <Text style={{fontWeight: 'bold'}}>15</Text> seconds.</Text>
+
+            <Divider width={4} style={{width: '90%', alignSelf: 'center', marginVertical: 16, borderRadius: 2}} color={'#22a'} />
+
             <View style={styles.textColumn}>
-                <Text>Steam Inventory Value is not affiliated with Steam or Valve Corp.</Text>
+                <Text style={{fontSize: 18, textAlign: 'center', width: '90%', alignSelf: 'center',}}><Text style={{fontWeight: 'bold'}}>Steam Inventory Value</Text> is not affiliated with
+                    <Text style={{fontWeight: 'bold'}}> Steam</Text> or <Text style={{fontWeight: 'bold'}}>Valve Corp</Text>.</Text>
+
+                <Text style={{fontSize: 16, textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 16,}}>You can check API status @ <Text style={{color: '#3342A3'}}>status.domr.xyz</Text></Text>
             </View>
-        </View>
+        </ScrollView>
     )
 }
 

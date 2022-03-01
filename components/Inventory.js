@@ -12,15 +12,14 @@ import {
     TouchableOpacity,
     UIManager,
     View,
-    Clipboard
 } from "react-native";
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import gamesJson from '../assets/inv-games.json'
 import BouncyCheckbox from "react-native-bouncy-checkbox";
-import {Icon} from "react-native-elements";
+import {Divider, Icon} from "react-native-elements";
 import BSheet, {BottomSheetScrollView} from '@gorhom/bottom-sheet'
 import {Dropdown} from "react-native-element-dropdown";
-import {Snackbar} from "react-native-paper";
+import {Modal, Portal, Provider, Snackbar} from "react-native-paper";
 
 if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental(true)
@@ -56,9 +55,11 @@ export default function Inventory(props) {
     const [search, setSearch] = useState('')
     const [sort, setSort] = useState(0)
     const [stickerPrices] = useState({})
-    const [invSize, setInvSize] = useState(0)
+    // const [invSize, setInvSize] = useState(0)
     const [snackbarVisible, setSnackbarVisible] = useState(false)
     const [snackError, setSnackError] = useState('')
+    const [filterVisible, setFilterVisible] = useState(false)
+    const [containsCSGO, setContainsCSGO] = useState(false)
 
     const sortOptionsData = [
         { label: 'Default', value: 0 },
@@ -82,6 +83,7 @@ export default function Inventory(props) {
                 if (json !== null) {
                     json['appid'] = id
                     json['game'] = gameName(id)
+                    if (id === 730) setContainsCSGO(true)
                     tempArray.push(json)
                     if (end) {
                         setLoading(false)
@@ -350,19 +352,32 @@ export default function Inventory(props) {
 
     const [alert, setAlert] = useState('')
     const [renderUnsellable, setRenderUnsellable] = useState(false)
+    const [renderNameTag, setRenderNameTag] = useState(false)
+    const [renderAppliedSticker, setRenderAppliedSticker] = useState(false)
     const scrollRef = useRef();
 
     function displayItem(item) {
-        let render = true
+        let render = item.tradable === 1 || item.marketable === 1
+        let renderSearch = true
 
         if (search !== '') {
-            render = (item.market_name.toLowerCase().includes(search.toLowerCase()) || item.type.toLowerCase().includes(search.toLowerCase()))
+            renderSearch = (item.market_name.toLowerCase().includes(search.toLowerCase()) || item.type.toLowerCase().includes(search.toLowerCase()))
         }
 
         if (renderUnsellable) {
-            return (render && renderUnsellable)
+            render = true
         }
-        return (render && (item.tradable === 1 || item.marketable === 1))
+
+        if (item.appid === 730) {
+            if (renderNameTag) {
+                render = item.hasOwnProperty('fraudwarnings') && render
+            }
+
+            if (renderAppliedSticker) {
+                render = item.hasOwnProperty('stickers') && render
+            }
+        }
+        return (render && renderSearch)
     }
 
     const _renderItem = item => {
@@ -387,14 +402,6 @@ export default function Inventory(props) {
                         }
                     </View> :
                     <View style={[styles.column, {alignItems: 'center', marginVertical: 8}]}>
-                        <BouncyCheckbox
-                            isChecked={renderUnsellable}
-                            onPress={(isChecked) => setRenderUnsellable(isChecked)}
-                            text = 'Display non-tradable items'
-                            textStyle={{textDecorationLine: "none"}}
-                            fillColor={'#229'}
-                            iconStyle={{borderWidth:2}}
-                        />
                         <View style={styles.inputView}>
                             <TextInput
                                 style={styles.searchInput}
@@ -427,7 +434,7 @@ export default function Inventory(props) {
                             </View>
 
                             <View style={styles.fsCell}>
-                                <Pressable style={styles.filterPressable}>
+                                <Pressable style={styles.filterPressable} onPress={() => setFilterVisible(true)}>
                                     <Icon name={'filter'} type={'feather'} size={20} color={'#229'} />
                                     <Text style={styles.filterPressableText}>Filter options</Text>
                                 </Pressable>
@@ -436,15 +443,20 @@ export default function Inventory(props) {
 
                     </View>
                 }
-                <ScrollView ref={scrollRef} style={{marginBottom: 46}}>
+                <ScrollView ref={scrollRef}>
                     {
                         (loaded) ?
                             inventory.map((item) => (
                                 <View>
                                     <Text style={styles.gameName}>{item.game}</Text>
                                     {
-                                        item.descriptions.map((inv) => (
-                                            (displayItem(inv)) ? <Item inv={inv} rate={rate} curr={curr} stPrices={stickerPrices} /> : null
+                                        item.descriptions.map((inv, index) => (
+                                            (displayItem(inv)) ?
+                                                <View>
+                                                    <Item inv={inv} rate={rate} curr={curr} stPrices={stickerPrices} />
+
+                                                    {(item.descriptions.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center'}} /> : null}
+                                                </View> : null
                                         ))
                                     }
                                 </View>
@@ -463,6 +475,53 @@ export default function Inventory(props) {
             </View>
 
             { (loaded) ? <Summary stats={stats} curr={rates[props.rate].abb} rate={rates[props.rate].exc} steam={props.steam} games={props.games} /> : null}
+
+            <Provider>
+                <Portal>
+                    <Modal visible={filterVisible} onDismiss={() => setFilterVisible(false)} contentContainerStyle={styles.containerStyle}>
+                        <Text style={styles.fModalTitle}>Filter</Text>
+
+                        <Text style={styles.fModalGameTitle}>All Games</Text>
+                        <BouncyCheckbox
+                            isChecked={renderUnsellable}
+                            onPress={(isChecked) => setRenderUnsellable(isChecked)}
+                            text={<Text style={{fontSize:14}}>Display <Text style={{fontWeight: 'bold'}}>non-tradable</Text> items</Text>}
+                            textStyle={{textDecorationLine: "none"}}
+                            fillColor={'#229'}
+                            iconStyle={{borderWidth:3}}
+                            style={{marginLeft: 16}}
+                            size={22}
+                        />
+
+                        { (containsCSGO) ?
+                            <View>
+                                <Text style={styles.fModalGameTitle}>Counter-Strike: Global Offensive</Text>
+                                <BouncyCheckbox
+                                    isChecked={renderNameTag}
+                                    onPress={(isChecked) => setRenderNameTag(isChecked)}
+                                    text={<Text style={{fontSize:14}}>Display items with <Text style={{fontWeight: 'bold'}}>Name Tags</Text> only</Text>}
+                                    textStyle={{textDecorationLine: "none"}}
+                                    fillColor={'#229'}
+                                    iconStyle={{borderWidth:3}}
+                                    style={{marginLeft: 16, marginVertical: 8,}}
+                                    size={22}
+                                />
+
+                                <BouncyCheckbox
+                                    isChecked={renderAppliedSticker}
+                                    onPress={(isChecked) => setRenderAppliedSticker(isChecked)}
+                                    text={<Text style={{fontSize:14}}>Display items with <Text style={{fontWeight: 'bold'}}>Stickers</Text> only</Text>}
+                                    textStyle={{textDecorationLine: "none"}}
+                                    fillColor={'#229'}
+                                    iconStyle={{borderWidth:3}}
+                                    style={{marginLeft: 16, marginVertical: 8,}}
+                                    size={22}
+                                />
+                            </View> : null
+                        }
+                    </Modal>
+                </Portal>
+            </Provider>
 
             <Snackbar
                 visible={snackbarVisible}
@@ -518,11 +577,11 @@ function Item(props) {
 
     return (
         <Pressable onPress={() => onPress()}>
-            <View style={[styles.container, open ? { borderWidth: 1 } : null]}>
+            <View style={[styles.container]}>
                 <View style={{display: 'flex', flexDirection: 'row',}}>
                     <View style={[styles.flowColumn, {width: '96%'}]}>
                         <Text style={styles.itemName}>{inv.market_name}</Text>
-                        <Text style={{color: '#aaa'}}>{inv.type}</Text>
+                        <Text style={{color: '#777'}}>{inv.type}</Text>
                     </View>
                 </View>
                 <View style={[styles.flowRow]}>
@@ -598,7 +657,7 @@ function Item(props) {
 
 function Summary(props) {
     const sumRef = useRef();
-    const snapPoints = useMemo(() => [70, '70%'], []);
+    const snapPoints = useMemo(() => [70, '70%', '100%'], []);
     const handleSheetChanges = useCallback((index: number) => {
         console.log('handleSheetChanges', index);
     }, []);
@@ -614,16 +673,23 @@ function Summary(props) {
             onChange={handleSheetChanges}
             detached={false}
             ref={sumRef}
-            handleStyle={{backgroundColor: '#ddd', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 16,}}
-            backgroundStyle={{backgroundColor: '#ffffff00'}}
             overDragResistanceFactor={0}
-            handleIndicatorStyle={{backgroundColor: '#333', height: 10, width: 40,}}
-            style={{backgroundColor: '#ffffff00'}}>
-            <View style={{width: '100%', height: '100%', backgroundColor: '#ddd', alignItems: 'center'}}>
+            handleIndicatorStyle={{backgroundColor: '#555', elevation: 8, height: 10, width: 48}}
+            handleStyle={{borderRadius: 16, padding: 12, borderWidth: 2, width: '40%', alignSelf: 'center', marginBottom: 8, backgroundColor: '#fff',}}
+            backgroundStyle={{backgroundColor: '#ffffff00'}}>
+            <View style={{flex: 1,
+                alignItems: 'center',
+                elevation: -5,
+                borderTopRightRadius: 16,
+                borderTopLeftRadius: 16,
+                borderTopWidth: 2,
+                borderLeftWidth: 2,
+                borderRightWidth: 2,
+                backgroundColor: '#fff',}}>
                 <View style={{marginBottom: 8, alignItems: 'center', width: '100%',}}>
-                    <Text style={[styles.gameTitle, {fontSize: 20, color: '#444'}]}>Inventory Details</Text>
-                    <Text>SteamID: <Text style={{fontWeight: 'bold'}}>{props.steam}</Text></Text>
-                    <Text>Games loaded (appid): <Text style={{fontWeight: 'bold'}}>{JSON.stringify(props.games)}</Text></Text>
+                    <Text style={[styles.gameTitle, {fontSize: 24, color: '#333'}]}>Inventory Details</Text>
+                    <Text style={{color: '#777'}}>SteamID: <Text style={{fontWeight: 'bold', color: '#444'}}>{props.steam}</Text></Text>
+                    <Text style={{color: '#777'}}>Games loaded (appid): <Text style={{fontWeight: 'bold', color: '#444'}}>{JSON.stringify(props.games)}</Text></Text>
                 </View>
 
                 <BottomSheetScrollView>
@@ -677,7 +743,7 @@ function Summary(props) {
                                 </View>
                             </View>
 
-                            <Text style={styles.gameName}>Game stats</Text>
+                            <Text style={[styles.gameName]}>Game stats</Text>
 
                             {
                                 stats.games.map((data) => (
@@ -741,13 +807,11 @@ const styles = StyleSheet.create ({
         marginTop: 6,
         marginBottom: 6,
         width: '95%',
-        backgroundColor: '#117',
         alignItems: 'center',
         display: 'flex',
         flexDirection: 'column',
         borderRadius: 8,
         alignSelf: 'center',
-        elevation: 3,
     },
     containerCollapsable: {
         width: '95%',
@@ -755,9 +819,11 @@ const styles = StyleSheet.create ({
         flexDirection: 'column',
         marginVertical: 4,
         alignSelf: 'center',
-        backgroundColor: '#ffffffdd',
         borderRadius: 8,
         padding: 4,
+        borderWidth: 2,
+        borderStyle: 'dashed',
+        borderColor: '#00a',
     },
     row: {
         display: 'flex',
@@ -795,6 +861,7 @@ const styles = StyleSheet.create ({
         fontWeight: 'bold',
         marginVertical: 8,
         marginLeft: 8,
+        color: '#333',
     },
     itemIcon: {
         width: 56,
@@ -805,22 +872,21 @@ const styles = StyleSheet.create ({
         fontSize: 15,
         fontWeight: "bold",
         width: '100%',
-        color: '#fff',
+        color: '#555',
     },
     itemPriceTitle: {
         width: '33%',
         textAlign: "center",
-        color: '#bbb',
+        color: '#777',
     },
     itemPrice: {
         width: '33%',
         textAlign: "center",
         fontWeight: 'bold',
-        color: '#fff',
+        color: '#333',
     },
     avgTitle: {
-        fontWeight: "bold",
-        color: '#666',
+        color: '#777',
         width: '32%',
         textAlign: "center",
     },
@@ -863,18 +929,21 @@ const styles = StyleSheet.create ({
         textAlignVertical: 'center',
         textAlign: 'left',
         width: '45%',
+        color: '#555',
     },
     statsDetails: {
         fontSize: 13,
         fontWeight: 'bold',
         textAlign: 'right',
         width: '55%',
+        color: '#222',
     },
     statsDetailsS: {
         fontSize: 12,
         fontWeight: 'normal',
         textAlign: 'right',
         width: '55%',
+        color: '#222',
     },
     scrollProgress: {
         width: '65%',
@@ -885,14 +954,16 @@ const styles = StyleSheet.create ({
         backgroundColor: '#fff',
         borderRadius: 16,
         elevation: 5,
-        marginBottom: 36,
+        marginBottom: 82,
     },
     summarySection: {
-        borderWidth: 1.0,
+        borderWidth: 1.5,
         borderRadius: 8,
         padding: 4,
         marginBottom: 8,
         alignSelf: 'center',
+        borderColor: '#229',
+        borderStyle: 'dashed',
     },
     inputView: {
         width: '90%',
@@ -1001,6 +1072,7 @@ const styles = StyleSheet.create ({
         fontWeight: 'bold',
         textAlign: 'center',
         marginHorizontal: 4,
+        color: '#666',
     },
     totalAppliedValueText: {
         fontSize: 16,
@@ -1018,5 +1090,24 @@ const styles = StyleSheet.create ({
     snackbarText: {
         fontSize: 15,
         color: '#ddd'
+    },
+    containerStyle: {
+        backgroundColor: 'white',
+        padding: 20,
+        width: '90%',
+        alignSelf: 'center',
+        borderRadius: 8,
+    },
+    fModalTitle: {
+        textAlign: 'center',
+        color: '#555',
+        fontSize: 28,
+        fontWeight: 'bold',
+    },
+    fModalGameTitle: {
+        color: '#777',
+        fontSize: 20,
+        marginVertical: 8,
+        fontWeight: 'bold',
     }
 })
