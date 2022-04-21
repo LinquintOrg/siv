@@ -40,22 +40,30 @@ function App() {
         ],
     });
 
-    const [rate, setRate] = useState(0)         // selected currency
+    const [rate, setRate] = useState(46)         // selected currency
     const [rates, setRates] = useState()        // downloaded rates from database
     const [loadedRates, setLoadedRates] = useState(false)       // Are rates loaded?
     const [loadedUsers, setLoadedUsers] = useState(false)       // Are saved profiles loaded
     const [users, setUsers] = useState([])      // Saved profiles
     const [snackbarVisible, setSnackbarVisible] = useState(false)
+    const [updatedProfiles, setUpdatedProfiles] = useState(false)
 
     if (!loadedRates) {
         setLoadedRates(true)
         getRates()
     }
 
-    if (!loadedUsers) {
-        setLoadedUsers(true)
-        getAllKeys().then(r => null)
+    if (!updatedProfiles) {
+        setUpdatedProfiles(true)
+        updateProfiles().then(r => null)
     }
+
+    /*if (!loadedUsers) {
+        setLoadedUsers(true)
+        getAllKeys().then(r => {
+
+        })
+    }*/
 
     function navigateToLoad(navigation, steamID) {
         navigation.navigate('Choose games', { steamId: steamID })
@@ -79,6 +87,41 @@ function App() {
         }
         await AsyncStorage.setItem(id, JSON.stringify(tmp))
         setUsers(users.concat(tmp))
+    }
+
+    async function updateProfiles() {
+        let id = '7401764DA0F7B99794826E9E2512E311';
+
+        await AsyncStorage.getAllKeys((err, keys) => {
+            AsyncStorage.multiGet(keys, async (err, stores) => {
+                const ids = []
+                keys.forEach(key => {
+                    if (key !== 'currency' && !key.includes('prevGames')) {
+                        ids.push(key)
+                    }
+                })
+
+                await fetch('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=' + id + '&steamids=' + ids.join(','))
+                    .then(response => response.json())
+                    .then(async json => {
+                        let values = []
+                        for (const user of json.response.players) {
+                            let tmp = {
+                                'id': user.steamid,
+                                'name': user.personaname,
+                                'url': user.avatar
+                            }
+
+                            await AsyncStorage.removeItem(user.steamid).then(async r => {
+                                await AsyncStorage.setItem(user.steamid, JSON.stringify(tmp)).then(async r => {
+                                    values = values.concat([tmp])
+                                })
+                            })
+                        }
+                        setUsers(values)
+                    })
+            });
+        })
     }
 
     async function saveSetting(name, value) {
@@ -317,7 +360,7 @@ function App() {
           <Tab.Navigator tabBar={(props) => <ColorfulTabBar {...props} />}>
               <Tab.Screen name="Profiles" component={TabProfile}
                   options={{
-                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
+                      tabBarLabelStyle: {color: '#194D5C', fontSize: 12},
                       tabBarActiveTintColor: '#30BF8E',
                       icon: () => (
                         <Icon name="home" type='font-awesome' color={'#194D5C'} size={24} />
@@ -327,7 +370,7 @@ function App() {
               />
               <Tab.Screen name="Steam Market" component={TabSteamMarket}
                   options={{
-                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
+                      tabBarLabelStyle: {color: '#194D5C', fontSize: 12},
                       tabBarActiveTintColor: '#30BF8E',
                       tabBarIcon: () => (
                       <Icon name="steam" type='font-awesome' color={'#194D5C'} size={24} />
@@ -337,7 +380,7 @@ function App() {
               />
               <Tab.Screen name="Music Kits" component={TabMusicKit}
                   options={{
-                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
+                      tabBarLabelStyle: {color: '#194D5C', fontSize: 12},
                       tabBarActiveTintColor: '#30BF8E',
                       tabBarIcon: () => (
                       <Icon name="music" type='font-awesome' color={'#194D5C'} size={24} />
@@ -345,7 +388,7 @@ function App() {
                       headerShown: false
                   }}
               />
-              <Tab.Screen name="Loadout" component={TabLoadout}
+              {/*<Tab.Screen name="Loadout" component={TabLoadout}
                   options={{
                       tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
                       tabBarActiveTintColor: '#30BF8E',
@@ -354,10 +397,10 @@ function App() {
                       ),
                       headerShown: false,
                   }}
-              />
+              />*/}
               <Tab.Screen name="Settings" component={TabSettings}
                   options={{
-                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
+                      tabBarLabelStyle: {color: '#194D5C', fontSize: 12},
                       tabBarActiveTintColor: '#30BF8E',
                       tabBarIcon: () => (
                       <Icon name="wrench" type='font-awesome' color={'#194D5C'} size={24} />

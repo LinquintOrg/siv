@@ -4,4 +4,9 @@
     <option name="languageLevel" value="FLOW" />
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_15" project-jdk-name="Android API 31 Platform" project-jdk-type="Android SDK" />
+  <component name="SwUserDefinedSpecifications">
+    <option name="specTypeByUrl">
+      <map />
+    </option>
+  </component>
 </project>

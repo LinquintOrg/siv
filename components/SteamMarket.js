@@ -1,17 +1,31 @@
 import React, {useCallback, useMemo, useRef, useState} from "react";
-import {Pressable, Text, View, StyleSheet, TextInput, Dimensions, ScrollView, ActivityIndicator} from "react-native";
+import {
+    Pressable,
+    Text,
+    View,
+    StyleSheet,
+    TextInput,
+    Dimensions,
+    ScrollView,
+    ActivityIndicator,
+    TouchableOpacity
+} from "react-native";
 import BottomSheet from '@gorhom/bottom-sheet'
-import {Icon} from "react-native-elements";
-import FilterSheet from 'react-native-raw-bottom-sheet'
+import {Divider, Icon} from "react-native-elements";
+import {Dropdown} from 'react-native-element-dropdown';
 
 export default function (props) {
     const [loading, setLoading] = useState(true)
     const [loadedGames, setLoadedGames] = useState(false)
-    const [games, setGames] = useState([{ appid: 0, name: 'All Games' }])
+    const [games] = useState([{ value: 0, label: 'All Games' }]) // appid: 0, name: 'All Games'
     const [searchResults, setSearchResults] = useState([])
     const [loadingResults, setLoadingResults] = useState(false)
     const [searchTimeout, setSearchTimeout] = useState(false)
-    const sortByValues = ['Default - no specific order', 'Price', 'Name']
+    const sortByValues = [
+        {label: 'Default - no specific order', value: 0},
+        {label: 'Price', value: 1},
+        {label: 'Name', value: 2}
+    ]
 
     if (!loadedGames) {
         fetch('https://domr.xyz/api/Steam/getGames.php')
@@ -19,13 +33,22 @@ export default function (props) {
             .then((json) => {
                 setLoadedGames(true)
                 setLoading(false)
-                setGames(games.concat(json))
+
+                for (const game of json) {
+                    games.push({ value: game.appid, label: game.name })
+                }
             })
     }
 
+    const _renderItem = item => {
+        return (
+            <View style={styles.item}>
+                <Text style={styles.textItem}>{item.label}</Text>
+            </View>
+        );
+    };
+
     const filterSheetRef = useRef();
-    const fSelectRef = useRef();
-    const sortSelectRef = useRef();
 
     const snapPoints = useMemo(() => [70, 420, '100%'], []);
     const handleSheetChanges = useCallback((index: number) => {
@@ -38,6 +61,7 @@ export default function (props) {
     const [sortBy, setSortBy] = useState(0)
     const [sortAsc, setSortAsc] = useState(true)
     const [searchDesc, setSearchDesc] = useState(false)
+    const scrollRef = useRef()
 
     function getSortIcon() {
         if (sortBy === 1) {
@@ -60,8 +84,7 @@ export default function (props) {
             const sd = (searchDesc) ? 1 : 0
             const column = (sortBy === 0) ? '' : (sortBy === 1) ? '&sort_column=price' : '&sort_column=name'
             const dir = (sortAsc) ? 'asc' : 'desc'
-            const appid = games[filterGame].appid
-            const url = 'https://steamcommunity.com/market/search/render/?search_descriptions=' + sd + column + '&sort_dir=' + dir + '&appid=' + appid + '&norender=1&count=100&start=0&query=' + searchQuery
+            const url = 'https://steamcommunity.com/market/search/render/?search_descriptions=' + sd + column + '&sort_dir=' + dir + '&appid=' + filterGame + '&norender=1&count=100&start=0&query=' + searchQuery
 
             fetch(url)
                 .then(response => response.json())
@@ -90,54 +113,36 @@ export default function (props) {
             <Text style={{textAlign: 'center'}}>Loading market search results</Text>
         </View> :
         <View style={styles.container}>
-            <ScrollView>
+            <ScrollView ref={scrollRef}>
                 {
                     searchResults.map(item => (
-                        <View style={styles.listingRow}>
-                            <View style={[styles.column, {width: '80%'}]}>
-                                <Text style={styles.listingName}>{item.name}</Text>
-                                <Text style={styles.listingGame}>{item.app_name}</Text>
+                        <View>
+                            <View style={styles.listingRow}>
+                                <View style={[styles.column, {width: '80%'}]}>
+                                    <Text style={styles.listingName}>{item.name}</Text>
+                                    <Text style={styles.listingGame}>{item.app_name}</Text>
+                                </View>
+                                <View style={styles.column}>
+                                    <Text style={styles.listingPrice}>{props.rate} {Math.round(item.sell_price * props.exchange) / 100}</Text>
+                                    <Text style={styles.listingAmount}>{item.sell_listings} listed</Text>
+                                </View>
                             </View>
-                            <View style={styles.column}>
-                                <Text style={styles.listingPrice}>{props.rate} {Math.round(item.sell_price * props.exchange) / 100}</Text>
-                                <Text style={styles.listingAmount}>{item.sell_listings} listed</Text>
-                            </View>
+
+                            <Divider width={1} style={{width: '95%', alignSelf: 'center',}} />
                         </View>
                     ))
                 }
+
+                {
+                    (searchResults.length > 4) ?
+                        <TouchableOpacity style={styles.scrollProgress} onPress={() => scrollRef.current?.scrollTo({animated: true, y: 0})}>
+                            <Icon name={'angle-double-up'} type={'font-awesome'} size={48} color={'#555'} />
+                            <Text>This is the end of the search results</Text>
+                            <Text>Tap to scroll back to top</Text>
+                        </TouchableOpacity> : null
+                }
+
             </ScrollView>
-
-            <FilterSheet ref={fSelectRef} closeOnDragDown={false} height={Dimensions.get('window').height / 1.667} customStyles={{
-                wrapper: {backgroundColor: '#00000089'},
-                container: {borderRadius: 4, width: '90%', marginBottom: 24, alignSelf: 'center'},
-                draggableIcon: {borderRadius: 24}}}
-            >
-                <ScrollView>
-                    {
-                        games.map((game, index) => (
-                            <Pressable onPress={() => setFilterGame(index) & fSelectRef.current?.close() }>
-                                <Text style={styles.optionSelect}>{ game.name }</Text>
-                            </Pressable>
-                        ))
-                    }
-                </ScrollView>
-            </FilterSheet>
-
-            <FilterSheet ref={sortSelectRef} closeOnDragDown={false} height={Dimensions.get('window').height / 1.667} customStyles={{
-                wrapper: {backgroundColor: '#00000089'},
-                container: {borderRadius: 8, width: '90%', marginBottom: 24, alignSelf: 'center'},
-                draggableIcon: {borderRadius: 24}}}
-            >
-                <ScrollView>
-                    {
-                        sortByValues.map((sort, index) => (
-                            <Pressable onPress={() => setSortBy(index) & sortSelectRef.current?.close() }>
-                                <Text style={styles.optionSelect}>{ sort }</Text>
-                            </Pressable>
-                        ))
-                    }
-                </ScrollView>
-            </FilterSheet>
 
             <BottomSheet
                 ref={filterSheetRef}
@@ -158,24 +163,48 @@ export default function (props) {
                         <TextInput
                             style={{marginHorizontal: 4, borderWidth: 1.0, borderRadius: 8, flex: 1, padding: 4}}
                             onChangeText={(text => setSearchQuery(text))}
+                            value={searchQuery}
                         />
                     </View>
 
                     <Text style={styles.sheetSubtitle}>Game</Text>
                     <View style={styles.inputView}>
                         <Icon name={'gamepad'} type={'font-awesome'} />
-                        <Pressable onPress={() => fSelectRef.current?.open()} style={{marginHorizontal: 4, borderWidth: 1.0, borderRadius: 8, flex: 1, padding: 4}}>
-                            <Text>{ games[filterGame].name }</Text>
-                        </Pressable>
+                        <Dropdown
+                            style={styles.dropdown}
+                            containerStyle={styles.shadow}
+                            data={games}
+                            search
+                            label="Game"
+                            searchPlaceholder={"Search for game"}
+                            labelField="label"
+                            valueField="value"
+                            placeholder="Select game"
+                            onChange={item => {
+                                setFilterGame(item.value)
+                            }}
+                            renderItem={item => _renderItem(item)}
+                        />
                     </View>
 
                     <Text style={styles.sheetSubtitle}>Sort by</Text>
                     <Text style={{textAlign: 'left', width: '90%', alignSelf: 'center', fontSize: 12}}>Tap on the right icon to change sort order</Text>
                     <View style={styles.inputView}>
                         <Icon name={'navicon'} type={'font-awesome'} />
-                        <Pressable onPress={() => sortSelectRef.current?.open()} style={{marginHorizontal: 4, borderWidth: 1.0, borderRadius: 8, flex: 1, padding: 4}}>
-                            <Text>{ sortByValues[sortBy] }</Text>
-                        </Pressable>
+                        <Dropdown
+                            style={styles.dropdown}
+                            containerStyle={styles.shadow}
+                            data={sortByValues}
+                            label="Sort by"
+                            labelField="label"
+                            valueField="value"
+                            placeholder="Select sort order"
+                            value={0}
+                            onChange={item => {
+                                setSortBy(item.value)
+                            }}
+                            renderItem={item => _renderItem(item)}
+                        />
                         <Pressable onPress={() => setSortAsc(!sortAsc)}>{ getSortIcon() }</Pressable>
                     </View>
 
@@ -208,6 +237,7 @@ export default function (props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        height: '100%',
     },
     contentContainer: {
         flex: 1,
@@ -264,7 +294,6 @@ const styles = StyleSheet.create({
         width: '94%',
         alignSelf: 'center',
         padding: 8,
-        backgroundColor: '#ddd',
         borderRadius: 8,
         margin: 8,
     },
@@ -291,5 +320,57 @@ const styles = StyleSheet.create({
         color: '#888',
         textAlign: 'center',
         fontWeight: 'bold'
-    }
+    },
+    item: {
+        paddingVertical: 16,
+        paddingHorizontal: 4,
+        marginHorizontal: 8,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#777',
+    },
+    singleSelect: {
+        textAlign: 'center',
+        fontSize: 14,
+        fontWeight: 'bold',
+        width: '100%',
+    },
+    dropdown: {
+        backgroundColor: 'white',
+        borderColor: '#000',
+        borderWidth: 1,
+        width: '85%',
+        alignSelf: 'center',
+        paddingHorizontal: 4,
+        paddingVertical: 4,
+        borderRadius: 8,
+        marginHorizontal: 8,
+    },
+    shadow: {
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+        elevation: 2,
+    },
+    textItem: {
+        flex: 1,
+        fontSize: 14,
+    },
+    scrollProgress: {
+        width: '65%',
+        alignSelf: 'center',
+        alignItems: 'center',
+        padding: 8,
+        margin: 8,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        elevation: 5,
+        marginBottom: 82,
+    },
 });

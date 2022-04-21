@@ -86,8 +86,9 @@ export default function Inventory(props) {
                     if (id === 730) setContainsCSGO(true)
                     tempArray.push(json)
                     if (end) {
-                        setLoading(false)
-                        await fetchData()
+                        await fetchData().then(r => {
+                            setLoading(false)
+                        })
                     }
                 } else {
                     setLoading(false)
@@ -287,7 +288,9 @@ export default function Inventory(props) {
                     stats.games.push(gameStats)
 
                     if (i === queries.length - 1) {
-                        await getStickerPrices(tmpStickers).then(r => {
+                        await getStickerPrices(tmpStickers).then(async r => {
+                            sortByPrice(tempArray)
+                            sortByName(tempArray)
                             setInventory(tempArray)
                             setLoaded(true)
                             setFetching(false)
@@ -350,11 +353,74 @@ export default function Inventory(props) {
         }
     }
 
+    const has = (arr, id) => {
+        arr.forEach(item => {
+            if (item === id) return true
+        })
+        return false
+    }
+
     const [alert, setAlert] = useState('')
     const [renderUnsellable, setRenderUnsellable] = useState(false)
     const [renderNameTag, setRenderNameTag] = useState(false)
     const [renderAppliedSticker, setRenderAppliedSticker] = useState(false)
+    const [sortPrice, setSortPrice] = useState([])
+    const [sortName] = useState([])
     const scrollRef = useRef();
+
+    function sortByPrice(inv) {
+        inv.forEach(game => {
+            let IDs = []
+            game.descriptions.forEach((i, id) => {
+                if (i.marketable === 1) {
+                    let maxID = id
+                    let max = 0
+
+                    game.descriptions.forEach((tmpI, tmpID) => {
+                        if (tmpI.marketable === 1 && !IDs.includes(tmpID)) {
+                            if (max <= tmpI.Price * 100) {
+                                max = tmpI.Price * 100
+                                maxID = tmpID
+                            }
+                        }
+                    })
+                    IDs.push(maxID)
+                }
+            })
+            sortPrice.push(IDs)
+        })
+    }
+
+    function cmpNames(oldName, newName) {
+        if (oldName === newName) return true
+        const len = (oldName.length <= newName.length) ? oldName.length : newName.length
+        for (let i = 0; i < len; i++) {
+            if (oldName[i].toLowerCase() > newName[i].toLowerCase()) return true
+            if (oldName[i].toLowerCase() < newName[i].toLowerCase()) return false
+        }
+        return false
+    }
+
+    function sortByName(inv) {
+        inv.forEach(game => {
+            let IDs = []
+            game.descriptions.forEach((i, id) => {
+                let maxID = id
+                let max = 'zzzzzzzzzzzzzzzzzzzzzzzzzzz'
+
+                game.descriptions.forEach((tmpI, tmpID) => {
+                    if (!IDs.includes(tmpID) && tmpID !== id) {
+                        if (cmpNames(max, tmpI.market_name)) {
+                            max = tmpI.market_name
+                            maxID = tmpID
+                        }
+                    }
+                })
+                IDs.push(maxID)
+            })
+            sortName.push(IDs)
+        })
+    }
 
     function displayItem(item) {
         let render = item.tradable === 1 || item.marketable === 1
@@ -411,10 +477,6 @@ export default function Inventory(props) {
                         </View>
                         <View style={styles.fsRow}>
                             <View style={styles.fsCell}>
-                                <Pressable style={styles.sIcon}>
-                                    <Icon type={'font-awesome'} name={'unsorted'} color={'#229'} size={24} />
-                                </Pressable>
-
                                 <Dropdown
                                     style={styles.dropdown}
                                     containerStyle={styles.shadow}
@@ -434,35 +496,69 @@ export default function Inventory(props) {
                             </View>
 
                             <View style={styles.fsCell}>
-                                <Pressable style={styles.filterPressable} onPress={() => setFilterVisible(true)}>
+                                <TouchableOpacity style={styles.filterPressable} onPress={() => setFilterVisible(true)}>
                                     <Icon name={'filter'} type={'feather'} size={20} color={'#229'} />
                                     <Text style={styles.filterPressableText}>Filter options</Text>
-                                </Pressable>
+                                </TouchableOpacity>
                             </View>
                         </View>
-
                     </View>
                 }
+
                 <ScrollView ref={scrollRef}>
                     {
                         (loaded) ?
-                            inventory.map((item) => (
-                                <View>
-                                    <Text style={styles.gameName}>{item.game}</Text>
-                                    {
-                                        item.descriptions.map((inv, index) => (
-                                            (displayItem(inv)) ?
-                                                <View>
-                                                    <Item inv={inv} rate={rate} curr={curr} stPrices={stickerPrices} />
+                            (sort === 1) ?
+                                sortPrice.map((item, index) => (
+                                    <View>
+                                        <Text style={styles.gameName}>{inventory[index].game}</Text>
+                                        {
+                                            item.map((id) => (
+                                                (displayItem(inventory[index].descriptions[id])) ?
+                                                    <View>
+                                                        <Item inv={inventory[index].descriptions[id]} rate={rate} curr={curr} stPrices={stickerPrices} />
 
-                                                    {(item.descriptions.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center'}} /> : null}
-                                                </View> : null
-                                        ))
-                                    }
-                                </View>
-                            ))
+                                                        <Divider width={1} style={{width: '95%', alignSelf: 'center'}} />
+                                                    </View> : null
+                                            ))
+                                        }
+                                    </View>
+                                ))
+                                : (sort === 2) ?
+                                sortName.map((item, index) => (
+                                    <View>
+                                        <Text style={styles.gameName}>{inventory[index].game}</Text>
+                                        {
+                                            item.map((id) => (
+                                                (displayItem(inventory[index].descriptions[id])) ?
+                                                    <View>
+                                                        <Item inv={inventory[index].descriptions[id]} rate={rate} curr={curr} stPrices={stickerPrices} />
+
+                                                        <Divider width={1} style={{width: '95%', alignSelf: 'center'}} />
+                                                    </View> : null
+                                            ))
+                                        }
+                                    </View>
+                                ))
+                                :
+                                inventory.map((item) => (
+                                    <View>
+                                        <Text style={styles.gameName}>{item.game}</Text>
+                                        {
+                                            item.descriptions.map((inv, index) => (
+                                                (displayItem(inv)) ?
+                                                    <View>
+                                                        <Item inv={inv} rate={rate} curr={curr} stPrices={stickerPrices} />
+
+                                                        {(item.descriptions.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center'}} /> : null}
+                                                    </View> : null
+                                            ))
+                                        }
+                                    </View>
+                                ))
                         : null
                     }
+
                     {
                         loaded ?
                             <TouchableOpacity style={styles.scrollProgress} onPress={() => scrollRef.current?.scrollTo({animated: true, y: 0})}>
@@ -482,7 +578,9 @@ export default function Inventory(props) {
                         <Text style={styles.fModalTitle}>Filter</Text>
 
                         <Text style={styles.fModalGameTitle}>All Games</Text>
+                        {sort === 1 ? <Text style={{color: '#666', fontSize: 12, textAlign: 'center'}}>Unavailable when items are sorted by price</Text> : null}
                         <BouncyCheckbox
+                            disabled={sort === 1}
                             isChecked={renderUnsellable}
                             onPress={(isChecked) => setRenderUnsellable(isChecked)}
                             text={<Text style={{fontSize:14}}>Display <Text style={{fontWeight: 'bold'}}>non-tradable</Text> items</Text>}
@@ -708,6 +806,8 @@ function Summary(props) {
                                 </View>
                             </View>
 
+                            <Divider width={2} style={{width: '100%', alignSelf: 'center'}} />
+
                             <View style={styles.summarySection}>
                                 <View style={styles.row}>
                                     <Text style={styles.statsTitle}>24 hour average value</Text>
@@ -724,6 +824,8 @@ function Summary(props) {
                                     <Text style={styles.statsDetails}>{curr} {Math.round(stats['avg30'] * rate * 1000) / 1000}</Text>
                                 </View>
                             </View>
+
+                            <Divider width={2} style={{width: '100%', alignSelf: 'center'}} />
 
                             <View style={styles.summarySection}>
                                 <View style={styles.row}>
@@ -746,58 +848,61 @@ function Summary(props) {
                             <Text style={[styles.gameName]}>Game stats</Text>
 
                             {
-                                stats.games.map((data) => (
-                                    <View style={styles.summarySection}>
-                                        <Text style={styles.sumGame}>{ data.name }</Text>
+                                stats.games.map((data, index) => (
+                                    <View>
+                                        <View style={styles.summarySection}>
+                                            <Text style={styles.sumGame}>{ data.name }</Text>
 
-                                        <View style={styles.row}>
-                                            <Text style={styles.statsTitle}>Value</Text>
-                                            <Text style={styles.statsDetails}>{curr} {Math.round(data.value * rate * 100) / 100}</Text>
+                                            <View style={styles.row}>
+                                                <Text style={styles.statsTitle}>Value</Text>
+                                                <Text style={styles.statsDetails}>{curr} {Math.round(data.value * rate * 100) / 100}</Text>
+                                            </View>
+
+                                            <View style={styles.row}>
+                                                <Text style={styles.statsTitle}>Items owned</Text>
+                                                <Text style={styles.statsDetails}>{data.items}</Text>
+                                            </View>
+
+                                            <View style={styles.row}>
+                                                <Text style={styles.statsTitle}>Average 24 hour</Text>
+                                                <Text style={styles.statsDetails}>{curr} {Math.round(data.avg24 * rate * 1000) / 1000}</Text>
+                                            </View>
+
+                                            <View style={styles.row}>
+                                                <Text style={styles.statsTitle}>Average 7 day</Text>
+                                                <Text style={styles.statsDetails}>{curr} {Math.round(data.avg7 * rate * 1000) / 1000}</Text>
+                                            </View>
+
+                                            <View style={styles.row}>
+                                                <Text style={styles.statsTitle}>Average 30 day</Text>
+                                                <Text style={styles.statsDetails}>{curr} {Math.round(data.avg30 * rate * 1000) / 1000}</Text>
+                                            </View>
+
+                                            {
+                                                (data.name === 'Counter-Strike: Global Offensive') ?
+                                                    <View>
+                                                        <View style={styles.row}>
+                                                            <Text style={styles.statsTitle}>Applied stickers value</Text>
+                                                            <Text style={styles.statsDetails}>{curr} {Math.round(data.stickerVal * rate * 100) / 100}</Text>
+                                                        </View>
+
+                                                        <View style={styles.row}>
+                                                            <Text style={styles.statsTitle}>Applied patches value</Text>
+                                                            <Text style={styles.statsDetails}>{curr} {Math.round(data.patchVal * rate * 100) / 100}</Text>
+                                                        </View>
+                                                    </View> : null
+                                            }
                                         </View>
-
-                                        <View style={styles.row}>
-                                            <Text style={styles.statsTitle}>Items owned</Text>
-                                            <Text style={styles.statsDetails}>{data.items}</Text>
-                                        </View>
-
-                                        <View style={styles.row}>
-                                            <Text style={styles.statsTitle}>Average 24 hour</Text>
-                                            <Text style={styles.statsDetails}>{curr} {Math.round(data.avg24 * rate * 1000) / 1000}</Text>
-                                        </View>
-
-                                        <View style={styles.row}>
-                                            <Text style={styles.statsTitle}>Average 7 day</Text>
-                                            <Text style={styles.statsDetails}>{curr} {Math.round(data.avg7 * rate * 1000) / 1000}</Text>
-                                        </View>
-
-                                        <View style={styles.row}>
-                                            <Text style={styles.statsTitle}>Average 30 day</Text>
-                                            <Text style={styles.statsDetails}>{curr} {Math.round(data.avg30 * rate * 1000) / 1000}</Text>
-                                        </View>
-
                                         {
-                                            (data.name === 'Counter-Strike: Global Offensive') ?
-                                                <View>
-                                                    <View style={styles.row}>
-                                                        <Text style={styles.statsTitle}>Applied stickers value</Text>
-                                                        <Text style={styles.statsDetails}>{curr} {Math.round(data.stickerVal * rate * 100) / 100}</Text>
-                                                    </View>
-
-                                                    <View style={styles.row}>
-                                                        <Text style={styles.statsTitle}>Applied patches value</Text>
-                                                        <Text style={styles.statsDetails}>{curr} {Math.round(data.patchVal * rate * 100) / 100}</Text>
-                                                    </View>
-                                                </View> : null
+                                            (stats.games.length - 1 !== index) ? <Divider width={2} style={{width: '100%', alignSelf: 'center'}} /> : null
                                         }
                                     </View>
                                 ))
                             }
-
                         </View>
                     </View>
                 </BottomSheetScrollView>
             </View>
-
         </BSheet>
     )
 }
@@ -957,13 +1062,9 @@ const styles = StyleSheet.create ({
         marginBottom: 82,
     },
     summarySection: {
-        borderWidth: 1.5,
-        borderRadius: 8,
         padding: 4,
         marginBottom: 8,
         alignSelf: 'center',
-        borderColor: '#229',
-        borderStyle: 'dashed',
     },
     inputView: {
         width: '90%',
@@ -1010,7 +1111,7 @@ const styles = StyleSheet.create ({
         backgroundColor: 'white',
         borderColor: '#229',
         borderWidth: 2,
-        width: '80%',
+        width: '100%',
         alignSelf: 'center',
         paddingHorizontal: 8,
         borderRadius: 8,
