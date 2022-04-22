@@ -1,0 +1,124 @@
+{
+  "games": [
+    {
+      "name": "American Truck Simulator",
+      "appid": 270880,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/270880/2aec8af4b4b23cb6054d9aea06194621cdd66945.jpg"
+    },
+    {
+      "name": "Artifact",
+      "appid": 583950,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/583950/dee44586fb8e07add8b86bfb59c958071d08b0e2.jpg"
+    },
+    {
+      "name": "Ballistic Overkill",
+      "appid": 296300,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/296300/3dfbac7f837c33c2807d5631eaa7215d3b0bc600.jpg"
+    },
+    {
+      "name": "Black Squad",
+      "appid": 550650,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/550650/213a736d8c5b75998b671de25e6621d1e7bc122a.jpg"
+    },
+    {
+      "name": "BATTALION 1944",
+      "appid": 489940,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/489940/6e7ecfbac1d32106fa75d24118d54ecbfd3c346c.jpg"
+    },
+    {
+      "name": "Battle Block Theater",
+      "appid": 238460,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/238460/2f258aaff583d797812cdcf24830d5992f48733b.jpg"
+    },
+    {
+      "name": "Counter-Strike: Global Offensive",
+      "appid": 730,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/730/69f7ebe2735c366c65c0b33dae00e12dc40edbe4.jpg"
+    },
+    {
+      "name": "Euro Truck Simulator 2",
+      "appid": 227300,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/227300/adc18a4fc9adc0330144b76d61cbda68bb2394a0.jpg"
+    },
+    {
+      "name": "Golf It!",
+      "appid": 571740,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/571740/70b58cf94333587a69cf93c7e4a4241500928251.jpg"
+    },
+    {
+      "name": "Golf With Your Friends",
+      "appid": 431240,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/431240/c6379c8ec66ac02565f1155bf3821b846164d93c.jpg"
+    },
+    {
+      "name": "Killing Floor 2",
+      "appid": 232090,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/232090/15837cefb378766e9916548f8591b6eb490b9e52.jpg"
+    },
+    {
+      "name": "Path of Exile",
+      "appid": 238960,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/238960/1110764aac57ac28d7ffd8c43071c75d5482a9c9.jpg"
+    },
+    {
+      "name": "PAYDAY 2",
+      "appid": 218620,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/218620/a6abc0d0c1e79c0b5b0f5c8ab81ce9076a542414.jpg"
+    },
+    {
+      "name": "PUBG",
+      "appid": 578080,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/578080/93d896e7d7a42ae35c1d77239430e1d90bc82cae.jpg"
+    },
+    {
+      "name": "Rust",
+      "appid": 252490,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/252490/820be4782639f9c4b64fa3ca7e6c26a95ae4fd1c.jpg"
+    },
+    {
+      "name": "SpeedRunners",
+      "appid": 207140,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/207140/65cfa21149c415430fe36d83c23e079e6db476cc.jpg"
+    },
+    {
+      "name": "Steam VR",
+      "appid": 250820,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/250820/7f286d5ee22905b51663e0cea505e1c2f7500f36.jpg"
+    },
+    {
+      "name": "Subnautica",
+      "appid": 264710,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/264710/8a14ceef6e230330a916d7a6324b8c52d464d569.jpg"
+    },
+    {
+      "name": "Warframe",
+      "appid": 230410,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/230410/22064646470f4c53388ba87774c7ac10f0a91ffa.jpg"
+    },
+    {
+      "name": "Z1 Battle Royale",
+      "appid": 433850,
+      "classid": 2,
+      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/433850/aee7491abfd812e2fbb4ec3326ad5f4b85c8137a.jpg"
+    }
+  ]
+}

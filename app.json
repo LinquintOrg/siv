@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Steam Inventory Value",
+    "slug": "siv",
+    "version": "3.0-t9",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#091b53"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-3940256099942544~3347511713"
+      },
+      "package": "com.rsds.steaminventoryvalue",
+      "versionCode": 2010000119
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "sentry-expo"
+    ],
+    "hooks": {
+      "postPublish": [
+        {
+          "file": "sentry-expo/upload-sourcemaps",
+          "config": {
+            "organization": "domr",
+            "project": "domr",
+            "authToken": "32896b340c8f4d3689d68d2f0b7174ecd57e6ba09cf44f1fb63fa9f6d571950e"
+          }
+        }
+      ]
+    }
+  }
+}
