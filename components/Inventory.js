@@ -20,6 +20,7 @@ import {Divider, Icon} from "react-native-elements";
 import BSheet, {BottomSheetScrollView} from '@gorhom/bottom-sheet'
 import {Dropdown} from "react-native-element-dropdown";
 import {Modal, Portal, Provider, Snackbar} from "react-native-paper";
+import NetInfo from "@react-native-community/netinfo";
 
 if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental(true)
@@ -30,6 +31,7 @@ export default function Inventory(props) {
     const [loading, setLoading] = useState(false)
     const [inventory, setInventory] = useState([])
     const [fetching, setFetching] = useState(false)
+    const [isEmpty, setIsEmpty] = useState(false)
     const [stats] = useState({
         'price': 0,
         'owned': 0,
@@ -61,6 +63,11 @@ export default function Inventory(props) {
     const [filterVisible, setFilterVisible] = useState(false)
     const [containsCSGO, setContainsCSGO] = useState(false)
 
+    const [scale] = useState(Dimensions.get('window').width / 423);
+    const resize = (size) => {
+        return Math.ceil(size * scale)
+    }
+
     const sortOptionsData = [
         { label: 'Default', value: 0 },
         { label: 'Price', value: 1 },
@@ -85,6 +92,7 @@ export default function Inventory(props) {
                     json['game'] = gameName(id)
                     if (id === 730) setContainsCSGO(true)
                     tempArray.push(json)
+
                     if (end) {
                         setLoading(false)
                         await fetchData()
@@ -143,16 +151,21 @@ export default function Inventory(props) {
     const getLoadingItemsAmount = () => {
         let tmpLen = 0;
         for (let i = 0; i < tempArray.length; i++) {
-            tmpLen += tempArray[i].descriptions.length
+            if (tempArray[i].total_inventory_count > 0) tmpLen += tempArray[i].assets.length
         }
         return tmpLen
     }
 
     const fetchData = async () => {
         setFetching(true)
-        if (getLoadingItemsAmount() > 700) {
+        const itemsAmount = getLoadingItemsAmount()
+
+        if (itemsAmount === 0) {
+            setIsEmpty(true)
+            return
+        } else if (itemsAmount > 700) {
             setAlert('Getting prices... It may take a few minutes to complete...')
-        } else if (getLoadingItemsAmount() > 300) {
+        } else if (itemsAmount > 300) {
             setAlert('Getting prices... It may take up to a minute to complete...')
         } else {
             setAlert('Getting prices... This shouldn\'t take long...')
@@ -161,52 +174,53 @@ export default function Inventory(props) {
         let tmpStickers = []
 
         for (let i = 0; i < tempArray.length; i++) {
-            /*let query = 'https://domr.xyz/api/Steam/rq/prices.php?appid=' + tempArray[i].appid + '&hashes='*/
-            let query = {
-                app: tempArray[i].appid,
-                hashes: ''
-            }
-
-            let tmpHash = ''
-
-            let assets = tempArray[i].assets
-            let items = tempArray[i].descriptions
-
-            for (let j = 0; j < items.length; j++) {
-                let num = 0
-                let id = items[j].classid + items[j].instanceid
-
-                if (items[j].marketable === 1) {
-                    let item_hash = items[j].market_name.replace(',', ';')
-                    tmpHash += item_hash + ','
+            if (tempArray[i].total_inventory_count > 0) {
+                let query = {
+                    app: tempArray[i].appid,
+                    hashes: ''
                 }
 
-                for (let k = 0; k < assets.length; k++) {
-                    let aID = assets[k].classid + assets[k].instanceid
-                    if (id === aID) num++
-                }
+                let tmpHash = ''
 
-                // if CSGO, get info about stickers
-                if (tempArray[i].appid === 730) {
-                    let tmp  = findStickers(tempArray[i].descriptions[j].descriptions)
-                    if (tmp !== null) {
-                        tempArray[i].descriptions[j]['stickers'] = tmp
-                        tempArray[i].descriptions[j]['stickers'].stickers.forEach(sticker => {
-                            if (!tmpStickers.includes(sticker.long_name)) {
-                                tmpStickers.push(sticker.long_name)
-                            }
-                        })
+                let assets = tempArray[i].assets
+                let items = tempArray[i].descriptions
+
+                for (let j = 0; j < items.length; j++) {
+                    let num = 0
+                    let id = items[j].classid + items[j].instanceid
+
+                    if (items[j].marketable === 1) {
+                        let item_hash = items[j].market_name.replace(',', ';')
+                        tmpHash += item_hash + ','
+                    }
+
+                    for (let k = 0; k < assets.length; k++) {
+                        let aID = assets[k].classid + assets[k].instanceid
+                        if (id === aID) num++
+                    }
+
+                    // if CSGO, get info about stickers
+                    if (tempArray[i].appid === 730) {
+                        let tmp = findStickers(tempArray[i].descriptions[j].descriptions)
+                        if (tmp !== null) {
+                            tempArray[i].descriptions[j]['stickers'] = tmp
+                            tempArray[i].descriptions[j]['stickers'].stickers.forEach(sticker => {
+                                if (!tmpStickers.includes(sticker.long_name)) {
+                                    tmpStickers.push(sticker.long_name)
+                                }
+                            })
+                        }
+                    }
+
+                    tempArray[i].descriptions[j]['amount'] = num
+                    stats['owned'] += num
+                    if (items[j].marketable === 1 && items[j].tradable === 1) {
+                        stats['ownedTradeable'] += num
                     }
                 }
-
-                tempArray[i].descriptions[j]['amount'] = num
-                stats['owned'] += num
-                if (items[j].marketable === 1 && items[j].tradable === 1) {
-                    stats['ownedTradeable'] += num
-                }
+                query.hashes = tmpHash.substring(0, tmpHash.length - 1)
+                queries.push(query)
             }
-            query.hashes = tmpHash.substring(0, tmpHash.length - 1)
-            queries.push(query)
         }
 
         for (let i = 0; i < queries.length; i++) {
@@ -334,6 +348,11 @@ export default function Inventory(props) {
 
     useEffect(async () => {
         if (!loaded) {
+            let internetConnection = await NetInfo.fetch();
+            if (internetConnection.isInternetReachable && internetConnection.isConnected) {
+                setAlert("No internet connection")
+                return
+            }
             setLoading(true)
             for (let i = 0; i < props.games.length; i++) {
                 await getInventory(props.games[i], i === props.games.length - 1).then(null)
@@ -392,16 +411,21 @@ export default function Inventory(props) {
         <View>
             <View style={{height: '100%'}}>
                 {
+                    (isEmpty) ?
+                    <View style={styles.column}>
+                        <Text style={{textAlign: 'center', marginTop: Dimensions.get('window').height / 2 - 36}}>No items found.</Text>
+                        <Text style={{textAlign: 'center'}}>Choose different games and try again</Text>
+                    </View> :
                     (loading || fetching) ?
                     <View style={styles.column}>
                         <ActivityIndicator style={{marginTop: Dimensions.get('window').height / 2 - 36}} size="large" color='#000' />
                         <Text style={{textAlign: 'center'}}>{alert}</Text>
                         {(props.games.length > 1) ?
-                            <Text style={{textAlign: 'center', alignSelf: 'center', marginVertical: 16, width: '70%'}}>You have selected { props.games.length } games, therefore it will take a bit longer to complete</Text>
+                            <Text style={{textAlign: 'center', alignSelf: 'center', marginVertical: resize(16), width: '70%'}}>You have selected { props.games.length } games, therefore it will take a bit longer to complete</Text>
                             : null
                         }
                     </View> :
-                    <View style={[styles.column, {alignItems: 'center', marginVertical: 8}]}>
+                    <View style={[styles.column, {alignItems: 'center', marginVertical: resize(8)}]}>
                         <View style={styles.inputView}>
                             <TextInput
                                 style={styles.searchInput}
@@ -411,10 +435,6 @@ export default function Inventory(props) {
                         </View>
                         <View style={styles.fsRow}>
                             <View style={styles.fsCell}>
-                                <Pressable style={styles.sIcon}>
-                                    <Icon type={'font-awesome'} name={'unsorted'} color={'#229'} size={24} />
-                                </Pressable>
-
                                 <Dropdown
                                     style={styles.dropdown}
                                     containerStyle={styles.shadow}
@@ -428,14 +448,14 @@ export default function Inventory(props) {
                                         setSort(item.value)
                                     }}
                                     renderItem={item => _renderItem(item)}
-                                    maxHeight={180}
+                                    maxHeight={resize(160)}
                                     activeColor={'#dde'}
                                 />
                             </View>
 
                             <View style={styles.fsCell}>
                                 <Pressable style={styles.filterPressable} onPress={() => setFilterVisible(true)}>
-                                    <Icon name={'filter'} type={'feather'} size={20} color={'#229'} />
+                                    <Icon name={'filter'} type={'feather'} size={resize(20)} color={'#229'} />
                                     <Text style={styles.filterPressableText}>Filter options</Text>
                                 </Pressable>
                             </View>
@@ -450,14 +470,18 @@ export default function Inventory(props) {
                                 <View>
                                     <Text style={styles.gameName}>{item.game}</Text>
                                     {
-                                        item.descriptions.map((inv, index) => (
-                                            (displayItem(inv)) ?
-                                                <View>
-                                                    <Item inv={inv} rate={rate} curr={curr} stPrices={stickerPrices} />
+                                        (item.total_inventory_count === 0) ?
+                                            <View>
+                                                <Text style={{fontSize: resize(18), color: '#444', textAlign: 'center', marginBottom: resize(16)}}>Game inventory is empty.</Text>
+                                            </View> :
+                                            item.descriptions.map((inv, index) => (
+                                                (displayItem(inv)) ?
+                                                    <View>
+                                                        <Item inv={inv} rate={rate} curr={curr} stPrices={stickerPrices} />
 
-                                                    {(item.descriptions.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center'}} /> : null}
-                                                </View> : null
-                                        ))
+                                                        {(item.descriptions.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center'}} /> : null}
+                                                    </View> : null
+                                            ))
                                     }
                                 </View>
                             ))
@@ -466,9 +490,9 @@ export default function Inventory(props) {
                     {
                         loaded ?
                             <TouchableOpacity style={styles.scrollProgress} onPress={() => scrollRef.current?.scrollTo({animated: true, y: 0})}>
-                                <Icon name={'angle-double-up'} type={'font-awesome'} size={48} color={'#555'} />
-                                <Text>This is the end of the inventory</Text>
-                                <Text>Tap to scroll back to top</Text>
+                                <Icon name={'angle-double-up'} type={'font-awesome'} size={resize(48)} color={'#555'} />
+                                <Text style={{fontSize: resize(14)}}>This is the end of the inventory</Text>
+                                <Text style={{fontSize: resize(14)}}>Tap to scroll back to top</Text>
                             </TouchableOpacity> : null
                     }
                 </ScrollView>
@@ -485,12 +509,12 @@ export default function Inventory(props) {
                         <BouncyCheckbox
                             isChecked={renderUnsellable}
                             onPress={(isChecked) => setRenderUnsellable(isChecked)}
-                            text={<Text style={{fontSize:14}}>Display <Text style={{fontWeight: 'bold'}}>non-tradable</Text> items</Text>}
+                            text={<Text style={{fontSize:resize(14)}}>Display <Text style={{fontWeight: 'bold'}}>non-tradable</Text> items</Text>}
                             textStyle={{textDecorationLine: "none"}}
                             fillColor={'#229'}
-                            iconStyle={{borderWidth:3}}
-                            style={{marginLeft: 16}}
-                            size={22}
+                            iconStyle={{borderWidth:resize(3)}}
+                            style={{marginLeft: resize(16)}}
+                            size={resize(22)}
                         />
 
                         { (containsCSGO) ?
@@ -499,23 +523,23 @@ export default function Inventory(props) {
                                 <BouncyCheckbox
                                     isChecked={renderNameTag}
                                     onPress={(isChecked) => setRenderNameTag(isChecked)}
-                                    text={<Text style={{fontSize:14}}>Display items with <Text style={{fontWeight: 'bold'}}>Name Tags</Text> only</Text>}
+                                    text={<Text style={{fontSize:resize(14)}}>Display items with <Text style={{fontWeight: 'bold'}}>Name Tags</Text> only</Text>}
                                     textStyle={{textDecorationLine: "none"}}
                                     fillColor={'#229'}
-                                    iconStyle={{borderWidth:3}}
-                                    style={{marginLeft: 16, marginVertical: 8,}}
-                                    size={22}
+                                    iconStyle={{borderWidth:resize(3)}}
+                                    style={{marginLeft: resize(16), marginVertical: resize(8),}}
+                                    size={resize(22)}
                                 />
 
                                 <BouncyCheckbox
                                     isChecked={renderAppliedSticker}
                                     onPress={(isChecked) => setRenderAppliedSticker(isChecked)}
-                                    text={<Text style={{fontSize:14}}>Display items with <Text style={{fontWeight: 'bold'}}>Stickers</Text> only</Text>}
+                                    text={<Text style={{fontSize:resize(14)}}>Display items with <Text style={{fontWeight: 'bold'}}>Stickers</Text> only</Text>}
                                     textStyle={{textDecorationLine: "none"}}
                                     fillColor={'#229'}
-                                    iconStyle={{borderWidth:3}}
-                                    style={{marginLeft: 16, marginVertical: 8,}}
-                                    size={22}
+                                    iconStyle={{borderWidth:resize(3)}}
+                                    style={{marginLeft: resize(16), marginVertical: resize(8),}}
+                                    size={resize(22)}
                                 />
                             </View> : null
                         }
@@ -550,6 +574,11 @@ function Item(props) {
     const not_found = 'https://icon-library.com/images/development_not_found-512.png'
     const winWidth = Dimensions.get('window').width;
 
+    const [scale] = useState(Dimensions.get('window').width / 423);
+    const resize = (size) => {
+        return Math.ceil(size * scale)
+    }
+
     const getAppliedPrice = (name) => {
         return props.stPrices[name]
     }
@@ -581,7 +610,7 @@ function Item(props) {
                 <View style={{display: 'flex', flexDirection: 'row',}}>
                     <View style={[styles.flowColumn, {width: '96%'}]}>
                         <Text style={styles.itemName}>{inv.market_name}</Text>
-                        <Text style={{color: '#777'}}>{inv.type}</Text>
+                        <Text style={styles.itemType}>{inv.type}</Text>
                     </View>
                 </View>
                 <View style={[styles.flowRow]}>
@@ -600,17 +629,17 @@ function Item(props) {
                     <View style={styles.row}>
                         <Image style={{width: '22%', aspectRatio: 1.3, marginRight: 4}} source={open ? {uri: img} : {uri: not_found}} />
                         <View style={[styles.column, {width: '73%'}]}>
-                            <Text>Item is <Text style={{fontWeight: 'bold'}}>{inv.marketable === 1 ? 'marketable' : 'non-marketable'}</Text> and <Text style={{fontWeight: 'bold'}}>{inv.tradable ? 'tradable' : 'non-tradable'}</Text></Text>
+                            <Text style={styles.detail}>Item is <Text style={styles.detailBold}>{inv.marketable === 1 ? 'marketable' : 'non-marketable'}</Text> and <Text style={styles.detailBold}>{inv.tradable ? 'tradable' : 'non-tradable'}</Text></Text>
                             { (inv.Price === 'NaN' || (inv.Price === 0.03 && inv.Listed === 0)) ?
                                 <View>
-                                    <Text style={{fontWeight: 'bold'}}>Market details unavailable for this item</Text>
+                                    <Text style={styles.detailBold}>Market details unavailable for this item</Text>
                                 </View> :
                                 <View>
-                                    <Text>Price updated <Text style={{fontWeight: 'bold'}}>{hours}</Text>h <Text style={{fontWeight: 'bold'}}>{minutes}</Text>min <Text style={{fontWeight: 'bold'}}>{seconds}</Text>s ago</Text>
-                                    <Text><Text style={{fontWeight: 'bold'}}>{inv.Listed}</Text> listings on Steam Market</Text>
+                                    <Text style={styles.detail}>Price updated <Text style={styles.detailBold}>{hours}</Text>h <Text style={styles.detailBold}>{minutes}</Text>min <Text style={styles.detailBold}>{seconds}</Text>s ago</Text>
+                                    <Text style={styles.detail}><Text style={styles.detailBold}>{inv.Listed}</Text> listings on Steam Market</Text>
                                 </View>
                             }
-                            {inv.hasOwnProperty('fraudwarnings') ? <Text>Name Tag: <Text style={{fontWeight: 'bold'}}>{inv.fraudwarnings[0].substring(12, inv.fraudwarnings[0].length - 2)}</Text></Text> : null}
+                            {inv.hasOwnProperty('fraudwarnings') ? <Text style={styles.detail}>Name Tag: <Text style={{fontWeight: 'bold'}}>{inv.fraudwarnings[0].substring(12, inv.fraudwarnings[0].length - 2)}</Text></Text> : null}
                         </View>
                     </View>
                     {
@@ -620,14 +649,14 @@ function Item(props) {
                                 <View style={styles.stpaRow}>
                                     {
                                         inv.stickers.stickers.map(sticker => (
-                                            <Image style={{ aspectRatio: 1.3, width: getStickerWidth(inv.stickers.sticker_count) }} source={open ? { uri: sticker.img } : {uri: not_found}} />
+                                            <Image style={{ aspectRatio: 1.3, width: resize(getStickerWidth(inv.stickers.sticker_count)) }} source={open ? { uri: sticker.img } : {uri: not_found}} />
                                         ))
                                     }
                                 </View>
                                 <View style={styles.stpaRow}>
                                     {
                                         inv.stickers.stickers.map(sticker => (
-                                            <Text style={{ width: getStickerWidth(inv.stickers.sticker_count), textAlign: 'center', color: '#555', fontWeight: 'bold' }}>{props.curr} {Math.round(getAppliedPrice(sticker.long_name) * props.rate * 100) / 100}</Text>
+                                            <Text style={{ width: resize(getStickerWidth(inv.stickers.sticker_count)), textAlign: 'center', color: '#555', fontWeight: 'bold' }}>{props.curr} {Math.round(getAppliedPrice(sticker.long_name) * props.rate * 100) / 100}</Text>
                                         ))
                                     }
                                 </View>
@@ -656,8 +685,13 @@ function Item(props) {
 }
 
 function Summary(props) {
+    const [scale] = useState(Dimensions.get('window').width / 423);
+    const resize = (size) => {
+        return Math.ceil(size * scale)
+    }
+
     const sumRef = useRef();
-    const snapPoints = useMemo(() => [70, '70%', '100%'], []);
+    const snapPoints = useMemo(() => [resize(70), '60%', '100%'], []);
     const handleSheetChanges = useCallback((index: number) => {
         console.log('handleSheetChanges', index);
     }, []);
@@ -674,20 +708,12 @@ function Summary(props) {
             detached={false}
             ref={sumRef}
             overDragResistanceFactor={0}
-            handleIndicatorStyle={{backgroundColor: '#555', elevation: 8, height: 10, width: 48}}
-            handleStyle={{borderRadius: 16, padding: 12, borderWidth: 2, width: '40%', alignSelf: 'center', marginBottom: 8, backgroundColor: '#fff',}}
+            handleIndicatorStyle={{backgroundColor: '#333', height: resize(8), width: resize(40)}}
+            handleStyle={{ alignSelf: 'center', width: resize(64), backgroundColor: '#bbb', borderTopLeftRadius: 16, borderTopRightRadius: 16}}
             backgroundStyle={{backgroundColor: '#ffffff00'}}>
-            <View style={{flex: 1,
-                alignItems: 'center',
-                elevation: -5,
-                borderTopRightRadius: 16,
-                borderTopLeftRadius: 16,
-                borderTopWidth: 2,
-                borderLeftWidth: 2,
-                borderRightWidth: 2,
-                backgroundColor: '#fff',}}>
-                <View style={{marginBottom: 8, alignItems: 'center', width: '100%',}}>
-                    <Text style={[styles.gameTitle, {fontSize: 24, color: '#333'}]}>Inventory Details</Text>
+            <View style={{flex: 1, alignItems: 'center', backgroundColor: '#fff', borderTopWidth: 3, borderTopColor: '#bbb'}}>
+                <View style={{marginBottom: resize(8), alignItems: 'center', width: '100%',}}>
+                    <Text style={[styles.gameTitle, {fontSize: resize(24), color: '#555'}]}>Inventory Details</Text>
                     <Text style={{color: '#777'}}>SteamID: <Text style={{fontWeight: 'bold', color: '#444'}}>{props.steam}</Text></Text>
                     <Text style={{color: '#777'}}>Games loaded (appid): <Text style={{fontWeight: 'bold', color: '#444'}}>{JSON.stringify(props.games)}</Text></Text>
                 </View>
@@ -708,6 +734,8 @@ function Summary(props) {
                                 </View>
                             </View>
 
+                            <Divider width={2} style={{width: '95%', alignSelf: 'center'}} />
+
                             <View style={styles.summarySection}>
                                 <View style={styles.row}>
                                     <Text style={styles.statsTitle}>24 hour average value</Text>
@@ -724,6 +752,8 @@ function Summary(props) {
                                     <Text style={styles.statsDetails}>{curr} {Math.round(stats['avg30'] * rate * 1000) / 1000}</Text>
                                 </View>
                             </View>
+
+                            <Divider width={2} style={{width: '95%', alignSelf: 'center'}} />
 
                             <View style={styles.summarySection}>
                                 <View style={styles.row}>
@@ -746,7 +776,7 @@ function Summary(props) {
                             <Text style={[styles.gameName]}>Game stats</Text>
 
                             {
-                                stats.games.map((data) => (
+                                stats.games.map((data, index) => (
                                     <View style={styles.summarySection}>
                                         <Text style={styles.sumGame}>{ data.name }</Text>
 
@@ -789,6 +819,8 @@ function Summary(props) {
                                                     </View>
                                                 </View> : null
                                         }
+
+                                        {(stats.games.length - 1 !== index) ? <Divider width={2} style={{width: '95%', alignSelf: 'center'}}/> : null}
                                     </View>
                                 ))
                             }
@@ -800,6 +832,11 @@ function Summary(props) {
 
         </BSheet>
     )
+}
+
+const resize = (size) => {
+    const scale = Dimensions.get('window').width / 423
+    return Math.ceil(size * scale)
 }
 
 const styles = StyleSheet.create ({
@@ -857,41 +894,49 @@ const styles = StyleSheet.create ({
         borderColor: '#0f0',
     },
     gameName: {
-        fontSize: 24,
+        fontSize: resize(24),
         fontWeight: 'bold',
         marginVertical: 8,
         marginLeft: 8,
         color: '#333',
     },
     itemIcon: {
-        width: 56,
-        height: 56,
+        width: resize(56),
+        height: resize(56),
         alignSelf: 'center',
     },
     itemName: {
-        fontSize: 15,
+        fontSize: resize(16),
         fontWeight: "bold",
         width: '100%',
         color: '#555',
+    },
+    itemType: {
+        fontSize: resize(13),
+        color: '#777',
+        fontStyle: 'italic',
     },
     itemPriceTitle: {
         width: '33%',
         textAlign: "center",
         color: '#777',
+        fontSize: resize(14),
     },
     itemPrice: {
         width: '33%',
         textAlign: "center",
         fontWeight: 'bold',
         color: '#333',
+        fontSize: resize(16),
     },
     avgTitle: {
         color: '#777',
         width: '32%',
         textAlign: "center",
+        fontSize: resize(14),
     },
     avgDetails: {
-        fontSize: 15,
+        fontSize: resize(14),
         fontWeight: "bold",
         color: '#333',
         width: '32%',
@@ -899,7 +944,7 @@ const styles = StyleSheet.create ({
     },
     alert: {
         position: "absolute",
-        top: 8,
+        top: resize(8),
         backgroundColor: '#229',
         width: '90%',
         overflow: "hidden",
@@ -907,43 +952,44 @@ const styles = StyleSheet.create ({
         borderRadius: 8,
     },
     msg: {
-        margin: 8,
+        margin: resize(8),
         color: '#fff',
     },
     detailsPress: {
         width: '67%',
         alignSelf: "center",
         backgroundColor: '#d3d5d8',
-        marginVertical: 8,
+        marginVertical: resize(8),
         borderRadius: 8,
     },
     detailsText: {
-        fontSize: 19,
+        fontSize: resize(18),
         fontWeight: "bold",
         textAlign: "center",
         textAlignVertical: "center",
         marginVertical: 8,
+        color: '#333',
     },
     statsTitle: {
-        fontSize: 13,
+        fontSize: resize(12),
         textAlignVertical: 'center',
         textAlign: 'left',
         width: '45%',
         color: '#555',
     },
     statsDetails: {
-        fontSize: 13,
+        fontSize: resize(14),
         fontWeight: 'bold',
         textAlign: 'right',
         width: '55%',
-        color: '#222',
+        color: '#333',
     },
     statsDetailsS: {
-        fontSize: 12,
+        fontSize: resize(12),
         fontWeight: 'normal',
         textAlign: 'right',
         width: '55%',
-        color: '#222',
+        color: '#333',
     },
     scrollProgress: {
         width: '65%',
@@ -957,19 +1003,14 @@ const styles = StyleSheet.create ({
         marginBottom: 82,
     },
     summarySection: {
-        borderWidth: 1.5,
-        borderRadius: 8,
-        padding: 4,
+        paddingVertical: resize(8),
         marginBottom: 8,
         alignSelf: 'center',
-        borderColor: '#229',
-        borderStyle: 'dashed',
     },
     inputView: {
         width: '90%',
         backgroundColor: '#fff',
-        paddingVertical: 2,
-        paddingHorizontal: 8,
+        paddingHorizontal: resize(8),
         display: "flex",
         flexDirection: 'row',
         alignItems: 'center',
@@ -977,18 +1018,18 @@ const styles = StyleSheet.create ({
         borderWidth: 2.0,
         borderColor: '#229',
         borderRadius: 8,
-        marginTop: 8,
+        marginTop: resize(4),
     },
     searchInput: {
-        fontSize: 14,
+        fontSize: resize(14),
         width: '100%',
     },
     fsRow: {
-        width: '96%',
+        width: '90%',
         alignSelf: 'center',
         display: 'flex',
         flexDirection: 'row',
-        justifyContent: 'space-evenly',
+        justifyContent: 'space-between',
         marginTop: 8,
     },
     fsCell: {
@@ -997,23 +1038,15 @@ const styles = StyleSheet.create ({
         display: 'flex',
         flexDirection: 'row',
     },
-    sIcon: {
-        borderWidth: 2,
-        borderColor: '#229',
-        padding: 4,
-        borderRadius: 8,
-        marginRight: 4,
-        height: 36,
-        width: '18%',
-    },
     dropdown: {
         backgroundColor: 'white',
         borderColor: '#229',
         borderWidth: 2,
-        width: '80%',
+        width: '100%',
         alignSelf: 'center',
         paddingHorizontal: 8,
         borderRadius: 8,
+        height: resize(38.5),
     },
     shadow: {
         shadowColor: '#000',
@@ -1027,7 +1060,7 @@ const styles = StyleSheet.create ({
         borderRadius: 8,
     },
     item: {
-        paddingVertical: 16,
+        paddingVertical: resize(16),
         paddingHorizontal: 4,
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -1035,7 +1068,7 @@ const styles = StyleSheet.create ({
     },
     textItem: {
         flex: 1,
-        fontSize: 16,
+        fontSize: resize(16),
     },
     filterPressable: {
         display: 'flex',
@@ -1046,11 +1079,11 @@ const styles = StyleSheet.create ({
         borderRadius: 8,
         alignItems: 'center',
         width: '100%',
-        height: 38.5,
+        height: resize(38.5),
         justifyContent: 'center',
     },
     filterPressableText: {
-        fontSize: 18,
+        fontSize: resize(18),
         textAlignVertical: 'center',
         height: '100%',
     },
@@ -1062,38 +1095,38 @@ const styles = StyleSheet.create ({
         alignSelf: 'center',
     },
     stpaType: {
-        fontSize: 16,
+        fontSize: resize(16),
         fontWeight: 'bold',
         width: '100%',
         textAlign: 'center',
     },
     sumGame: {
-        fontSize: 16,
+        fontSize: resize(16),
         fontWeight: 'bold',
         textAlign: 'center',
         marginHorizontal: 4,
         color: '#666',
     },
     totalAppliedValueText: {
-        fontSize: 16,
+        fontSize: resize(16),
         marginTop: 4,
-        marginBottom: 8,
+        marginBottom: resize(8),
         width: '100%',
         textAlign: 'center',
         color: '#777',
     },
     totalAppliedValue: {
         fontWeight: 'bold',
-        fontSize: 17,
+        fontSize: resize(16),
         color: '#333',
     },
     snackbarText: {
-        fontSize: 15,
+        fontSize: resize(12),
         color: '#ddd'
     },
     containerStyle: {
         backgroundColor: 'white',
-        padding: 20,
+        padding: resize(20),
         width: '90%',
         alignSelf: 'center',
         borderRadius: 8,
@@ -1101,13 +1134,20 @@ const styles = StyleSheet.create ({
     fModalTitle: {
         textAlign: 'center',
         color: '#555',
-        fontSize: 28,
+        fontSize: resize(28),
         fontWeight: 'bold',
     },
     fModalGameTitle: {
         color: '#777',
-        fontSize: 20,
-        marginVertical: 8,
+        fontSize: resize(20),
+        marginVertical: resize(8),
         fontWeight: 'bold',
-    }
+    },
+    detailBold: {
+        fontWeight: 'bold',
+        fontSize: resize(14),
+    },
+    detail: {
+        fontSize: resize(14),
+    },
 })

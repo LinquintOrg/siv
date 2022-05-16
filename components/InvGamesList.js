@@ -1,4 +1,4 @@
-import {Text, TouchableOpacity, View, StyleSheet, Image, ScrollView, Pressable} from "react-native";
+import {Text, TouchableOpacity, View, StyleSheet, Image, ScrollView, Pressable, Dimensions} from "react-native";
 import React from "react";
 import {useState} from "react";
 import gamesJson from '../assets/inv-games.json'
@@ -11,6 +11,11 @@ export default function InvGamesList(props) {
     const [loadedPrevGames, setLoadedPrevGames] = useState(false)
     const [prevGames, setPrevGames] = useState([]);
     const [snackbarVisible, setSnackbarVisible] = useState(false)
+
+    const [scale] = useState(Dimensions.get('window').width / 423);
+    const resize = (size) => {
+        return Math.ceil(size * scale)
+    }
 
     if (!loadedPrevGames) getAllKeys().then(() => {
         setLoadedPrevGames(true)
@@ -45,7 +50,7 @@ export default function InvGamesList(props) {
 
     return(
         <View style={{height: '100%'}}>
-            <Text style={[styles.title, {fontSize: 24}]}>Choose games to load</Text>
+            <Text style={[styles.title, {fontSize: resize(24)}]}>Choose games</Text>
             <Text style={styles.title}>Use previously loaded games</Text>
             {
                 (prevGames.length === 0) ? <Text style={styles.previousGamesSubtitle}>You will be able to see previous games next time you use this profile</Text> :
@@ -54,7 +59,7 @@ export default function InvGamesList(props) {
                     }}>
                         {
                             prevGames[0]?.val.map((item) => (
-                                <Image style={{ height: 48, width: 48, borderRadius: 8, marginRight: 8 }} source={{uri: getGameImage(item)}} />
+                                <Image style={{ height: resize(48), width: resize(48), borderRadius: 8, marginRight: 8 }} source={{uri: getGameImage(item)}} />
                             ))
                         }
                     </Pressable>
@@ -72,14 +77,14 @@ export default function InvGamesList(props) {
                                     props.setState([item.appid])
                                 }
                             }}>
-                                <Image style={{ height: 48, width: 48, borderRadius: 8, marginRight: 8 }} source={{uri: item.url} } />
+                                <Image style={{ height: resize(48), width: resize(48), borderRadius: 8, marginRight: 8 }} source={{uri: item.url} } />
 
                                 <View style={{ display: 'flex', flexDirection: 'column', width: '77%' }}>
                                     <Text style={styles.gameTitle}>{item.name}</Text>
                                     <Text style={styles.appID}>{item.appid}</Text>
                                 </View>
 
-                                <Icon name={ (props.hasState(item.appid)) ? 'check-square-o' : 'square-o' } type='font-awesome' size={25}
+                                <Icon name={ (props.hasState(item.appid)) ? 'check-square-o' : 'square-o' } type='font-awesome' size={resize(24)}
                                       style={{alignSelf: 'center'}} />
                             </TouchableOpacity>
 
@@ -99,7 +104,7 @@ export default function InvGamesList(props) {
                 }
             }}>
                 <Text style={styles.buttonMediumText}>Proceed</Text>
-                <Icon type={'font-awesome-5'} name={'angle-double-right'} size={32} color={'#193C6E'} />
+                <Icon type={'font-awesome-5'} name={'angle-double-right'} size={resize(32)} color={'#193C6E'} />
             </TouchableOpacity>
 
             <Snackbar
@@ -118,6 +123,11 @@ export default function InvGamesList(props) {
     )
 }
 
+const resize = (size) => {
+    const scale = Dimensions.get('window').width / 423
+    return Math.ceil(size * scale)
+}
+
 const styles = StyleSheet.create ({
     container: {
         marginVertical: 6,
@@ -130,10 +140,12 @@ const styles = StyleSheet.create ({
     },
     gameTitle: {
         color: '#333',
-        fontWeight: "bold"
+        fontWeight: "bold",
+        fontSize: resize(16),
     },
     appID: {
-        color: '#777'
+        color: '#777',
+        fontSize: resize(14),
     },
     containerSelected: {
         borderWidth: 1.0,
@@ -141,26 +153,27 @@ const styles = StyleSheet.create ({
     },
     title: {
         textAlign: 'center',
-        fontSize: 18,
+        fontSize: resize(20),
         fontWeight: 'bold',
-        marginVertical: 8,
+        marginVertical: 4,
     },
     buttonProceed: {
         alignSelf: "center",
         backgroundColor: '#FFF',
         width: '80%',
-        height: 42,
+        height: resize(40),
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 16,
-        marginVertical: 4,
+        marginBottom: 4,
+        marginTop: resize(8),
         display: 'flex',
         flexDirection: 'row',
         borderWidth: 2.0,
         borderColor: '#193C6E',
     },
     buttonMediumText: {
-        fontSize: 24,
+        fontSize: resize(20),
         color: '#193C6E',
         fontWeight: "bold",
         marginHorizontal: 8,
@@ -181,10 +194,10 @@ const styles = StyleSheet.create ({
         width: '90%',
         alignSelf: 'center',
         textAlign: 'center',
-        fontSize: 15
+        fontSize: resize(14)
     },
     snackbarText: {
-        fontSize: 15,
+        fontSize: resize(13),
         color: '#ddd'
     }
 

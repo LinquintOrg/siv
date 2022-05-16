@@ -1,4 +1,5 @@
 import {
+    Dimensions,
     Image,
     ScrollView,
     StyleSheet,
@@ -6,11 +7,16 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
-import React from "react";
+import React, {useState} from "react";
 import {Divider} from "react-native-elements";
 
 export default function (props) {
     let users = props.users
+
+    const [scale] = useState(Dimensions.get('window').width / 423);
+    const resize = (size) => {
+        return Math.ceil(size * scale)
+    }
 
     return (
         <ScrollView>
@@ -19,7 +25,7 @@ export default function (props) {
                     <View>
                         <TouchableOpacity style={styles.profileSection} onPress={() => props.loadInv(props.nav, item.id)} onLongPress={() => props.deleteUser(item.id)}>
                             <Image style={styles.profilePicture} source={ { uri: item.url } } />
-                            <View style={[styles.column, {paddingTop: 8}]}>
+                            <View style={[styles.column, {paddingTop: resize(6)}]}>
                                 <Text style={styles.profileID}>{item.id}</Text>
                                 <Text style={styles.profileName}>{item.name}</Text>
                             </View>
@@ -32,6 +38,11 @@ export default function (props) {
     )
 }
 
+const resize = (size) => {
+    const scale = Dimensions.get('window').width / 423
+    return Math.ceil(size * scale)
+}
+
 const styles = StyleSheet.create({
     column: {
         display: 'flex',
@@ -40,25 +51,25 @@ const styles = StyleSheet.create({
     },
     profileSection: {
         borderRadius: 8,
-        marginVertical: 12,
+        marginVertical: resize(12),
         display: 'flex',
         flexDirection: 'row',
         width: '92%',
         alignSelf: 'center',
     },
     profilePicture: {
-        width:  51,
-        height: 51,
+        width:  resize(52),
+        height: resize(52),
         borderRadius: 8,
-        marginEnd: 8
+        marginEnd: resize(8)
     },
     profileName: {
-        fontSize: 13,
+        fontSize: resize(14),
         fontWeight: "bold",
         color: '#666'
     },
     profileID: {
-        fontSize: 15,
+        fontSize: resize(14),
         fontWeight: "bold",
         color: '#444'
     },

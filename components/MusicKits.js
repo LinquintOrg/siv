@@ -13,6 +13,7 @@ import {Audio} from 'expo-av';
 import {AdMobRewarded} from "expo-ads-admob";
 import {Divider, Icon} from "react-native-elements";
 import {Snackbar} from "react-native-paper";
+import NetInfo from "@react-native-community/netinfo";
 
 export default function MusicKits(props) {
     const [loading, setLoading] = useState(true)
@@ -28,14 +29,33 @@ export default function MusicKits(props) {
     const [snackError, setSnackError] = useState('')
     const [snackbarRewardAd, setSnackbarRewardAd] = useState(false)
 
+    const [scale] = useState(Dimensions.get('window').width / 423);
+    const resize = (size) => {
+        return Math.ceil(size * scale)
+    }
+
+    const getMusicKits = async () => {
+        let internetConnection = await NetInfo.fetch();
+        if (internetConnection.isInternetReachable && internetConnection.isConnected) {
+            await fetch('https://domr.xyz/api/Steam/rq/music_kits.json')
+                .then((response) => response.json())
+                .then((json) => {
+                    setKits(json)
+                    setLoading(false)
+                    setLoadingPrices(true)
+                })
+            return true
+        }
+        return false
+    }
+
     if (loading) {
-        fetch('https://domr.xyz/api/Steam/rq/music_kits.json')
-            .then((response) => response.json())
-            .then((json) => {
-                setKits(json)
-                setLoading(false)
-                setLoadingPrices(true)
-            })
+        getMusicKits().then(r => {
+            if (!r) {
+                setSnackbarVisible(true)
+                setSnackError('No internet connection')
+            }
+        })
     }
 
     if (loadingPrices) {
@@ -53,41 +73,18 @@ export default function MusicKits(props) {
                 const newNumPlays = numPlays - 1
                 setPlaybackTimeout(true)
 
-                /*
-                 *      Should probably try to use a proper object to create Async. If that doesn't work out try to use it with ref as explained
-                 *      here: https://stackoverflow.com/questions/67618888/expo-av-playbackobjects-onplaybackstatusupdate-is-called-only-on-play-stop-inst
-                 */
-
                 const {sound: playbackObject} = await Audio.Sound.createAsync(
                     {uri: 'https://domr.xyz/api/Files/csgo/musickits/' + dir + '/roundmvpanthem_01.mp3'},
                     {shouldPlay: true}
                 )
 
-                setSnackError(<Text>Now Playing <Text style={{fontWeight: 'bold', color: '#6FC8F7'}}>{song}</Text> by <Text style={{color: '#6FC8F7'}}>{artist}</Text></Text>)
+                setSnackError(<Text style={{fontSize: resize(12)}}>Now Playing <Text style={{fontWeight: 'bold', color: '#6FC8F7'}}>{song}</Text> by <Text style={{color: '#6FC8F7'}}>{artist}</Text></Text>)
                 setSnackbarVisible(true)
                 await sleep(5000)
                 setSnackbarVisible(false)
                 await sleep(9000)
                 setNumPlays(newNumPlays)
                 setPlaybackTimeout(false);
-
-                /*playbackObject.setOnPlaybackStatusUpdate(async status => {
-                    if (status.isLoaded) {
-                        if (status.isPlaying) {
-                            setSnackError(<Text>Now Playing <Text
-                                style={{fontWeight: 'bold', color: '#fff'}}>{song}</Text> by <Text
-                                style={{color: '#fff'}}>{artist}</Text></Text>)
-                            setSnackbarVisible(true)
-                        }
-
-                        if (status.didJustFinish) {
-                            setSnackbarVisible(false)
-                            await sleep(2000)
-                            setNumPlays(newNumPlays)
-                            setPlaybackTimeout(false);
-                        }
-                    }
-                })*/
             } else {
                 setSnackbarRewardAd(true)
             }
@@ -95,7 +92,7 @@ export default function MusicKits(props) {
     }
 
     async function playRewardAd() {
-        await AdMobRewarded.setAdUnitID('ca-app-pub-3940256099942544/5224354917'); // Test ID, Replace with your-admob-unit-id
+        await AdMobRewarded.setAdUnitID('ca-app-pub-3223910346366351/1125060976'); // Test ID, Replace with your-admob-unit-id
         AdMobRewarded.addEventListener('rewardedVideoUserDidEarnReward', () => {
             setNumPlays(5)
         });
@@ -171,15 +168,18 @@ export default function MusicKits(props) {
                     <Text style={{textAlign: 'center'}}>Downloading music kit prices</Text>
                 </View> :
                 <View style={{height: '100%'}}>
-                    <View style={{marginVertical: 8}}>
+                    <View style={{marginVertical: resize(8)}}>
                         <Text style={styles.title}>Music Kits</Text>
                         <Text style={styles.subTitle}>Tap to play MVP anthem</Text>
-                        <Text style={styles.subTitle}>Available playbacks: <Text
-                            style={[numPlays === 0 ? {color: '#a00'} : {color: '#0a0'}, {fontWeight: 'bold'}]}>{numPlays}</Text></Text>
+                        <Text style={styles.subTitle}>Available playbacks: <Text style={[numPlays === 0 ? {color: '#a00'} : {color: '#0a0'}, {fontWeight: 'bold'}]}>{numPlays}</Text></Text>
+                        <Text style={{fontSize: resize(14), textAlign: 'center'}}>
+                            Timeout:
+                            {(playbackTimeout) ? <Text style={{fontWeight: 'bold', color: '#f00'}}> TRUE</Text> : <Text style={{fontWeight: 'bold', color: '#0b0'}}> FALSE</Text>}
+                        </Text>
                     </View>
 
                     <View style={styles.inputView}>
-                        <Icon color='#333' name='filter' type='font-awesome' size={20}/>
+                        <Icon color='#333' name='filter' type='font-awesome' size={resize(20)}/>
                         <TextInput
                             style={{marginHorizontal: 8, borderBottomWidth: 1.0, flex: 1}}
                             placeholder='Filter by artist or song name'
@@ -195,7 +195,7 @@ export default function MusicKits(props) {
                                         <TouchableOpacity style={styles.container} onPress={async () => {
                                             await playSound(item.dir, item.artist, item.song)
                                         }}>
-                                            <Image style={{width: 48, aspectRatio: 1, marginRight: 8}}
+                                            <Image style={{width: resize(48), aspectRatio: 1, marginRight: 8}}
                                                    source={{uri: (item.img || imgNotFound)}}/>
                                             <View style={styles.containerCol}>
                                                 <Text style={styles.song}>{item.song}</Text>
@@ -233,6 +233,11 @@ export default function MusicKits(props) {
     )
 }
 
+const resize = (size) => {
+    const scale = Dimensions.get('window').width / 423
+    return Math.ceil(size * scale)
+}
+
 const styles = StyleSheet.create({
     container: {
         marginTop: 6,
@@ -251,17 +256,17 @@ const styles = StyleSheet.create({
         width: '63%',
     },
     artist: {
-        fontSize: 14,
+        fontSize: resize(14),
         fontWeight: "bold",
         color: '#666',
     },
     song: {
-        fontSize: 17,
+        fontSize: resize(16),
         fontWeight: "bold",
         color: '#222',
     },
     price: {
-        fontSize: 14,
+        fontSize: resize(14),
         color: '#333',
         textAlignVertical: 'center',
         width: '30%',
@@ -270,26 +275,26 @@ const styles = StyleSheet.create({
     },
     title: {
         textAlign: 'center',
-        fontSize: 24,
+        fontSize: resize(24),
         fontWeight: 'bold',
         marginVertical: 4,
     },
     subTitle: {
         textAlign: 'center',
-        fontSize: 13,
+        fontSize: resize(13),
     },
     inputView: {
         width: '90%',
-        height: 44,
+        height: resize(44),
         borderRadius: 8,
-        paddingHorizontal: 10,
+        paddingHorizontal: resize(10),
         display: "flex",
         flexDirection: 'row',
         alignItems: 'center',
         alignSelf: "center",
     },
     snackbarText: {
-        fontSize: 15,
+        fontSize: resize(13),
         color: '#fff'
     }
 })

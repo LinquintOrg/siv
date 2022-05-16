@@ -6,12 +6,12 @@ import {
     View,
     TextInput,
     TouchableOpacity,
-    Image
+    Image, Dimensions
 } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Icon } from 'react-native-elements';
-import {useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {createNativeStackNavigator} from "@react-navigation/native-stack";
 import InvGamesList from "./components/InvGamesList.js";
 import Inventory from "./components/Inventory.js";
@@ -23,6 +23,8 @@ import SteamMarket from "./components/SteamMarket";
 import {ColorfulTabBar} from "react-navigation-tabbar-collection";
 import * as Sentry from 'sentry-expo';
 import {Snackbar} from "react-native-paper";
+import * as SplashScreen from 'expo-splash-screen';
+import NetInfo from '@react-native-community/netinfo';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -40,21 +42,57 @@ function App() {
         ],
     });
 
-    const [rate, setRate] = useState(0)         // selected currency
+    const [scale] = useState(Dimensions.get('window').width / 423);
+    const resize = (size) => {
+        return Math.ceil(size * scale)
+    }
+
+    const [rate, setRate] = useState(46)         // selected currency
     const [rates, setRates] = useState()        // downloaded rates from database
     const [loadedRates, setLoadedRates] = useState(false)       // Are rates loaded?
     const [loadedUsers, setLoadedUsers] = useState(false)       // Are saved profiles loaded
     const [users, setUsers] = useState([])      // Saved profiles
     const [snackbarVisible, setSnackbarVisible] = useState(false)
+    const [snackbarText, setSnackbarText] = useState("")
+    const [snackError, setSnackError] = useState(false)
 
-    if (!loadedRates) {
-        setLoadedRates(true)
-        getRates()
-    }
+    const [appIsReady, setAppIsReady] = useState(false);
 
-    if (!loadedUsers) {
-        setLoadedUsers(true)
-        getAllKeys().then(r => null)
+    useEffect(() => {
+        async function prepare() {
+            try {
+                await SplashScreen.preventAutoHideAsync();
+
+                let internetConnection = await NetInfo.fetch();
+                if (internetConnection.isInternetReachable && internetConnection.isConnected) {
+                    setLoadedRates(true)
+                    getRates()
+
+                    setLoadedUsers(true)
+                    updateProfiles().then(() => null)
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                } else {
+                    setSnackbarText("No internet connection")
+                    setSnackError(true)
+                }
+            } catch (e) {
+                console.warn(e);
+            } finally {
+                setAppIsReady(true);
+            }
+        }
+
+        prepare().then(null);
+    }, []);
+
+    const onLayoutRootView = useCallback(async () => {
+        if (appIsReady) {
+            await SplashScreen.hideAsync();
+        }
+    }, [appIsReady]);
+
+    if (!appIsReady) {
+        return null;
     }
 
     function navigateToLoad(navigation, steamID) {
@@ -81,31 +119,57 @@ function App() {
         setUsers(users.concat(tmp))
     }
 
+    async function updateProfiles() {
+        let id = '7401764DA0F7B99794826E9E2512E311';
+
+        await AsyncStorage.getAllKeys((err, keys) => {
+            AsyncStorage.multiGet(keys, async () => {
+                const ids = []
+                for (const key of keys) {
+                    switch (key) {
+                        case 'currency': {
+                            setRate(JSON.parse(await AsyncStorage.getItem('currency')).val)
+                            break;
+                        }
+                        default: {
+                            if (!key.includes('prevGames')) {
+                                ids.push(key)
+                            }
+                        }
+                    }
+                }
+
+                await fetch('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=' + id + '&steamids=' + ids.join(','))
+                    .then(response => response.json())
+                    .then(async json => {
+                        let values = []
+                        for (const user of json.response.players) {
+                            let tmp = {
+                                'id': user.steamid,
+                                'name': user.personaname,
+                                'url': user.avatar
+                            }
+
+                            await AsyncStorage.removeItem(user.steamid).then(async () => {
+                                await AsyncStorage.setItem(user.steamid, JSON.stringify(tmp)).then(async () => {
+                                    values = values.concat([tmp])
+                                })
+                            })
+                        }
+                        setUsers(values)
+                    })
+            });
+        })
+    }
+
     async function saveSetting(name, value) {
-        console.log('Save setting: [ ' + name + ' => ' + value + ' ]')
+        if (name === 'currency') {
+            setRate(value)
+        }
         let tmp = {
             'val': value
         }
         await AsyncStorage.setItem(name, JSON.stringify(tmp))
-    }
-
-    async function getAllKeys() {
-        await AsyncStorage.getAllKeys((err, keys) => {
-            AsyncStorage.multiGet(keys, (err, stores) => {
-                const values = []
-                stores.map((result/*, i, store*/) => {
-                    if (result[0] === 'currency') {
-                        setRate(JSON.parse(result[1]).val)
-                    } else {
-                        if (!result[0].includes('prevGames')) {
-                            console.log('Update: ' + result[1])
-                            values.push(JSON.parse(result[1]))
-                        }
-                    }
-                });
-                setUsers(values)
-            });
-        });
     }
 
     function TabProfile(/*{ navigation }*/) {
@@ -127,6 +191,10 @@ function App() {
 
         function isSteamIDValid() {
             return !(steamID == '' || steamID.match(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/? ]+/) || steamID.length === 0)
+        }
+
+        const isNameEmpty = () => {
+            return (dataName === '' && steamID !== '')
         }
 
         const getProfileData = async (sid) => {
@@ -172,19 +240,23 @@ function App() {
         }
 
         return (
-            <View style={{backgroundColor: '#fff', height: '100%'}}>
+            <View style={{backgroundColor: '#fff', height: '100%'}} onLayout={onLayoutRootView}>
                 <Text style={[styles.title, {fontWeight: 'bold'}]}>Find Steam profile</Text>
-                <Text style={[styles.title, {fontSize: 12}]}>Enter SteamID64 and tap search button</Text>
+                <Text style={[styles.title, {fontSize: resize(12)}]}>Enter SteamID64 and tap search button</Text>
 
                 <View style={styles.inputView} disabled={isLoading}>
-                    <Icon color='#333' name='at' type='font-awesome' size={20}/>
+                    <Icon color='#333' name='at' type='font-awesome' size={resize(20)}/>
                     <TextInput
-                        style={{marginHorizontal: 8, borderBottomWidth: 1.0, flex: 1}}
+                        style={{marginHorizontal: resize(8), borderBottomWidth: 1.0, flex: 1}}
                         placeholder='Enter SteamID64'
                         onChangeText={text => setSteamIDtyped(text)}
                         onEndEditing={() => setSteamID(steamIDtyped)}
                     />
-                    <Text style={[(steamIDtyped.length === 17) ? {color: '#0f0'} : {color: '#f00'}, {fontSize: 12, width: 45, textAlign: 'center'}]}>{steamIDtyped.length} / 17</Text>
+                    <Text style={[(steamIDtyped.length === 17) ? {color: '#0f0'} : {color: '#f00'}, {
+                        fontSize: resize(12),
+                        width: resize(45),
+                        textAlign: 'center'
+                    }]}>{steamIDtyped.length} / 17</Text>
 
                     <TouchableOpacity style={{padding: 4}} onPress={() => {
                         getProfileData(steamIDtyped).then(r => null)
@@ -193,18 +265,21 @@ function App() {
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.profileSection}>
-                    <Image style={styles.profilePicture} source={ { uri: dataPfp } } />
+                <View style={[styles.profileSection, (dataName === '' && steamID === '') && {display: 'none'}]}>
+                    <Image style={styles.profilePicture} source={{uri: dataPfp}}/>
                     <View style={styles.flowDown}>
-                        <Text style={styles.profileID}>{ steamID }</Text>
-                        <Text style={styles.profileName} numberOfLines={1}>{ dataName }</Text>
+                        <Text style={styles.profileID}>{steamID}</Text>
+                        <Text style={styles.profileName} numberOfLines={1}>{dataName}</Text>
 
                         <View style={styles.flowRow}>
-                            <TouchableOpacity style={styles.buttonSmall} onPress={() => navigateToLoad(navigation, steamID) } disabled={!isSteamIDValid(steamID)}>
+                            <TouchableOpacity style={styles.buttonSmall} onPress={() => navigateToLoad(navigation, steamID)}
+                                              disabled={!isSteamIDValid(steamID)}>
                                 <Text style={styles.buttonSmallText}>LOAD</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={styles.buttonSmall} onPress={() => saveProfile(steamID, dataName, dataPfp)} disabled={!isSteamIDValid(steamID)}>
+                            <TouchableOpacity style={styles.buttonSmall}
+                                              onPress={() => saveProfile(steamID, dataName, dataPfp)}
+                                              disabled={!isSteamIDValid(steamID)}>
                                 <Text style={styles.buttonSmallText}>SAVE</Text>
                             </TouchableOpacity>
                         </View>
@@ -212,15 +287,26 @@ function App() {
                 </View>
 
                 <Text style={[styles.title, {fontWeight: 'bold'}]}>Saved profiles</Text>
-                <Text style={[styles.title, {fontSize: 13}]}>Tap on profile to load it</Text>
-                <Text style={[styles.title, {fontSize: 13}]}>Long press on profile to remove it</Text>
-                <UserSaves users={users} loadInv={navigateToLoad} nav={navigation} deleteUser={deleteProfile} />
+                <Text style={[styles.title, {fontSize: resize(12)}]}>Tap on profile to load it</Text>
+                <Text style={[styles.title, {fontSize: resize(12)}]}>Long press on profile to remove it</Text>
+                <UserSaves users={users} loadInv={navigateToLoad} nav={navigation} deleteUser={deleteProfile}/>
 
                 <Snackbar
                     visible={snackbarVisible}
                     onDismiss={() => setSnackbarVisible(false)}
                     style={{backgroundColor: "#193C6E"}}>
-                    <View><Text style={styles.snackbarText}>Steam ID must be <Text style={{fontWeight: 'bold'}}>17 characters long</Text> and contain only <Text style={{fontWeight: 'bold'}}>numbers</Text>.</Text></View>
+                    <View><Text style={styles.snackbarText}>Steam ID must be <Text style={{fontWeight: 'bold'}}>17
+                        characters long</Text> and contain only <Text
+                        style={{fontWeight: 'bold'}}>numbers</Text>.</Text></View>
+                </Snackbar>
+
+                <Snackbar
+                    visible={snackError}
+                    onDismiss={() => setSnackError(false)}
+                    style={{backgroundColor: "#193C6E"}}>
+                    <View><Text style={styles.snackbarText}>Steam ID must be <Text style={{fontWeight: 'bold'}}>17
+                        characters long</Text> and contain only <Text
+                        style={{fontWeight: 'bold'}}>numbers</Text>.</Text></View>
                 </Snackbar>
             </View>
         )
@@ -228,6 +314,11 @@ function App() {
 
     function StackGames({ route, navigation }) {
         const [selState, setSelState] = useState([])
+
+        const [scale] = useState(Dimensions.get('window').width / 423);
+        const resize = (size) => {
+            return Math.ceil(size * scale)
+        }
 
         function hasState(state) {
             return selState.includes(state)
@@ -295,13 +386,13 @@ function App() {
         );
     }
 
-    function TabLoadout() {
+    /*function TabLoadout() {
         return (
             <View style={{backgroundColor: '#fff', height: '100%'}}>
                 <Text style={styles.title}>Loadouts will be available in the future version!</Text>
             </View>
         );
-    }
+    }*/
 
     function TabSettings() {
         return (
@@ -317,35 +408,35 @@ function App() {
           <Tab.Navigator tabBar={(props) => <ColorfulTabBar {...props} />}>
               <Tab.Screen name="Profiles" component={TabProfile}
                   options={{
-                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
+                      tabBarLabelStyle: {color: '#194D5C', fontSize: resize(14)},
                       tabBarActiveTintColor: '#30BF8E',
                       icon: () => (
-                        <Icon name="home" type='font-awesome' color={'#194D5C'} size={24} />
+                        <Icon name="home" type='font-awesome' color={'#194D5C'} size={resize(28)} />
                       ),
                       headerShown: false,
                   }}
               />
               <Tab.Screen name="Steam Market" component={TabSteamMarket}
                   options={{
-                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
+                      tabBarLabelStyle: {color: '#194D5C', fontSize: resize(14)},
                       tabBarActiveTintColor: '#30BF8E',
                       tabBarIcon: () => (
-                      <Icon name="steam" type='font-awesome' color={'#194D5C'} size={24} />
+                      <Icon name="steam" type='font-awesome' color={'#194D5C'} size={resize(28)} />
                       ),
                       headerShown: false
                   }}
               />
               <Tab.Screen name="Music Kits" component={TabMusicKit}
                   options={{
-                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
+                      tabBarLabelStyle: {color: '#194D5C', fontSize: resize(14)},
                       tabBarActiveTintColor: '#30BF8E',
                       tabBarIcon: () => (
-                      <Icon name="music" type='font-awesome' color={'#194D5C'} size={24} />
+                      <Icon name="music" type='font-awesome' color={'#194D5C'} size={resize(28)} />
                       ),
                       headerShown: false
                   }}
               />
-              <Tab.Screen name="Loadout" component={TabLoadout}
+              {/*<Tab.Screen name="Loadout" component={TabLoadout}
                   options={{
                       tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
                       tabBarActiveTintColor: '#30BF8E',
@@ -354,13 +445,13 @@ function App() {
                       ),
                       headerShown: false,
                   }}
-              />
+              />*/}
               <Tab.Screen name="Settings" component={TabSettings}
                   options={{
-                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
+                      tabBarLabelStyle: {color: '#194D5C', fontSize: resize(14)},
                       tabBarActiveTintColor: '#30BF8E',
                       tabBarIcon: () => (
-                      <Icon name="wrench" type='font-awesome' color={'#194D5C'} size={24} />
+                      <Icon name="wrench" type='font-awesome' color={'#194D5C'} size={resize(28)} />
                       ),
                       headerShown: false
                   }}
@@ -368,6 +459,11 @@ function App() {
           </Tab.Navigator>
       </NavigationContainer>
     );
+}
+
+const resize = (size) => {
+    const scale = Dimensions.get('window').width / 423
+    return Math.ceil(size * scale)
 }
 
 const styles = StyleSheet.create({
@@ -379,9 +475,9 @@ const styles = StyleSheet.create({
     },
     inputView: {
         width: '90%',
-        height: 44,
+        height: resize(44),
         borderRadius: 8,
-        paddingHorizontal: 10,
+        paddingHorizontal: resize(10),
         display: "flex",
         flexDirection: 'row',
         alignItems: 'center',
@@ -389,25 +485,26 @@ const styles = StyleSheet.create({
     },
     title: {
         textAlign: 'center',
-        fontSize: 20,
+        fontSize: resize(20),
     },
     input: {
-        height: 40,
-        margin: 12,
+        height: resize(40),
+        margin: resize(12),
         borderWidth: 1,
-        padding: 10,
+        padding: resize(10),
+        fontSize: resize(14),
         borderRadius: 8,
     },
     warning: {
-        fontSize: 12,
+        fontSize: resize(12),
         color: '#f00',
         fontWeight: 'bold',
         paddingLeft: 12
     },
     button: {
         backgroundColor: '#122334',
-        width: 150,
-        height: 45,
+        width: resize(150),
+        height: resize(45),
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 8,
@@ -415,7 +512,7 @@ const styles = StyleSheet.create({
     buttonSmall: {
         backgroundColor: '#379C63',
         width: '35%',
-        height: 40,
+        height: resize(40),
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 8,
@@ -423,14 +520,14 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         color: '#fff',
-        fontSize: 20
+        fontSize: resize(20)
     },
     buttonSmallText: {
-        fontSize: 16,
+        fontSize: resize(18),
         color: '#fff',
     },
     buttonMediumText: {
-        fontSize: 24,
+        fontSize: resize(24),
         color: '#fff',
     },
     singleButtonSection: {
@@ -439,27 +536,27 @@ const styles = StyleSheet.create({
     profileSection: {
         borderWidth: 0,
         borderRadius: 8,
-        marginVertical: 16,
-        padding: 8,
+        marginVertical: resize(8),
+        padding: resize(8),
         display: 'flex',
         flexDirection: 'row',
         backgroundColor: '#0E273E',
-        width: '94%',
+        width: '90%',
         alignSelf: 'center',
     },
     profilePicture: {
-        width: '16%',
+        width: resize(64),
         borderRadius: 8,
         marginEnd: 8,
         aspectRatio: 1.0,
     },
     profileName: {
-        fontSize: 14,
+        fontSize: resize(14),
         fontWeight: "bold",
         color: '#aaa'
     },
     profileID: {
-        fontSize: 16,
+        fontSize: resize(16),
         fontWeight: "bold",
         color: '#ddd'
     },
@@ -474,9 +571,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-evenly',
     },
     snackbarText: {
-        fontSize: 15,
+        fontSize: resize(13),
         color: '#ddd',
-        width: '50%',
+        width: '100%',
         textAlign: 'left',
     },
 });

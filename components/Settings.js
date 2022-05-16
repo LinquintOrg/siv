@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {Text, View, StyleSheet, Image, ScrollView} from "react-native";
+import {Text, View, StyleSheet, Image, ScrollView, Dimensions} from "react-native";
 import {Dropdown} from 'react-native-element-dropdown';
 import {Divider} from "react-native-elements";
 
@@ -7,14 +7,21 @@ export default function (props) {
     const rates = props.rates
     let rate = props.rate
 
+    const [scale] = useState(Dimensions.get('window').width / 423);
+    const resize = (size) => {
+        return Math.ceil(size * scale)
+    }
+
     const [valuesInitialized, setValuesInitialized] = useState(false)
     const [ratesData] = useState([])
 
     if (!valuesInitialized) {
-        setValuesInitialized(true)
-        rates.forEach((item, index) => {
-            ratesData.push({ label: item.abb + ' - ' + item.full, value: index })
-        })
+        if (rates.length > 0) {
+            setValuesInitialized(true)
+            rates.forEach((item, index) => {
+                ratesData.push({label: item.abb + ' - ' + item.full, value: index})
+            })
+        }
     }
 
     const _renderItem = item => {
@@ -28,65 +35,78 @@ export default function (props) {
     return (
         <ScrollView>
             <Text style={styles.title}>Settings</Text>
-            <Text style={{fontSize: 14, alignSelf: 'center', color: '#777', width: '90%', marginTop: 8,}}>After pressing on dropdown, please wait for it to load</Text>
+            <Text style={{fontSize: resize(14), alignSelf: 'center', color: '#777', width: '90%', marginTop: 8,}}>After pressing on dropdown, please wait for it to load</Text>
 
             <Text style={styles.settingTitle}>Currency</Text>
-            <Dropdown
-                style={styles.dropdown}
-                containerStyle={styles.shadow}
-                data={ratesData}
-                search
-                label="Currency"
-                searchPlaceholder={"Search"}
-                labelField="label"
-                valueField="value"
-                placeholder="Select item"
-                value={rate}
-                onChange={item => {
-                    props.saveSetting('currency', item.value)
-                    console.log('selected', item);
-                }}
-                renderItem={item => _renderItem(item)}
-            />
+            {
+                (valuesInitialized) ?
+                    <Dropdown
+                        style={styles.dropdown}
+                        containerStyle={styles.shadow}
+                        data={ratesData}
+                        search
+                        label="Currency"
+                        searchPlaceholder={"Search"}
+                        labelField="label"
+                        valueField="value"
+                        placeholder="Select item"
+                        value={rate}
+                        onChange={item => {
+                            props.saveSetting('currency', item.value)
+                        }}
+                        renderItem={item => _renderItem(item)}
+                        inputSearchStyle={styles.dropdownInput}
+                        selectedTextStyle={styles.selectedTextStyle}
+                    /> :
+                    <View>
+                        <Text style={{fontSize: resize(14), alignSelf: 'center', color: '#777', width: '90%', marginTop: 8,}}>Couldn't fetch data...</Text>
+                    </View>
+            }
 
-            <Text style={styles.title}>Credits</Text>
+           {/*<Text style={styles.title}>Credits</Text>
             <View>
-                {/*<div>Icons made by <a href="https://www.flaticon.com/authors/apien" title="apien">apien</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>*/}
+                <div>Icons made by <a href="https://www.flaticon.com/authors/apien" title="apien">apien</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
                 <View style={styles.iconCreditRow}>
                     <Image style={styles.iconCreditSize} source={{uri: 'https://domr.xyz/api/Files/img/no-photo.png'}} />
                     <Text style={styles.iconCreditTitle}>Icon made by <Text style={styles.iconCreditAuthorURL}>apien</Text><Text style={styles.iconCreditSubtitle}> | source <Text style={styles.iconCreditAuthorURL}>www.flaticon.com</Text></Text></Text>
                 </View>
 
-                {/*<div>Icons made by <a href="https://www.flaticon.com/authors/pixelmeetup" title="Pixelmeetup">Pixelmeetup</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>*/}
+                <div>Icons made by <a href="https://www.flaticon.com/authors/pixelmeetup" title="Pixelmeetup">Pixelmeetup</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
                 <View style={styles.iconCreditRow}>
                     <Image style={styles.iconCreditSize} source={{uri: 'https://domr.xyz/api/Files/img/profile.png'}} />
                     <Text style={styles.iconCreditTitle}>Icon made by <Text style={styles.iconCreditAuthorURL}>Pixelmeetup</Text><Text style={styles.iconCreditSubtitle}> | source <Text style={styles.iconCreditAuthorURL}>www.flaticon.com</Text></Text></Text>
                 </View>
-            </View>
+            </View>*/}
             <Text style={styles.title}>Other</Text>
 
-            <Text style={styles.settingTitle}>Timeouts</Text>
-            <Text style={{
-                textAlign: 'center',
-                width: '90%',
-                alignSelf: 'center',
-            }}>Steam Market allows only <Text style={{fontWeight: 'bold'}}>20</Text> request every <Text style={{fontWeight: 'bold'}}>5</Text> minutes, therefore you can conduct search across Steam Market once every <Text style={{fontWeight: 'bold'}}>15</Text> seconds.</Text>
+            <Text style={{fontSize: resize(14), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can check API status @ <Text style={{color: '#3342A3'}}>status.domr.xyz</Text></Text>
+            <Text style={{fontSize: resize(14), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can find credits @ <Text style={{color: '#3342A3'}}>domr.xyz/credits</Text></Text>
 
-            <Divider width={4} style={{width: '90%', alignSelf: 'center', marginVertical: 16, borderRadius: 2}} color={'#22a'} />
+            <Text style={styles.settingTitle}>Timeouts</Text>
+            <Text style={{width: '85%', alignSelf: 'center', fontSize: resize(14)}}>
+                Steam Market allows only <Text style={{fontWeight: 'bold'}}>20</Text> request every <Text style={{fontWeight: 'bold'}}>5</Text> minutes, therefore you can conduct search across Steam Market once every <Text style={{fontWeight: 'bold'}}>15</Text> seconds.
+            </Text>
+
+            <Divider width={4} style={{width: '90%', alignSelf: 'center', marginVertical: resize(16), borderRadius: 2}} color={'#22a'} />
 
             <View style={styles.textColumn}>
-                <Text style={{fontSize: 18, textAlign: 'center', width: '90%', alignSelf: 'center',}}><Text style={{fontWeight: 'bold'}}>Steam Inventory Value</Text> is not affiliated with
-                    <Text style={{fontWeight: 'bold'}}> Steam</Text> or <Text style={{fontWeight: 'bold'}}>Valve Corp</Text>.</Text>
-
-                <Text style={{fontSize: 16, textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 16,}}>You can check API status @ <Text style={{color: '#3342A3'}}>status.domr.xyz</Text></Text>
+                <Text style={{fontSize: resize(18), textAlign: 'center', width: '90%', alignSelf: 'center',}}>
+                    <Text style={{fontWeight: 'bold'}}>Steam Inventory Value</Text> is not affiliated with
+                    <Text style={{fontWeight: 'bold'}}> Steam</Text> or <Text style={{fontWeight: 'bold'}}>Valve Corp</Text>.
+                </Text>
             </View>
         </ScrollView>
     )
 }
 
+const resize = (size) => {
+    const scale = Dimensions.get('window').width / 423
+    return Math.ceil(size * scale)
+}
+
 const styles = StyleSheet.create({
     title: {
-        fontSize: 26,
+        fontSize: resize(24),
         fontWeight: 'bold',
         color: '#555',
         marginTop: 8,
@@ -101,7 +121,7 @@ const styles = StyleSheet.create({
     optionRow: {
         width: '95%',
         alignSelf: 'center',
-        marginVertical: 16,
+        marginVertical: resize(16),
         backgroundColor: '#0C2925',
         display: 'flex',
         flexDirection: 'row',
@@ -109,46 +129,23 @@ const styles = StyleSheet.create({
     },
     optionName: {
         color: '#ccc',
-        fontSize: 16,
+        fontSize: resize(16),
         fontWeight: 'bold',
         marginBottom: 4,
     },
     optionDescription: {
         color: '#999',
-        fontSize: 12,
+        fontSize: resize(12),
     },
     optionChoice: {
         width: '30%',
         borderRadius: 8,
         backgroundColor: '#00FCA3',
         color: '#222',
-        fontSize: 16,
+        fontSize: resize(16),
         fontWeight: 'bold',
         textAlignVertical: 'center',
         textAlign: 'center',
-    },
-    currencySheetRow: {
-        display: 'flex',
-        flexDirection: 'row',
-        padding: 8,
-        width: '95%',
-        backgroundColor: '#eee',
-        borderRadius: 8,
-        alignSelf: 'center',
-        margin: 8,
-    },
-    currencyShort: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        width: '20%',
-        textAlign: 'center',
-        textAlignVertical: 'center',
-    },
-    currencyLong: {
-        fontSize: 13,
-        width: '80%',
-        textAlign: 'right',
-        textAlignVertical: 'center',
     },
     textColumn: {
         width: '90%',
@@ -156,35 +153,9 @@ const styles = StyleSheet.create({
         display: 'flex',
         flexDirection: 'column',
     },
-    iconCreditRow: {
-        display: 'flex',
-        flexDirection: 'row',
-        width: '90%',
-        alignSelf: 'center',
-        borderRadius: 8,
-        marginVertical: 4,
-    },
-    iconCreditTitle: {
-        fontSize: 17,
-        color: '#222',
-        width: '80%',
-        textAlignVertical: 'center',
-    },
-    iconCreditAuthorURL: {
-        fontWeight: 'bold',
-    },
-    iconCreditSubtitle: {
-        fontSize: 13,
-        color: '#777',
-    },
-    iconCreditSize: {
-        width: '15%',
-        aspectRatio: 1,
-        marginHorizontal: 8,
-    },
     singleSelect: {
         textAlign: 'center',
-        fontSize: 16,
+        fontSize: resize(16),
         fontWeight: 'bold',
         width: '100%',
     },
@@ -195,7 +166,6 @@ const styles = StyleSheet.create({
         width: '90%',
         alignSelf: 'center',
         paddingHorizontal: 8,
-        paddingVertical: 4,
         borderRadius: 8,
     },
     shadow: {
@@ -209,7 +179,7 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     item: {
-        paddingVertical: 17,
+        paddingVertical: resize(16),
         paddingHorizontal: 4,
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -217,15 +187,23 @@ const styles = StyleSheet.create({
     },
     textItem: {
         flex: 1,
-        fontSize: 16,
+        fontSize: resize(16),
     },
     settingTitle: {
         fontWeight: 'bold',
-        fontSize: 18,
+        fontSize: resize(18),
         marginTop: 8,
         marginBottom: 4,
         color: '#333',
         width: '90%',
         alignSelf: 'center',
-    }
+    },
+    dropdownInput: {
+        fontSize: resize(14),
+        color: '#333',
+        borderRadius: 8,
+    },
+    selectedTextStyle: {
+        fontSize: resize(16),
+    },
 })

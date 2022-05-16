@@ -1,17 +1,36 @@
 import React, {useCallback, useMemo, useRef, useState} from "react";
-import {Pressable, Text, View, StyleSheet, TextInput, Dimensions, ScrollView, ActivityIndicator} from "react-native";
+import {
+    ActivityIndicator,
+    Dimensions,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from "react-native";
 import BottomSheet from '@gorhom/bottom-sheet'
-import {Icon} from "react-native-elements";
-import FilterSheet from 'react-native-raw-bottom-sheet'
+import {Divider, Icon} from "react-native-elements";
+import {Dropdown} from "react-native-element-dropdown";
 
 export default function (props) {
     const [loading, setLoading] = useState(true)
     const [loadedGames, setLoadedGames] = useState(false)
-    const [games, setGames] = useState([{ appid: 0, name: 'All Games' }])
+    const [games] = useState([{ value: 0, label: 'All Games' }])
     const [searchResults, setSearchResults] = useState([])
     const [loadingResults, setLoadingResults] = useState(false)
     const [searchTimeout, setSearchTimeout] = useState(false)
-    const sortByValues = ['Default - no specific order', 'Price', 'Name']
+    const sortByValues = [
+        {label: 'Default - no specific order', value: 0},
+        {label: 'Price', value: 1},
+        {label: 'Name', value: 2}
+    ]
+
+    const [scale] = useState(Dimensions.get('window').width / 423);
+    const resize = (size) => {
+        return Math.ceil(size * scale)
+    }
 
     if (!loadedGames) {
         fetch('https://domr.xyz/api/Steam/getGames.php')
@@ -19,15 +38,18 @@ export default function (props) {
             .then((json) => {
                 setLoadedGames(true)
                 setLoading(false)
-                setGames(games.concat(json))
+                for (const game of json) {
+                    games.push({
+                        value: game.appid,
+                        label: game.name
+                    })
+                }
             })
     }
 
     const filterSheetRef = useRef();
-    const fSelectRef = useRef();
-    const sortSelectRef = useRef();
 
-    const snapPoints = useMemo(() => [70, 420, '100%'], []);
+    const snapPoints = useMemo(() => [resize(70), '60%', '100%'], []);
     const handleSheetChanges = useCallback((index: number) => {
         console.log('handleSheetChanges', index);
     }, []);
@@ -60,8 +82,7 @@ export default function (props) {
             const sd = (searchDesc) ? 1 : 0
             const column = (sortBy === 0) ? '' : (sortBy === 1) ? '&sort_column=price' : '&sort_column=name'
             const dir = (sortAsc) ? 'asc' : 'desc'
-            const appid = games[filterGame].appid
-            const url = 'https://steamcommunity.com/market/search/render/?search_descriptions=' + sd + column + '&sort_dir=' + dir + '&appid=' + appid + '&norender=1&count=100&start=0&query=' + searchQuery
+            const url = 'https://steamcommunity.com/market/search/render/?search_descriptions=' + sd + column + '&sort_dir=' + dir + '&appid=' + filterGame + '&norender=1&count=100&start=0&query=' + searchQuery
 
             fetch(url)
                 .then(response => response.json())
@@ -78,66 +99,55 @@ export default function (props) {
         });
     }
 
+    const _renderItem = item => {
+        return (
+            <View style={styles.item}>
+                <Text style={styles.textItem}>{item.label}</Text>
+            </View>
+        );
+    };
+
+    const scrollRef = useRef();
+
     return (
         (loading) ?
         <View style={[styles.containerCol, {alignSelf: 'center'}]}>
             <ActivityIndicator style={{marginTop: Dimensions.get('window').height / 2 - 36}} size="large" color='#000' />
-            <Text style={{textAlign: 'center'}}>Downloading games list</Text>
+            <Text style={{textAlign: 'center', fontSize: resize(14)}}>Downloading games list</Text>
         </View> :
         (loadingResults) ?
         <View style={[styles.containerCol, {alignSelf: 'center'}]}>
             <ActivityIndicator style={{marginTop: Dimensions.get('window').height / 2 - 36}} size="large" color='#000' />
-            <Text style={{textAlign: 'center'}}>Loading market search results</Text>
+            <Text style={{textAlign: 'center', fontSize: resize(14)}}>Loading market search results</Text>
         </View> :
         <View style={styles.container}>
-            <ScrollView>
+            <ScrollView ref={scrollRef}>
                 {
-                    searchResults.map(item => (
-                        <View style={styles.listingRow}>
-                            <View style={[styles.column, {width: '80%'}]}>
-                                <Text style={styles.listingName}>{item.name}</Text>
-                                <Text style={styles.listingGame}>{item.app_name}</Text>
+                    searchResults.map((item, index) => (
+                        <View>
+                            <View style={styles.listingRow}>
+                                <View style={[styles.column, {width: '80%'}]}>
+                                    <Text style={styles.listingName}>{item.name}</Text>
+                                    <Text style={styles.listingGame}>{item.app_name}</Text>
+                                </View>
+                                <View style={styles.column}>
+                                    <Text style={styles.listingPrice}>{props.rate} {Math.round(item.sell_price * props.exchange) / 100}</Text>
+                                    <Text style={styles.listingAmount}>{item.sell_listings} listed</Text>
+                                </View>
                             </View>
-                            <View style={styles.column}>
-                                <Text style={styles.listingPrice}>{props.rate} {Math.round(item.sell_price * props.exchange) / 100}</Text>
-                                <Text style={styles.listingAmount}>{item.sell_listings} listed</Text>
-                            </View>
+                            {(searchResults.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center'}} /> : null}
                         </View>
                     ))
                 }
+                {
+                    (searchResults.length > 4) ?
+                        <TouchableOpacity style={styles.scrollProgress} onPress={() => scrollRef.current?.scrollTo({animated: true, y: 0})}>
+                            <Icon name={'angle-double-up'} type={'font-awesome'} size={resize(48)} color={'#555'} />
+                            <Text style={{fontSize: resize(14)}}>This is the end of the search results</Text>
+                            <Text style={{fontSize: resize(14)}}>Tap to scroll back to top</Text>
+                        </TouchableOpacity> : null
+                }
             </ScrollView>
-
-            <FilterSheet ref={fSelectRef} closeOnDragDown={false} height={Dimensions.get('window').height / 1.667} customStyles={{
-                wrapper: {backgroundColor: '#00000089'},
-                container: {borderRadius: 4, width: '90%', marginBottom: 24, alignSelf: 'center'},
-                draggableIcon: {borderRadius: 24}}}
-            >
-                <ScrollView>
-                    {
-                        games.map((game, index) => (
-                            <Pressable onPress={() => setFilterGame(index) & fSelectRef.current?.close() }>
-                                <Text style={styles.optionSelect}>{ game.name }</Text>
-                            </Pressable>
-                        ))
-                    }
-                </ScrollView>
-            </FilterSheet>
-
-            <FilterSheet ref={sortSelectRef} closeOnDragDown={false} height={Dimensions.get('window').height / 1.667} customStyles={{
-                wrapper: {backgroundColor: '#00000089'},
-                container: {borderRadius: 8, width: '90%', marginBottom: 24, alignSelf: 'center'},
-                draggableIcon: {borderRadius: 24}}}
-            >
-                <ScrollView>
-                    {
-                        sortByValues.map((sort, index) => (
-                            <Pressable onPress={() => setSortBy(index) & sortSelectRef.current?.close() }>
-                                <Text style={styles.optionSelect}>{ sort }</Text>
-                            </Pressable>
-                        ))
-                    }
-                </ScrollView>
-            </FilterSheet>
 
             <BottomSheet
                 ref={filterSheetRef}
@@ -145,37 +155,65 @@ export default function (props) {
                 snapPoints={snapPoints}
                 onChange={handleSheetChanges}
                 detached={false}
-                handleIndicatorStyle={{backgroundColor: '#555', elevation: 8, height: 10, width: 48}}
-                handleStyle={{borderRadius: 16, padding: 12, borderWidth: 2, width: '40%', alignSelf: 'center', marginBottom: 8, backgroundColor: '#fff',}}
+                handleIndicatorStyle={{backgroundColor: '#333', height: resize(8), width: resize(40)}}
+                handleStyle={{ alignSelf: 'center', width: resize(64), backgroundColor: '#bbb', borderTopLeftRadius: 16, borderTopRightRadius: 16}}
                 backgroundStyle={{backgroundColor: '#ffffff00'}}>
                 <View style={styles.contentContainer}>
                     <Text style={styles.sheetTitle}>Search</Text>
 
-                    <Text style={{fontSize: 14, textAlign: 'center'}}>Search timeout is <Text style={{fontWeight: 'bold'}}>{ (searchTimeout) ? 'active' : 'inactive' }</Text></Text>
+                    <Text style={{fontSize: resize(14), textAlign: 'center'}}>Search timeout is <Text style={{fontWeight: 'bold'}}>{ (searchTimeout) ? 'active' : 'inactive' }</Text></Text>
                     <Text style={styles.sheetSubtitle}>Search Query</Text>
                     <View style={styles.inputView}>
-                        <Icon name={'search'} type={'font-awesome'} />
+                        <Icon name={'search'} type={'font-awesome'} size={resize(24)} />
                         <TextInput
-                            style={{marginHorizontal: 4, borderWidth: 1.0, borderRadius: 8, flex: 1, padding: 4}}
+                            style={{marginHorizontal: 4, borderWidth: 1.0, borderRadius: 8, flex: 1, paddingHorizontal: 8, fontSize: resize(14)}}
                             onChangeText={(text => setSearchQuery(text))}
                         />
                     </View>
 
                     <Text style={styles.sheetSubtitle}>Game</Text>
                     <View style={styles.inputView}>
-                        <Icon name={'gamepad'} type={'font-awesome'} />
-                        <Pressable onPress={() => fSelectRef.current?.open()} style={{marginHorizontal: 4, borderWidth: 1.0, borderRadius: 8, flex: 1, padding: 4}}>
-                            <Text>{ games[filterGame].name }</Text>
-                        </Pressable>
+                        <Dropdown
+                            data={games}
+                            search
+                            label={"Game"}
+                            searchPlaceholder={"Search for game..."}
+                            labelField={'label'}
+                            valueField={'value'}
+                            placeholder={"Select a game..."}
+                            maxHeight={resize(320)}
+                            onChange={item => setFilterGame(item.value)}
+                            value={filterGame}
+                            renderItem={item => _renderItem(item)}
+                            renderLeftIcon={() => (
+                                <Icon name="gamepad" type={'font-awesome'} size={resize(20)} color="#000" style={{marginRight: resize(8)}} />
+                            )}
+                            inputSearchStyle={styles.dropdownInput}
+                            style={styles.dropdown}
+                            selectedTextStyle={styles.selectedTextStyle}
+                        />
                     </View>
 
                     <Text style={styles.sheetSubtitle}>Sort by</Text>
                     <Text style={{textAlign: 'left', width: '90%', alignSelf: 'center', fontSize: 12}}>Tap on the right icon to change sort order</Text>
                     <View style={styles.inputView}>
-                        <Icon name={'navicon'} type={'font-awesome'} />
-                        <Pressable onPress={() => sortSelectRef.current?.open()} style={{marginHorizontal: 4, borderWidth: 1.0, borderRadius: 8, flex: 1, padding: 4}}>
-                            <Text>{ sortByValues[sortBy] }</Text>
-                        </Pressable>
+                        <Dropdown
+                            data={sortByValues}
+                            label={"Sort by"}
+                            labelField={'label'}
+                            valueField={'value'}
+                            placeholder={"Select a sort option..."}
+                            maxHeight={resize(170)}
+                            onChange={item => setSortBy(item.value)}
+                            value={sortBy}
+                            renderItem={item => _renderItem(item)}
+                            renderLeftIcon={() => (
+                                <Icon name="sort" type={'font-awesome'} size={resize(20)} color="#000" style={{marginRight: resize(8)}} />
+                            )}
+                            inputSearchStyle={styles.dropdownInput}
+                            style={styles.dropdown}
+                            selectedTextStyle={styles.selectedTextStyle}
+                        />
                         <Pressable onPress={() => setSortAsc(!sortAsc)}>{ getSortIcon() }</Pressable>
                     </View>
 
@@ -194,7 +232,7 @@ export default function (props) {
                                 setSearchTimeout(false)
                             })
                         }}>
-                            <Text style={{textAlign: 'center', fontSize: 20, fontWeight: 'bold'}}>SEARCH</Text>
+                            <Text style={{textAlign: 'center', fontSize: resize(20), fontWeight: 'bold'}}>SEARCH</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -203,7 +241,10 @@ export default function (props) {
     )
 }
 
-
+const resize = (size) => {
+    const scale = Dimensions.get('window').width / 423
+    return Math.ceil(size * scale)
+}
 
 const styles = StyleSheet.create({
     container: {
@@ -212,21 +253,17 @@ const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
         alignItems: 'center',
-        elevation: -5,
-        borderTopRightRadius: 16,
-        borderTopLeftRadius: 16,
-        borderTopWidth: 2,
-        borderLeftWidth: 2,
-        borderRightWidth: 2,
         backgroundColor: '#fff',
+        borderTopWidth: 3,
+        borderTopColor: '#bbb',
     },
     sheetTitle: {
-        fontSize: 24,
+        fontSize: resize(24),
         fontWeight: 'bold',
-        marginVertical: 8,
+        marginVertical: resize(8),
     },
     sheetSubtitle: {
-        fontSize: 16,
+        fontSize: resize(16),
         fontWeight: 'bold',
         color: '#555',
         textAlign: 'left',
@@ -236,7 +273,7 @@ const styles = StyleSheet.create({
     },
     inputView: {
         width: '90%',
-        height: 44,
+        height: resize(44),
         borderRadius: 8,
         display: "flex",
         flexDirection: 'row',
@@ -249,7 +286,7 @@ const styles = StyleSheet.create({
         width: '63%',
     },
     optionSelect: {
-        fontSize: 18,
+        fontSize: resize(18),
         color: '#333',
         marginVertical: 8,
         width: '90%',
@@ -263,9 +300,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         width: '94%',
         alignSelf: 'center',
-        padding: 8,
-        backgroundColor: '#ddd',
-        borderRadius: 8,
+        padding: resize(8),
         margin: 8,
     },
     column: {
@@ -273,23 +308,82 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
     },
     listingName: {
-        fontSize: 14,
+        fontSize: resize(16),
         color: '#333',
     },
     listingGame: {
-        fontSize: 12,
+        fontSize: resize(14),
         fontWeight: 'bold',
         color: '#777',
     },
     listingPrice: {
-        fontSize: 15,
+        fontSize: resize(16),
         color: '#444',
         textAlign: 'center',
     },
     listingAmount: {
-        fontSize: 12,
+        fontSize: resize(12),
         color: '#888',
         textAlign: 'center',
         fontWeight: 'bold'
-    }
+    },
+    dropdownInput: {
+        fontSize: resize(14),
+        color: '#333',
+        borderRadius: 8,
+    },
+    selectedTextStyle: {
+        fontSize: resize(16),
+    },
+    dropdown: {
+        backgroundColor: 'white',
+        borderColor: '#000',
+        borderWidth: 1,
+        width: '85%',
+        alignSelf: 'center',
+        paddingHorizontal: 4,
+        borderRadius: 8,
+        marginHorizontal: 8,
+    },
+    shadow: {
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+        elevation: 2,
+    },
+    textItem: {
+        flex: 1,
+        fontSize: resize(14),
+    },
+    item: {
+        paddingVertical: resize(16),
+        paddingHorizontal: 4,
+        marginHorizontal: 8,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#777',
+    },
+    singleSelect: {
+        textAlign: 'center',
+        fontSize: resize(14),
+        fontWeight: 'bold',
+        width: '100%',
+    },
+    scrollProgress: {
+        width: '65%',
+        alignSelf: 'center',
+        alignItems: 'center',
+        padding: 8,
+        margin: 8,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        elevation: 5,
+        marginBottom: 82,
+    },
 });
