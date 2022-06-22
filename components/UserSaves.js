@@ -3,12 +3,12 @@ import {
     Image,
     ScrollView,
     StyleSheet,
-    Text,
     TouchableOpacity,
     View
 } from "react-native";
 import React, {useState} from "react";
 import {Divider} from "react-native-elements";
+import Text from '../Elements/text'
 
 export default function (props) {
     let users = props.users
@@ -26,8 +26,8 @@ export default function (props) {
                         <TouchableOpacity style={styles.profileSection} onPress={() => props.loadInv(props.nav, item.id)} onLongPress={() => props.deleteUser(item.id)}>
                             <Image style={styles.profilePicture} source={ { uri: item.url } } />
                             <View style={[styles.column, {paddingTop: resize(6)}]}>
-                                <Text style={styles.profileID}>{item.id}</Text>
-                                <Text style={styles.profileName}>{item.name}</Text>
+                                <Text bold style={styles.profileID}>{item.id}</Text>
+                                <Text bold style={styles.profileName}>{item.name}</Text>
                             </View>
                         </TouchableOpacity>
                         { (users.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center',}} /> : null }
@@ -65,12 +65,10 @@ const styles = StyleSheet.create({
     },
     profileName: {
         fontSize: resize(14),
-        fontWeight: "bold",
         color: '#666'
     },
     profileID: {
         fontSize: resize(14),
-        fontWeight: "bold",
         color: '#444'
     },
 

@@ -5,7 +5,6 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    Text,
     TextInput,
     TouchableOpacity,
     View
@@ -13,6 +12,7 @@ import {
 import BottomSheet from '@gorhom/bottom-sheet'
 import {Divider, Icon} from "react-native-elements";
 import {Dropdown} from "react-native-element-dropdown";
+import Text from '../Elements/text'
 
 export default function (props) {
     const [loading, setLoading] = useState(true)
@@ -128,10 +128,10 @@ export default function (props) {
                             <View style={styles.listingRow}>
                                 <View style={[styles.column, {width: '80%'}]}>
                                     <Text style={styles.listingName}>{item.name}</Text>
-                                    <Text style={styles.listingGame}>{item.app_name}</Text>
+                                    <Text bold style={styles.listingGame}>{item.app_name}</Text>
                                 </View>
                                 <View style={styles.column}>
-                                    <Text style={styles.listingPrice}>{props.rate} {Math.round(item.sell_price * props.exchange) / 100}</Text>
+                                    <Text bold style={styles.listingPrice}>{props.rate} {Math.round(item.sell_price * props.exchange) / 100}</Text>
                                     <Text style={styles.listingAmount}>{item.sell_listings} listed</Text>
                                 </View>
                             </View>
@@ -159,10 +159,10 @@ export default function (props) {
                 handleStyle={{ alignSelf: 'center', width: resize(64), backgroundColor: '#bbb', borderTopLeftRadius: 16, borderTopRightRadius: 16}}
                 backgroundStyle={{backgroundColor: '#ffffff00'}}>
                 <View style={styles.contentContainer}>
-                    <Text style={styles.sheetTitle}>Search</Text>
+                    <Text bold style={styles.sheetTitle}>Search</Text>
 
-                    <Text style={{fontSize: resize(14), textAlign: 'center'}}>Search timeout is <Text style={{fontWeight: 'bold'}}>{ (searchTimeout) ? 'active' : 'inactive' }</Text></Text>
-                    <Text style={styles.sheetSubtitle}>Search Query</Text>
+                    <Text style={{fontSize: resize(14), textAlign: 'center'}}>Search timeout is <Text bold>{ (searchTimeout) ? 'active' : 'inactive' }</Text></Text>
+                    <Text bold style={styles.sheetSubtitle}>Search Query</Text>
                     <View style={styles.inputView}>
                         <Icon name={'search'} type={'font-awesome'} size={resize(24)} />
                         <TextInput
@@ -171,7 +171,7 @@ export default function (props) {
                         />
                     </View>
 
-                    <Text style={styles.sheetSubtitle}>Game</Text>
+                    <Text bold style={styles.sheetSubtitle}>Game</Text>
                     <View style={styles.inputView}>
                         <Dropdown
                             data={games}
@@ -194,7 +194,7 @@ export default function (props) {
                         />
                     </View>
 
-                    <Text style={styles.sheetSubtitle}>Sort by</Text>
+                    <Text bold style={styles.sheetSubtitle}>Sort by</Text>
                     <Text style={{textAlign: 'left', width: '90%', alignSelf: 'center', fontSize: 12}}>Tap on the right icon to change sort order</Text>
                     <View style={styles.inputView}>
                         <Dropdown
@@ -218,7 +218,7 @@ export default function (props) {
                     </View>
 
                     <View style={styles.inputView}>
-                        <Text style={styles.sheetSubtitle}>Search in description</Text>
+                        <Text bold style={styles.sheetSubtitle}>Search in description</Text>
                         <Pressable onPress={() => setSearchDesc(!searchDesc)}>
                             <Icon name={searchDesc ? 'check-square-o' : 'square-o' } type={'font-awesome'} />
                         </Pressable>
@@ -232,7 +232,7 @@ export default function (props) {
                                 setSearchTimeout(false)
                             })
                         }}>
-                            <Text style={{textAlign: 'center', fontSize: resize(20), fontWeight: 'bold'}}>SEARCH</Text>
+                            <Text bold style={{textAlign: 'center', fontSize: resize(20)}}>SEARCH</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -259,12 +259,10 @@ const styles = StyleSheet.create({
     },
     sheetTitle: {
         fontSize: resize(24),
-        fontWeight: 'bold',
         marginVertical: resize(8),
     },
     sheetSubtitle: {
         fontSize: resize(16),
-        fontWeight: 'bold',
         color: '#555',
         textAlign: 'left',
         width: '90%',
@@ -313,7 +311,6 @@ const styles = StyleSheet.create({
     },
     listingGame: {
         fontSize: resize(14),
-        fontWeight: 'bold',
         color: '#777',
     },
     listingPrice: {
@@ -325,7 +322,6 @@ const styles = StyleSheet.create({
         fontSize: resize(12),
         color: '#888',
         textAlign: 'center',
-        fontWeight: 'bold'
     },
     dropdownInput: {
         fontSize: resize(14),

@@ -1,7 +1,8 @@
 import React, {useState} from "react";
-import {Text, View, StyleSheet, Image, ScrollView, Dimensions} from "react-native";
+import {View, StyleSheet, ScrollView, Dimensions} from "react-native";
 import {Dropdown} from 'react-native-element-dropdown';
 import {Divider} from "react-native-elements";
+import Text from '../Elements/text'
 
 export default function (props) {
     const rates = props.rates
@@ -34,10 +35,10 @@ export default function (props) {
 
     return (
         <ScrollView>
-            <Text style={styles.title}>Settings</Text>
+            <Text bold style={styles.title}>Settings</Text>
             <Text style={{fontSize: resize(14), alignSelf: 'center', color: '#777', width: '90%', marginTop: 8,}}>After pressing on dropdown, please wait for it to load</Text>
 
-            <Text style={styles.settingTitle}>Currency</Text>
+            <Text bold style={styles.settingTitle}>Currency</Text>
             {
                 (valuesInitialized) ?
                     <Dropdown
@@ -77,22 +78,22 @@ export default function (props) {
                     <Text style={styles.iconCreditTitle}>Icon made by <Text style={styles.iconCreditAuthorURL}>Pixelmeetup</Text><Text style={styles.iconCreditSubtitle}> | source <Text style={styles.iconCreditAuthorURL}>www.flaticon.com</Text></Text></Text>
                 </View>
             </View>*/}
-            <Text style={styles.title}>Other</Text>
+            <Text bold style={styles.title}>Other</Text>
 
             <Text style={{fontSize: resize(14), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can check API status @ <Text style={{color: '#3342A3'}}>status.domr.xyz</Text></Text>
             <Text style={{fontSize: resize(14), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can find credits @ <Text style={{color: '#3342A3'}}>domr.xyz/credits</Text></Text>
 
-            <Text style={styles.settingTitle}>Timeouts</Text>
+            <Text bold style={styles.settingTitle}>Timeouts</Text>
             <Text style={{width: '85%', alignSelf: 'center', fontSize: resize(14)}}>
-                Steam Market allows only <Text style={{fontWeight: 'bold'}}>20</Text> request every <Text style={{fontWeight: 'bold'}}>5</Text> minutes, therefore you can conduct search across Steam Market once every <Text style={{fontWeight: 'bold'}}>15</Text> seconds.
+                Steam Market allows only <Text bold>20</Text> request every <Text bold>5</Text> minutes, therefore you can conduct search across Steam Market once every <Text bold>15</Text> seconds.
             </Text>
 
             <Divider width={4} style={{width: '90%', alignSelf: 'center', marginVertical: resize(16), borderRadius: 2}} color={'#22a'} />
 
             <View style={styles.textColumn}>
                 <Text style={{fontSize: resize(18), textAlign: 'center', width: '90%', alignSelf: 'center',}}>
-                    <Text style={{fontWeight: 'bold'}}>Steam Inventory Value</Text> is not affiliated with
-                    <Text style={{fontWeight: 'bold'}}> Steam</Text> or <Text style={{fontWeight: 'bold'}}>Valve Corp</Text>.
+                    <Text bold>Steam Inventory Value</Text> is not affiliated with
+                    <Text bold> Steam</Text> or <Text bold>Valve Corp</Text>.
                 </Text>
             </View>
         </ScrollView>
@@ -107,7 +108,6 @@ const resize = (size) => {
 const styles = StyleSheet.create({
     title: {
         fontSize: resize(24),
-        fontWeight: 'bold',
         color: '#555',
         marginTop: 8,
         marginLeft: 8,
@@ -190,7 +190,6 @@ const styles = StyleSheet.create({
         fontSize: resize(16),
     },
     settingTitle: {
-        fontWeight: 'bold',
         fontSize: resize(18),
         marginTop: 8,
         marginBottom: 4,

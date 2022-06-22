@@ -2,9 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as React from 'react';
 import {
     StyleSheet,
-    Text,
     View,
-    TextInput,
     TouchableOpacity,
     Image, Dimensions
 } from 'react-native';
@@ -20,11 +18,13 @@ import UserSaves from "./components/UserSaves";
 import Settings from "./components/Settings";
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import SteamMarket from "./components/SteamMarket";
-import {ColorfulTabBar} from "react-navigation-tabbar-collection";
+import {CleanTabBar} from "react-navigation-tabbar-collection";
 import * as Sentry from 'sentry-expo';
-import {Snackbar} from "react-native-paper";
+import {Snackbar, TextInput} from "react-native-paper";
 import * as SplashScreen from 'expo-splash-screen';
 import NetInfo from '@react-native-community/netinfo';
+import Text from './Elements/text'
+import {useFonts} from "expo-font";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -37,9 +37,14 @@ function App() {
         tracesSampleRate: 1.0,
         integrations: [
             new Sentry.Native.ReactNativeTracing({
-                tracingOrigins: ["domr.xyz"],
+                tracingOrigins: ["localhost", "domr.xyz"],
             }),
         ],
+    });
+
+    useFonts({
+        Nunito: require('./assets/fonts/Nunito-Regular.ttf'),
+        NunitoBold: require('./assets/fonts/Nunito-Bold.ttf'),
     });
 
     const [scale] = useState(Dimensions.get('window').width / 423);
@@ -218,7 +223,7 @@ function App() {
                     })
             } else {
                 setSnackbarVisible(true)
-                await sleep(3000).then(r => setSnackbarVisible(false))
+                await sleep(3000).then(() => setSnackbarVisible(false))
             }
         }
 
@@ -241,35 +246,57 @@ function App() {
 
         return (
             <View style={{backgroundColor: '#fff', height: '100%'}} onLayout={onLayoutRootView}>
-                <Text style={[styles.title, {fontWeight: 'bold'}]}>Find Steam profile</Text>
-                <Text style={[styles.title, {fontSize: resize(12)}]}>Enter SteamID64 and tap search button</Text>
+                {/*<Text bold style={[styles.title]}>Find Steam profile</Text>
+                <Text style={[styles.title, {fontSize: resize(12)}]}>Enter SteamID64 and tap search button</Text>*/}
 
                 <View style={styles.inputView} disabled={isLoading}>
-                    <Icon color='#333' name='at' type='font-awesome' size={resize(20)}/>
+                    {/*<Icon color='#333' name='at' type='font-awesome' size={resize(20)}/>*/}
                     <TextInput
-                        style={{marginHorizontal: resize(8), borderBottomWidth: 1.0, flex: 1}}
+                        style={{marginHorizontal: resize(8), flex: 1, height: resize(40), fontSize: resize(16), padding: 0}}
                         placeholder='Enter SteamID64'
+                        mode={'outlined'}
                         onChangeText={text => setSteamIDtyped(text)}
                         onEndEditing={() => setSteamID(steamIDtyped)}
+                        label={'Steam ID64'}
+                        activeOutlineColor={'#1f4690'}
+                        left={
+                            <TextInput.Icon
+                                name={'at'}
+                                color={'#1f4690'}
+                                size={resize(24)}
+                                style={{margin: 0, paddingTop: resize(8)}}
+                                forceTextInputFocus={false}
+                            />
+                        }
+                        right={
+                            <TextInput.Icon
+                                name='arrow-right'
+                                size={resize(36)}
+                                color={'#1F4690'}
+                                style={{margin: 0, paddingTop: resize(8)}}
+                                onPress={() => { getProfileData(steamIDtyped).then(() => null) }}
+                            />
+                        }
                     />
                     <Text style={[(steamIDtyped.length === 17) ? {color: '#0f0'} : {color: '#f00'}, {
-                        fontSize: resize(12),
+                        fontSize: resize(14),
                         width: resize(45),
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        paddingTop: resize(8)
                     }]}>{steamIDtyped.length} / 17</Text>
 
-                    <TouchableOpacity style={{padding: 4}} onPress={() => {
+                    {/*<TouchableOpacity style={{padding: 4}} onPress={() => {
                         getProfileData(steamIDtyped).then(r => null)
                     }}>
-                        <Icon name='search' type='font-awesome' size={20}/>
-                    </TouchableOpacity>
+                        {<Icon name='search' type='font-awesome' size={20}/>}
+                    </TouchableOpacity>*/}
                 </View>
 
                 <View style={[styles.profileSection, (dataName === '' && steamID === '') && {display: 'none'}]}>
                     <Image style={styles.profilePicture} source={{uri: dataPfp}}/>
                     <View style={styles.flowDown}>
-                        <Text style={styles.profileID}>{steamID}</Text>
-                        <Text style={styles.profileName} numberOfLines={1}>{dataName}</Text>
+                        <Text bold style={styles.profileID}>{steamID}</Text>
+                        <Text bold style={styles.profileName} numberOfLines={1}>{dataName}</Text>
 
                         <View style={styles.flowRow}>
                             <TouchableOpacity style={styles.buttonSmall} onPress={() => navigateToLoad(navigation, steamID)}
@@ -286,9 +313,9 @@ function App() {
                     </View>
                 </View>
 
-                <Text style={[styles.title, {fontWeight: 'bold'}]}>Saved profiles</Text>
-                <Text style={[styles.title, {fontSize: resize(12)}]}>Tap on profile to load it</Text>
-                <Text style={[styles.title, {fontSize: resize(12)}]}>Long press on profile to remove it</Text>
+                <Text bold style={[styles.title]}>Saved profiles</Text>
+                <Text style={[styles.title, {fontSize: resize(14)}]}>Tap to select profile</Text>
+                <Text style={[styles.title, {fontSize: resize(14)}]}>Long press profile to see more options</Text>
                 <UserSaves users={users} loadInv={navigateToLoad} nav={navigation} deleteUser={deleteProfile}/>
 
                 <Snackbar
@@ -305,8 +332,7 @@ function App() {
                     onDismiss={() => setSnackError(false)}
                     style={{backgroundColor: "#193C6E"}}>
                     <View><Text style={styles.snackbarText}>Steam ID must be <Text style={{fontWeight: 'bold'}}>17
-                        characters long</Text> and contain only <Text
-                        style={{fontWeight: 'bold'}}>numbers</Text>.</Text></View>
+                        characters long</Text> and contain only <Text bold>numbers</Text>.</Text></View>
                 </Snackbar>
             </View>
         )
@@ -314,11 +340,6 @@ function App() {
 
     function StackGames({ route, navigation }) {
         const [selState, setSelState] = useState([])
-
-        const [scale] = useState(Dimensions.get('window').width / 423);
-        const resize = (size) => {
-            return Math.ceil(size * scale)
-        }
 
         function hasState(state) {
             return selState.includes(state)
@@ -405,33 +426,33 @@ function App() {
     return (
     <NavigationContainer>
           <StatusBar backgroundColor='#fff' translucent={false} style={"dark"} />
-          <Tab.Navigator tabBar={(props) => <ColorfulTabBar {...props} />}>
+          <Tab.Navigator tabBar={(props) => <CleanTabBar {...props} />}>
               <Tab.Screen name="Profiles" component={TabProfile}
                   options={{
-                      tabBarLabelStyle: {color: '#194D5C', fontSize: resize(14)},
-                      tabBarActiveTintColor: '#30BF8E',
+                      tabBarLabelStyle: {color: '#2F8F9D', fontSize: resize(14)},
+                      tabBarActiveTintColor: '#2F8F9D',
                       icon: () => (
-                        <Icon name="home" type='font-awesome' color={'#194D5C'} size={resize(28)} />
+                        <Icon name="home" type='font-awesome' color={'#51557E'} size={resize(28)} />
                       ),
                       headerShown: false,
                   }}
               />
               <Tab.Screen name="Steam Market" component={TabSteamMarket}
                   options={{
-                      tabBarLabelStyle: {color: '#194D5C', fontSize: resize(14)},
-                      tabBarActiveTintColor: '#30BF8E',
+                      tabBarLabelStyle: {color: '#1F4690', fontSize: resize(14)},
+                      tabBarActiveTintColor: '#1F4690',
                       tabBarIcon: () => (
-                      <Icon name="steam" type='font-awesome' color={'#194D5C'} size={resize(28)} />
+                      <Icon name="steam" type='font-awesome' color={'#51557E'} size={resize(28)} />
                       ),
                       headerShown: false
                   }}
               />
               <Tab.Screen name="Music Kits" component={TabMusicKit}
                   options={{
-                      tabBarLabelStyle: {color: '#194D5C', fontSize: resize(14)},
-                      tabBarActiveTintColor: '#30BF8E',
+                      tabBarLabelStyle: {color: '#F15412', fontSize: resize(14)},
+                      tabBarActiveTintColor: '#F15412',
                       tabBarIcon: () => (
-                      <Icon name="music" type='font-awesome' color={'#194D5C'} size={resize(28)} />
+                      <Icon name="music" type='font-awesome' color={'#51557E'} size={resize(28)} />
                       ),
                       headerShown: false
                   }}
@@ -448,10 +469,10 @@ function App() {
               />*/}
               <Tab.Screen name="Settings" component={TabSettings}
                   options={{
-                      tabBarLabelStyle: {color: '#194D5C', fontSize: resize(14)},
-                      tabBarActiveTintColor: '#30BF8E',
+                      tabBarLabelStyle: {color: '#5FD068', fontSize: resize(14)},
+                      tabBarActiveTintColor: '#5FD068',
                       tabBarIcon: () => (
-                      <Icon name="wrench" type='font-awesome' color={'#194D5C'} size={resize(28)} />
+                      <Icon name="wrench" type='font-awesome' color={'#51557E'} size={resize(28)} />
                       ),
                       headerShown: false
                   }}
@@ -474,14 +495,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     inputView: {
-        width: '90%',
+        width: '95%',
         height: resize(44),
-        borderRadius: 8,
-        paddingHorizontal: resize(10),
         display: "flex",
         flexDirection: 'row',
         alignItems: 'center',
         alignSelf: "center",
+        marginBottom: resize(16),
     },
     title: {
         textAlign: 'center',
@@ -557,7 +577,6 @@ const styles = StyleSheet.create({
     },
     profileID: {
         fontSize: resize(16),
-        fontWeight: "bold",
         color: '#ddd'
     },
     flowDown: {

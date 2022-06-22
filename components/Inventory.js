@@ -7,13 +7,12 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    Text,
     TextInput,
     TouchableOpacity,
     UIManager,
     View,
 } from "react-native";
-import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import React, {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
 import gamesJson from '../assets/inv-games.json'
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import {Divider, Icon} from "react-native-elements";
@@ -21,6 +20,7 @@ import BSheet, {BottomSheetScrollView} from '@gorhom/bottom-sheet'
 import {Dropdown} from "react-native-element-dropdown";
 import {Modal, Portal, Provider, Snackbar} from "react-native-paper";
 import NetInfo from "@react-native-community/netinfo";
+import Text from '../Elements/text'
 
 if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental(true)
@@ -51,8 +51,8 @@ export default function Inventory(props) {
     })
     const games = gamesJson.games
     const rates = props.rates
-    let rate = rates[props.rate].exc
-    let curr = rates[props.rate].abb
+    const [rate, setRate] = useState(rates[props.rate].exc)
+    const [curr, setCurr] = useState(rates[props.rate].abb)
     let tempArray = []
     const [search, setSearch] = useState('')
     const [sort, setSort] = useState(0)
@@ -76,6 +76,7 @@ export default function Inventory(props) {
 
     const getInventory = async (id, end) => {
         setAlert('Loading data from Steam')
+        setLoading(true)
         await fetch('https://steamcommunity.com/inventory/' + props.steam + '/' + id + '/2/?count=1000')
             .then((response) => {
                 if (response.ok) {
@@ -301,7 +302,7 @@ export default function Inventory(props) {
                     stats.games.push(gameStats)
 
                     if (i === queries.length - 1) {
-                        await getStickerPrices(tmpStickers).then(r => {
+                        await getStickerPrices(tmpStickers).then(() => {
                             setInventory(tempArray)
                             setLoaded(true)
                             setFetching(false)
@@ -346,13 +347,19 @@ export default function Inventory(props) {
         }
     }
 
+    useLayoutEffect(() => {
+        setRate(rates[props.rate].exc)
+        setCurr(rates[props.rate].abb)
+    }, [props.rate])
+
     useEffect(async () => {
         if (!loaded) {
             let internetConnection = await NetInfo.fetch();
-            if (internetConnection.isInternetReachable && internetConnection.isConnected) {
+            if (!internetConnection.isInternetReachable && !internetConnection.isConnected) {
                 setAlert("No internet connection")
                 return
             }
+
             setLoading(true)
             for (let i = 0; i < props.games.length; i++) {
                 await getInventory(props.games[i], i === props.games.length - 1).then(null)
@@ -360,6 +367,7 @@ export default function Inventory(props) {
             }
         }
     }, [])
+
 
     const gameName = (id) => {
         for (let i = 0; i < games.length; i++) {
@@ -468,7 +476,7 @@ export default function Inventory(props) {
                         (loaded) ?
                             inventory.map((item) => (
                                 <View>
-                                    <Text style={styles.gameName}>{item.game}</Text>
+                                    <Text bold style={styles.gameName}>{item.game}</Text>
                                     {
                                         (item.total_inventory_count === 0) ?
                                             <View>
@@ -503,13 +511,13 @@ export default function Inventory(props) {
             <Provider>
                 <Portal>
                     <Modal visible={filterVisible} onDismiss={() => setFilterVisible(false)} contentContainerStyle={styles.containerStyle}>
-                        <Text style={styles.fModalTitle}>Filter</Text>
+                        <Text bold style={styles.fModalTitle}>Filter</Text>
 
-                        <Text style={styles.fModalGameTitle}>All Games</Text>
+                        <Text bold style={styles.fModalGameTitle}>All Games</Text>
                         <BouncyCheckbox
                             isChecked={renderUnsellable}
                             onPress={(isChecked) => setRenderUnsellable(isChecked)}
-                            text={<Text style={{fontSize:resize(14)}}>Display <Text style={{fontWeight: 'bold'}}>non-tradable</Text> items</Text>}
+                            text={<Text style={{fontSize:resize(14)}}>Display <Text bold>non-tradable</Text> items</Text>}
                             textStyle={{textDecorationLine: "none"}}
                             fillColor={'#229'}
                             iconStyle={{borderWidth:resize(3)}}
@@ -519,11 +527,11 @@ export default function Inventory(props) {
 
                         { (containsCSGO) ?
                             <View>
-                                <Text style={styles.fModalGameTitle}>Counter-Strike: Global Offensive</Text>
+                                <Text bold style={styles.fModalGameTitle}>Counter-Strike: Global Offensive</Text>
                                 <BouncyCheckbox
                                     isChecked={renderNameTag}
                                     onPress={(isChecked) => setRenderNameTag(isChecked)}
-                                    text={<Text style={{fontSize:resize(14)}}>Display items with <Text style={{fontWeight: 'bold'}}>Name Tags</Text> only</Text>}
+                                    text={<Text style={{fontSize:resize(14)}}>Display items with <Text bold>Name Tags</Text> only</Text>}
                                     textStyle={{textDecorationLine: "none"}}
                                     fillColor={'#229'}
                                     iconStyle={{borderWidth:resize(3)}}
@@ -534,7 +542,7 @@ export default function Inventory(props) {
                                 <BouncyCheckbox
                                     isChecked={renderAppliedSticker}
                                     onPress={(isChecked) => setRenderAppliedSticker(isChecked)}
-                                    text={<Text style={{fontSize:resize(14)}}>Display items with <Text style={{fontWeight: 'bold'}}>Stickers</Text> only</Text>}
+                                    text={<Text style={{fontSize:resize(14)}}>Display items with <Text bold>Stickers</Text> only</Text>}
                                     textStyle={{textDecorationLine: "none"}}
                                     fillColor={'#229'}
                                     iconStyle={{borderWidth:resize(3)}}
@@ -590,7 +598,7 @@ function Item(props) {
             sum += parseFloat(Math.round(props.stPrices[item.long_name] * props.rate * 100) / 100)
         })
         return (
-            <Text style={styles.totalAppliedValueText}>{baseText}<Text style={styles.totalAppliedValue}>{props.curr} {Math.round(sum * 100) / 100}</Text></Text>
+            <Text style={styles.totalAppliedValueText}>{baseText}<Text bold style={styles.totalAppliedValue}>{props.curr} {Math.round(sum * 100) / 100}</Text></Text>
         )
     }
 
@@ -609,7 +617,7 @@ function Item(props) {
             <View style={[styles.container]}>
                 <View style={{display: 'flex', flexDirection: 'row',}}>
                     <View style={[styles.flowColumn, {width: '96%'}]}>
-                        <Text style={styles.itemName}>{inv.market_name}</Text>
+                        <Text bold style={styles.itemName}>{inv.market_name}</Text>
                         <Text style={styles.itemType}>{inv.type}</Text>
                     </View>
                 </View>
@@ -619,9 +627,9 @@ function Item(props) {
                     <Text style={styles.itemPriceTitle}>Total Price</Text>
                 </View>
                 <View style={styles.flowRow}>
-                    <Text style={styles.itemPrice}>{inv.amount}</Text>
-                    <Text style={styles.itemPrice}>{props.curr} {Math.round(inv.Price * props.rate * 100) / 100}</Text>
-                    <Text style={styles.itemPrice}>{props.curr} {(inv.Price === 'NaN' ? 'NaN' : Math.round(inv.Price * props.rate * 100) / 100 * inv.amount)}</Text>
+                    <Text bold style={styles.itemPrice}>{inv.amount}</Text>
+                    <Text bold style={styles.itemPrice}>{props.curr} {Math.round(inv.Price * props.rate * 100) / 100}</Text>
+                    <Text bold style={styles.itemPrice}>{props.curr} {(inv.Price === 'NaN' ? 'NaN' : Math.round(inv.Price * props.rate * 100) / 100 * inv.amount)}</Text>
                 </View>
             </View>
             { open &&
@@ -635,17 +643,17 @@ function Item(props) {
                                     <Text style={styles.detailBold}>Market details unavailable for this item</Text>
                                 </View> :
                                 <View>
-                                    <Text style={styles.detail}>Price updated <Text style={styles.detailBold}>{hours}</Text>h <Text style={styles.detailBold}>{minutes}</Text>min <Text style={styles.detailBold}>{seconds}</Text>s ago</Text>
-                                    <Text style={styles.detail}><Text style={styles.detailBold}>{inv.Listed}</Text> listings on Steam Market</Text>
+                                    <Text style={styles.detail}>Price updated <Text bold style={styles.detailBold}>{hours}</Text>h <Text bold style={styles.detailBold}>{minutes}</Text>min <Text bold style={styles.detailBold}>{seconds}</Text>s ago</Text>
+                                    <Text style={styles.detail}><Text bold style={styles.detailBold}>{inv.Listed}</Text> listings on Steam Market</Text>
                                 </View>
                             }
-                            {inv.hasOwnProperty('fraudwarnings') ? <Text style={styles.detail}>Name Tag: <Text style={{fontWeight: 'bold'}}>{inv.fraudwarnings[0].substring(12, inv.fraudwarnings[0].length - 2)}</Text></Text> : null}
+                            {inv.hasOwnProperty('fraudwarnings') ? <Text style={styles.detail}>Name Tag: <Text bold>{inv.fraudwarnings[0].substring(12, inv.fraudwarnings[0].length - 2)}</Text></Text> : null}
                         </View>
                     </View>
                     {
                         inv.hasOwnProperty('stickers') ?
                             <View style={styles.column}>
-                                <Text style={styles.stpaType}>Applied { (inv.stickers.type) ? (inv.stickers.sticker_count > 1) ? 'stickers' : 'sticker' : (inv.stickers.sticker_count > 1) ? 'patches' : 'patch' }</Text>
+                                <Text bold style={styles.stpaType}>Applied { (inv.stickers.type) ? (inv.stickers.sticker_count > 1) ? 'stickers' : 'sticker' : (inv.stickers.sticker_count > 1) ? 'patches' : 'patch' }</Text>
                                 <View style={styles.stpaRow}>
                                     {
                                         inv.stickers.stickers.map(sticker => (
@@ -656,7 +664,7 @@ function Item(props) {
                                 <View style={styles.stpaRow}>
                                     {
                                         inv.stickers.stickers.map(sticker => (
-                                            <Text style={{ width: resize(getStickerWidth(inv.stickers.sticker_count)), textAlign: 'center', color: '#555', fontWeight: 'bold' }}>{props.curr} {Math.round(getAppliedPrice(sticker.long_name) * props.rate * 100) / 100}</Text>
+                                            <Text bold style={{ width: resize(getStickerWidth(inv.stickers.sticker_count)), textAlign: 'center', color: '#555', fontSize: resize(14) }}>{Math.round(getAppliedPrice(sticker.long_name) * props.rate * 100) / 100}</Text>
                                         ))
                                     }
                                 </View>
@@ -672,9 +680,9 @@ function Item(props) {
                                 <Text style={styles.avgTitle}>30 day average</Text>
                             </View>
                             <View style={styles.flowRow}>
-                                <Text style={styles.avgDetails}>{props.curr} {Math.round(inv.avg24 * props.rate * 1000) / 1000}</Text>
-                                <Text style={styles.avgDetails}>{props.curr} {Math.round(inv.avg7 * props.rate * 1000) / 1000}</Text>
-                                <Text style={styles.avgDetails}>{props.curr} {Math.round(inv.avg30 * props.rate * 1000) / 1000}</Text>
+                                <Text bold style={styles.avgDetails}>{props.curr} {Math.round(inv.avg24 * props.rate * 1000) / 1000}</Text>
+                                <Text bold style={styles.avgDetails}>{props.curr} {Math.round(inv.avg7 * props.rate * 1000) / 1000}</Text>
+                                <Text bold style={styles.avgDetails}>{props.curr} {Math.round(inv.avg30 * props.rate * 1000) / 1000}</Text>
                             </View>
                         </View>
                     }
@@ -713,9 +721,9 @@ function Summary(props) {
             backgroundStyle={{backgroundColor: '#ffffff00'}}>
             <View style={{flex: 1, alignItems: 'center', backgroundColor: '#fff', borderTopWidth: 3, borderTopColor: '#bbb'}}>
                 <View style={{marginBottom: resize(8), alignItems: 'center', width: '100%',}}>
-                    <Text style={[styles.gameTitle, {fontSize: resize(24), color: '#555'}]}>Inventory Details</Text>
-                    <Text style={{color: '#777'}}>SteamID: <Text style={{fontWeight: 'bold', color: '#444'}}>{props.steam}</Text></Text>
-                    <Text style={{color: '#777'}}>Games loaded (appid): <Text style={{fontWeight: 'bold', color: '#444'}}>{JSON.stringify(props.games)}</Text></Text>
+                    <Text bold style={[styles.gameTitle, {fontSize: resize(24), color: '#555'}]}>Inventory Details</Text>
+                    <Text style={{color: '#777'}}>SteamID: <Text bold style={{ color: '#444'}}>{props.steam}</Text></Text>
+                    <Text style={{color: '#777'}}>Games loaded (appid): <Text bold style={{ color: '#444'}}>{JSON.stringify(props.games)}</Text></Text>
                 </View>
 
                 <BottomSheetScrollView>
@@ -725,12 +733,12 @@ function Summary(props) {
                             <View style={styles.summarySection}>
                                 <View style={styles.row}>
                                     <Text style={styles.statsTitle}>Total value</Text>
-                                    <Text style={styles.statsDetails}>{curr} {Math.round(stats['price'] * rate * 100) / 100} ({stats['ownedTradeable']} items)</Text>
+                                    <Text bold style={styles.statsDetails}>{curr} {Math.round(stats['price'] * rate * 100) / 100} ({stats['ownedTradeable']} items)</Text>
                                 </View>
 
                                 <View style={styles.row}>
                                     <Text style={styles.statsTitle}>Average item price</Text>
-                                    <Text style={styles.statsDetails}>{curr} {(Math.round(stats['price'] / stats['ownedTradeable'] * rate * 100) / 100)} / item</Text>
+                                    <Text bold style={styles.statsDetails}>{curr} {(Math.round(stats['price'] / stats['ownedTradeable'] * rate * 100) / 100)} / item</Text>
                                 </View>
                             </View>
 
@@ -739,17 +747,17 @@ function Summary(props) {
                             <View style={styles.summarySection}>
                                 <View style={styles.row}>
                                     <Text style={styles.statsTitle}>24 hour average value</Text>
-                                    <Text style={styles.statsDetails}>{curr} {Math.round(stats['avg24'] * rate * 1000) / 1000}</Text>
+                                    <Text bold style={styles.statsDetails}>{curr} {Math.round(stats['avg24'] * rate * 1000) / 1000}</Text>
                                 </View>
 
                                 <View style={styles.row}>
                                     <Text style={styles.statsTitle}>7 day average value</Text>
-                                    <Text style={styles.statsDetails}>{curr} {Math.round(stats['avg7'] * rate * 1000) / 1000}</Text>
+                                    <Text bold style={styles.statsDetails}>{curr} {Math.round(stats['avg7'] * rate * 1000) / 1000}</Text>
                                 </View>
 
                                 <View style={styles.row}>
                                     <Text style={styles.statsTitle}>30 day average value</Text>
-                                    <Text style={styles.statsDetails}>{curr} {Math.round(stats['avg30'] * rate * 1000) / 1000}</Text>
+                                    <Text bold style={styles.statsDetails}>{curr} {Math.round(stats['avg30'] * rate * 1000) / 1000}</Text>
                                 </View>
                             </View>
 
@@ -760,7 +768,7 @@ function Summary(props) {
                                     <Text style={styles.statsTitle}>Most expensive item</Text>
                                     <View style={[styles.column, {width: '55%'}]}>
                                         <Text style={[styles.statsDetailsS, {width: '100%'}]}>{stats['expensive'].name}</Text>
-                                        <Text style={[styles.statsDetails, {width: '100%'}]}>{curr} {Math.round(stats['expensive'].price * rate * 100) / 100}</Text>
+                                        <Text bold style={[styles.statsDetails, {width: '100%'}]}>{curr} {Math.round(stats['expensive'].price * rate * 100) / 100}</Text>
                                     </View>
                                 </View>
 
@@ -768,41 +776,41 @@ function Summary(props) {
                                     <Text style={styles.statsTitle}>Cheapest item</Text>
                                     <View style={[styles.column, {width: '55%'}]}>
                                         <Text style={[styles.statsDetailsS, {width: '100%'}]}>{stats['cheapest'].name}</Text>
-                                        <Text style={[styles.statsDetails, {width: '100%'}]}>{curr} {Math.round(stats['cheapest'].price * rate * 100) / 100}</Text>
+                                        <Text bold style={[styles.statsDetails, {width: '100%'}]}>{curr} {Math.round(stats['cheapest'].price * rate * 100) / 100}</Text>
                                     </View>
                                 </View>
                             </View>
 
-                            <Text style={[styles.gameName]}>Game stats</Text>
+                            <Text bold style={[styles.gameName]}>Game stats</Text>
 
                             {
                                 stats.games.map((data, index) => (
                                     <View style={styles.summarySection}>
-                                        <Text style={styles.sumGame}>{ data.name }</Text>
+                                        <Text bold style={styles.sumGame}>{ data.name }</Text>
 
                                         <View style={styles.row}>
                                             <Text style={styles.statsTitle}>Value</Text>
-                                            <Text style={styles.statsDetails}>{curr} {Math.round(data.value * rate * 100) / 100}</Text>
+                                            <Text bold style={styles.statsDetails}>{curr} {Math.round(data.value * rate * 100) / 100}</Text>
                                         </View>
 
                                         <View style={styles.row}>
                                             <Text style={styles.statsTitle}>Items owned</Text>
-                                            <Text style={styles.statsDetails}>{data.items}</Text>
+                                            <Text bold style={styles.statsDetails}>{data.items}</Text>
                                         </View>
 
                                         <View style={styles.row}>
                                             <Text style={styles.statsTitle}>Average 24 hour</Text>
-                                            <Text style={styles.statsDetails}>{curr} {Math.round(data.avg24 * rate * 1000) / 1000}</Text>
+                                            <Text bold style={styles.statsDetails}>{curr} {Math.round(data.avg24 * rate * 1000) / 1000}</Text>
                                         </View>
 
                                         <View style={styles.row}>
                                             <Text style={styles.statsTitle}>Average 7 day</Text>
-                                            <Text style={styles.statsDetails}>{curr} {Math.round(data.avg7 * rate * 1000) / 1000}</Text>
+                                            <Text bold style={styles.statsDetails}>{curr} {Math.round(data.avg7 * rate * 1000) / 1000}</Text>
                                         </View>
 
                                         <View style={styles.row}>
                                             <Text style={styles.statsTitle}>Average 30 day</Text>
-                                            <Text style={styles.statsDetails}>{curr} {Math.round(data.avg30 * rate * 1000) / 1000}</Text>
+                                            <Text bold style={styles.statsDetails}>{curr} {Math.round(data.avg30 * rate * 1000) / 1000}</Text>
                                         </View>
 
                                         {
@@ -810,12 +818,12 @@ function Summary(props) {
                                                 <View>
                                                     <View style={styles.row}>
                                                         <Text style={styles.statsTitle}>Applied stickers value</Text>
-                                                        <Text style={styles.statsDetails}>{curr} {Math.round(data.stickerVal * rate * 100) / 100}</Text>
+                                                        <Text bold style={styles.statsDetails}>{curr} {Math.round(data.stickerVal * rate * 100) / 100}</Text>
                                                     </View>
 
                                                     <View style={styles.row}>
                                                         <Text style={styles.statsTitle}>Applied patches value</Text>
-                                                        <Text style={styles.statsDetails}>{curr} {Math.round(data.patchVal * rate * 100) / 100}</Text>
+                                                        <Text bold style={styles.statsDetails}>{curr} {Math.round(data.patchVal * rate * 100) / 100}</Text>
                                                     </View>
                                                 </View> : null
                                         }
@@ -884,7 +892,6 @@ const styles = StyleSheet.create ({
     },
     gameTitle: {
         color: '#222',
-        fontWeight: "bold",
     },
     appID: {
         color: '#222'
@@ -895,7 +902,6 @@ const styles = StyleSheet.create ({
     },
     gameName: {
         fontSize: resize(24),
-        fontWeight: 'bold',
         marginVertical: 8,
         marginLeft: 8,
         color: '#333',
@@ -907,7 +913,6 @@ const styles = StyleSheet.create ({
     },
     itemName: {
         fontSize: resize(16),
-        fontWeight: "bold",
         width: '100%',
         color: '#555',
     },
@@ -925,7 +930,6 @@ const styles = StyleSheet.create ({
     itemPrice: {
         width: '33%',
         textAlign: "center",
-        fontWeight: 'bold',
         color: '#333',
         fontSize: resize(16),
     },
@@ -937,7 +941,6 @@ const styles = StyleSheet.create ({
     },
     avgDetails: {
         fontSize: resize(14),
-        fontWeight: "bold",
         color: '#333',
         width: '32%',
         textAlign: "center",
@@ -979,7 +982,6 @@ const styles = StyleSheet.create ({
     },
     statsDetails: {
         fontSize: resize(14),
-        fontWeight: 'bold',
         textAlign: 'right',
         width: '55%',
         color: '#333',
@@ -1096,13 +1098,11 @@ const styles = StyleSheet.create ({
     },
     stpaType: {
         fontSize: resize(16),
-        fontWeight: 'bold',
         width: '100%',
         textAlign: 'center',
     },
     sumGame: {
         fontSize: resize(16),
-        fontWeight: 'bold',
         textAlign: 'center',
         marginHorizontal: 4,
         color: '#666',
@@ -1116,7 +1116,6 @@ const styles = StyleSheet.create ({
         color: '#777',
     },
     totalAppliedValue: {
-        fontWeight: 'bold',
         fontSize: resize(16),
         color: '#333',
     },
@@ -1135,16 +1134,13 @@ const styles = StyleSheet.create ({
         textAlign: 'center',
         color: '#555',
         fontSize: resize(28),
-        fontWeight: 'bold',
     },
     fModalGameTitle: {
         color: '#777',
         fontSize: resize(20),
         marginVertical: resize(8),
-        fontWeight: 'bold',
     },
     detailBold: {
-        fontWeight: 'bold',
         fontSize: resize(14),
     },
     detail: {

@@ -1,10 +1,11 @@
-import {Text, TouchableOpacity, View, StyleSheet, Image, ScrollView, Pressable, Dimensions} from "react-native";
+import {TouchableOpacity, View, StyleSheet, Image, ScrollView, Pressable, Dimensions} from "react-native";
 import React from "react";
 import {useState} from "react";
 import gamesJson from '../assets/inv-games.json'
 import {Divider, Icon} from "react-native-elements";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Snackbar } from "react-native-paper";
+import Text from '../Elements/text'
 
 export default function InvGamesList(props) {
     const gj = gamesJson;
@@ -50,8 +51,8 @@ export default function InvGamesList(props) {
 
     return(
         <View style={{height: '100%'}}>
-            <Text style={[styles.title, {fontSize: resize(24)}]}>Choose games</Text>
-            <Text style={styles.title}>Use previously loaded games</Text>
+            <Text bold style={[styles.title, {fontSize: resize(24)}]}>Choose games</Text>
+            <Text bold style={styles.title}>Use previously loaded games</Text>
             {
                 (prevGames.length === 0) ? <Text style={styles.previousGamesSubtitle}>You will be able to see previous games next time you use this profile</Text> :
                     <Pressable style={styles.previousGames} onPress={() => {
@@ -65,7 +66,7 @@ export default function InvGamesList(props) {
                     </Pressable>
             }
 
-            <Text style={styles.title}>Select games from the list</Text>
+            <Text bold style={styles.title}>Select games from the list</Text>
             <ScrollView style={{borderRadius: 8}}>
                 {
                     gj.games.map((item, index) => (
@@ -80,7 +81,7 @@ export default function InvGamesList(props) {
                                 <Image style={{ height: resize(48), width: resize(48), borderRadius: 8, marginRight: 8 }} source={{uri: item.url} } />
 
                                 <View style={{ display: 'flex', flexDirection: 'column', width: '77%' }}>
-                                    <Text style={styles.gameTitle}>{item.name}</Text>
+                                    <Text bold style={styles.gameTitle}>{item.name}</Text>
                                     <Text style={styles.appID}>{item.appid}</Text>
                                 </View>
 
@@ -103,7 +104,7 @@ export default function InvGamesList(props) {
                     setSnackbarVisible(true)
                 }
             }}>
-                <Text style={styles.buttonMediumText}>Proceed</Text>
+                <Text bold style={styles.buttonMediumText}>Proceed</Text>
                 <Icon type={'font-awesome-5'} name={'angle-double-right'} size={resize(32)} color={'#193C6E'} />
             </TouchableOpacity>
 
@@ -140,7 +141,6 @@ const styles = StyleSheet.create ({
     },
     gameTitle: {
         color: '#333',
-        fontWeight: "bold",
         fontSize: resize(16),
     },
     appID: {
@@ -154,7 +154,6 @@ const styles = StyleSheet.create ({
     title: {
         textAlign: 'center',
         fontSize: resize(20),
-        fontWeight: 'bold',
         marginVertical: 4,
     },
     buttonProceed: {
@@ -175,7 +174,6 @@ const styles = StyleSheet.create ({
     buttonMediumText: {
         fontSize: resize(20),
         color: '#193C6E',
-        fontWeight: "bold",
         marginHorizontal: 8,
         width: '75%',
     },

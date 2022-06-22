@@ -4,7 +4,6 @@ import {
     Image,
     ScrollView,
     StyleSheet,
-    Text,
     TextInput, TouchableOpacity,
     View
 } from "react-native";
@@ -14,6 +13,7 @@ import {AdMobRewarded} from "expo-ads-admob";
 import {Divider, Icon} from "react-native-elements";
 import {Snackbar} from "react-native-paper";
 import NetInfo from "@react-native-community/netinfo";
+import Text from '../Elements/text'
 
 export default function MusicKits(props) {
     const [loading, setLoading] = useState(true)
@@ -73,12 +73,12 @@ export default function MusicKits(props) {
                 const newNumPlays = numPlays - 1
                 setPlaybackTimeout(true)
 
-                const {sound: playbackObject} = await Audio.Sound.createAsync(
+                const {sound} = await Audio.Sound.createAsync(
                     {uri: 'https://domr.xyz/api/Files/csgo/musickits/' + dir + '/roundmvpanthem_01.mp3'},
                     {shouldPlay: true}
                 )
 
-                setSnackError(<Text style={{fontSize: resize(12)}}>Now Playing <Text style={{fontWeight: 'bold', color: '#6FC8F7'}}>{song}</Text> by <Text style={{color: '#6FC8F7'}}>{artist}</Text></Text>)
+                setSnackError(<Text style={{fontSize: resize(12)}}>Now Playing <Text bold style={{color: '#6FC8F7'}}>{song}</Text> by <Text style={{color: '#6FC8F7'}}>{artist}</Text></Text>)
                 setSnackbarVisible(true)
                 await sleep(5000)
                 setSnackbarVisible(false)
@@ -169,12 +169,12 @@ export default function MusicKits(props) {
                 </View> :
                 <View style={{height: '100%'}}>
                     <View style={{marginVertical: resize(8)}}>
-                        <Text style={styles.title}>Music Kits</Text>
+                        <Text bold style={styles.title}>Music Kits</Text>
                         <Text style={styles.subTitle}>Tap to play MVP anthem</Text>
-                        <Text style={styles.subTitle}>Available playbacks: <Text style={[numPlays === 0 ? {color: '#a00'} : {color: '#0a0'}, {fontWeight: 'bold'}]}>{numPlays}</Text></Text>
+                        <Text style={styles.subTitle}>Available playbacks: <Text bold style={[numPlays === 0 ? {color: '#a00'} : {color: '#0a0'}]}>{numPlays}</Text></Text>
                         <Text style={{fontSize: resize(14), textAlign: 'center'}}>
                             Timeout:
-                            {(playbackTimeout) ? <Text style={{fontWeight: 'bold', color: '#f00'}}> TRUE</Text> : <Text style={{fontWeight: 'bold', color: '#0b0'}}> FALSE</Text>}
+                            {(playbackTimeout) ? <Text bold style={{color: '#f00'}}> TRUE</Text> : <Text bold style={{color: '#0b0'}}> FALSE</Text>}
                         </Text>
                     </View>
 
@@ -198,8 +198,8 @@ export default function MusicKits(props) {
                                             <Image style={{width: resize(48), aspectRatio: 1, marginRight: 8}}
                                                    source={{uri: (item.img || imgNotFound)}}/>
                                             <View style={styles.containerCol}>
-                                                <Text style={styles.song}>{item.song}</Text>
-                                                <Text style={styles.artist}>{item.artist}</Text>
+                                                <Text bold style={styles.song}>{item.song}</Text>
+                                                <Text bold style={styles.artist}>{item.artist}</Text>
                                             </View>
                                             {(!loadingPrices) ? getMusicKitPrice(item) : null}
                                         </TouchableOpacity>
@@ -224,10 +224,10 @@ export default function MusicKits(props) {
                             label: 'WATCH',
                             onPress: async () => {
                                 setSnackbarRewardAd(false)
-                                await playRewardAd().then(r => null)
+                                await playRewardAd().then(() => null)
                             },
                         }}>
-                        <View><Text style={styles.snackbarText}>Watch an <Text style={{fontWeight: 'bold', color: '#6FC8F7'}}>AD</Text> to get more playbacks</Text></View>
+                        <View><Text style={styles.snackbarText}>Watch an <Text bold style={{color: '#6FC8F7'}}>AD</Text> to get more playbacks</Text></View>
                     </Snackbar>
                 </View>
     )
@@ -257,12 +257,10 @@ const styles = StyleSheet.create({
     },
     artist: {
         fontSize: resize(14),
-        fontWeight: "bold",
         color: '#666',
     },
     song: {
         fontSize: resize(16),
-        fontWeight: "bold",
         color: '#222',
     },
     price: {
@@ -276,7 +274,6 @@ const styles = StyleSheet.create({
     title: {
         textAlign: 'center',
         fontSize: resize(24),
-        fontWeight: 'bold',
         marginVertical: 4,
     },
     subTitle: {
