@@ -1,7 +1,7 @@
-import React, {useCallback, useMemo, useRef, useState} from "react";
+import React, {useCallback, useRef, useState} from "react";
 import {
     ActivityIndicator,
-    Dimensions,
+    Dimensions, FlatList,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -9,10 +9,11 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
-import BottomSheet from '@gorhom/bottom-sheet'
 import {Divider, Icon} from "react-native-elements";
 import {Dropdown} from "react-native-element-dropdown";
 import Text from '../Elements/text'
+import { Sheet } from '@tamkeentech/react-native-bottom-sheet';
+import {AnimatedFAB, Snackbar} from "react-native-paper";
 
 export default function (props) {
     const [loading, setLoading] = useState(true)
@@ -21,6 +22,8 @@ export default function (props) {
     const [searchResults, setSearchResults] = useState([])
     const [loadingResults, setLoadingResults] = useState(false)
     const [searchTimeout, setSearchTimeout] = useState(false)
+    const [snackError, setSnackError] = useState(false)
+    const [snackbarText, setSnackbarText] = useState('')
     const sortByValues = [
         {label: 'Default - no specific order', value: 0},
         {label: 'Price', value: 1},
@@ -32,8 +35,9 @@ export default function (props) {
         return Math.ceil(size * scale)
     }
 
-    if (!loadedGames) {
-        fetch('https://domr.xyz/api/Steam/getGames.php')
+    const loadSteamGames = useCallback(async () => {
+        let didLoadGames = false
+        await fetch('https://domr.xyz/api/Steam/getGames.php')
             .then((response) => response.json())
             .then((json) => {
                 setLoadedGames(true)
@@ -44,15 +48,19 @@ export default function (props) {
                         label: game.name
                     })
                 }
+                didLoadGames = true
             })
+        return didLoadGames
+    }, [])
+
+    if (!loadedGames) {
+        loadSteamGames().then(r => {
+            if (!r) {
+                setSnackError(true)
+                setSnackbarText('Couldn\'t download the list of games')
+            }
+        })
     }
-
-    const filterSheetRef = useRef();
-
-    const snapPoints = useMemo(() => [resize(70), '60%', '100%'], []);
-    const handleSheetChanges = useCallback((index: number) => {
-        console.log('handleSheetChanges', index);
-    }, []);
 
     // Filter states
     const [filterGame, setFilterGame] = useState(0)
@@ -75,21 +83,27 @@ export default function (props) {
         return ( <Icon name={'align-justify'} type={'font-awesome'} /> )
     }
 
+    const search = async (url) => {
+        let tempResults = []
+        await fetch(url)
+            .then(response => response.json())
+            .then(json => {
+                tempResults = json.results
+            })
+        return tempResults
+    }
+
     async function searchMarket() {
         if (!searchTimeout) {
             setLoadingResults(true)
+            setShowSheet(false)
 
             const sd = (searchDesc) ? 1 : 0
             const column = (sortBy === 0) ? '' : (sortBy === 1) ? '&sort_column=price' : '&sort_column=name'
             const dir = (sortAsc) ? 'asc' : 'desc'
             const url = 'https://steamcommunity.com/market/search/render/?search_descriptions=' + sd + column + '&sort_dir=' + dir + '&appid=' + filterGame + '&norender=1&count=100&start=0&query=' + searchQuery
-
-            fetch(url)
-                .then(response => response.json())
-                .then(json => {
-                    setLoadingResults(false)
-                    setSearchResults(json.results)
-                })
+            setLoadingResults(false)
+            setSearchResults(await search(url))
         }
     }
 
@@ -107,7 +121,29 @@ export default function (props) {
         );
     };
 
+    const [showSheet, setShowSheet] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(true);
+    const onScroll = ({ nativeEvent }) => {
+        const currentScrollPosition =
+            Math.floor(nativeEvent?.contentOffset?.y) ?? 0;
+
+        setIsExpanded(currentScrollPosition <= 0);
+    };
+
     const scrollRef = useRef();
+
+    const _renderSteamItem = ({item}) => (
+        <View style={styles.listingRow}>
+            <View style={[styles.column, {width: '80%'}]}>
+                <Text style={styles.listingName}>{item.name}</Text>
+                <Text bold style={styles.listingGame}>{item.app_name}</Text>
+            </View>
+            <View style={styles.column}>
+                <Text bold style={styles.listingPrice}>{props.rate} {Math.round(item.sell_price * props.exchange) / 100}</Text>
+                <Text style={styles.listingAmount}>{item.sell_listings} listed</Text>
+            </View>
+        </View>
+    )
 
     return (
         (loading) ?
@@ -121,7 +157,28 @@ export default function (props) {
             <Text style={{textAlign: 'center', fontSize: resize(14)}}>Loading market search results</Text>
         </View> :
         <View style={styles.container}>
-            <ScrollView ref={scrollRef}>
+            <FlatList
+                ref={scrollRef}
+                renderItem={_renderSteamItem}
+                data={searchResults}
+                ListFooterComponent={() => (
+                    (searchResults.length > 4) ?
+                    <TouchableOpacity style={styles.scrollProgress} onPress={() => {
+                        scrollRef.current?.scrollToIndex({animated: true, index: 0})
+                        console.log(scrollRef.current)
+                    }}>
+                        <Icon name={'angle-double-up'} type={'font-awesome'} size={resize(48)} color={'#555'} />
+                        <Text style={{fontSize: resize(14)}}>This is the end of the search results</Text>
+                        <Text style={{fontSize: resize(14)}}>Tap to scroll back to top</Text>
+                    </TouchableOpacity> : null
+                )}
+                ItemSeparatorComponent={() => (
+                    <Divider width={1} style={{width: '95%', alignSelf: 'center'}} />
+                )}
+                onScroll={onScroll}
+            />
+
+            {/*<ScrollView ref={scrollRef} onScroll={onScroll}>
                 {
                     searchResults.map((item, index) => (
                         <View>
@@ -147,18 +204,14 @@ export default function (props) {
                             <Text style={{fontSize: resize(14)}}>Tap to scroll back to top</Text>
                         </TouchableOpacity> : null
                 }
-            </ScrollView>
+            </ScrollView>*/}
 
-            <BottomSheet
-                ref={filterSheetRef}
-                index={0}
-                snapPoints={snapPoints}
-                onChange={handleSheetChanges}
-                detached={false}
-                handleIndicatorStyle={{backgroundColor: '#333', height: resize(8), width: resize(40)}}
-                handleStyle={{ alignSelf: 'center', width: resize(64), backgroundColor: '#bbb', borderTopLeftRadius: 16, borderTopRightRadius: 16}}
-                backgroundStyle={{backgroundColor: '#ffffff00'}}>
-                <View style={styles.contentContainer}>
+            <Sheet
+                show={showSheet}
+                onClose={() => setShowSheet(false)}
+                contentContainerStyle={{height: resize(540)}}
+            >
+                <View>
                     <Text bold style={styles.sheetTitle}>Search</Text>
 
                     <Text style={{fontSize: resize(14), textAlign: 'center'}}>Search timeout is <Text bold>{ (searchTimeout) ? 'active' : 'inactive' }</Text></Text>
@@ -170,7 +223,9 @@ export default function (props) {
                             onChangeText={(text => setSearchQuery(text))}
                         />
                     </View>
+                </View>
 
+                <View>
                     <Text bold style={styles.sheetSubtitle}>Game</Text>
                     <View style={styles.inputView}>
                         <Dropdown
@@ -236,7 +291,28 @@ export default function (props) {
                         </Pressable>
                     </View>
                 </View>
-            </BottomSheet>
+
+            </Sheet>
+
+            <AnimatedFAB
+                icon={() => (<Icon name={'search'} type={'feather'} size={resize(24)} />)}
+                label={'Search'}
+                extended={isExpanded}
+                onPress={() => setShowSheet(true)}
+                uppercase={false}
+                visible={true}
+                animateFrom={'right'}
+                iconMode={'dynamic'}
+                style={[styles.fabStyle]}
+                loading={true}
+            />
+
+            <Snackbar
+                visible={snackError}
+                onDismiss={() => setSnackError(false)}
+                style={{backgroundColor: "#FF3732"}}>
+                <View><Text style={[styles.snackbarText, {color: '#F4EDEC'}]}>{ snackbarText }</Text></View>
+            </Snackbar>
         </View>
     )
 }
@@ -260,6 +336,7 @@ const styles = StyleSheet.create({
     sheetTitle: {
         fontSize: resize(24),
         marginVertical: resize(8),
+        textAlign: 'center',
     },
     sheetSubtitle: {
         fontSize: resize(16),
@@ -381,5 +458,10 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         elevation: 5,
         marginBottom: 82,
+    },
+    fabStyle: {
+        bottom: 8,
+        right: 8,
+        position: 'absolute',
     },
 });

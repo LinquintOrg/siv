@@ -25,6 +25,9 @@ import * as SplashScreen from 'expo-splash-screen';
 import NetInfo from '@react-native-community/netinfo';
 import Text from './Elements/text'
 import {useFonts} from "expo-font";
+import Modal from "react-native-modal";
+import * as Clipboard from 'expo-clipboard';
+import { enableScreens } from 'react-native-screens';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -54,8 +57,6 @@ function App() {
 
     const [rate, setRate] = useState(46)         // selected currency
     const [rates, setRates] = useState()        // downloaded rates from database
-    const [loadedRates, setLoadedRates] = useState(false)       // Are rates loaded?
-    const [loadedUsers, setLoadedUsers] = useState(false)       // Are saved profiles loaded
     const [users, setUsers] = useState([])      // Saved profiles
     const [snackbarVisible, setSnackbarVisible] = useState(false)
     const [snackbarText, setSnackbarText] = useState("")
@@ -70,24 +71,23 @@ function App() {
 
                 let internetConnection = await NetInfo.fetch();
                 if (internetConnection.isInternetReachable && internetConnection.isConnected) {
-                    setLoadedRates(true)
-                    getRates()
-
-                    setLoadedUsers(true)
-                    updateProfiles().then(() => null)
+                    updateProfiles().then(() => {
+                        getRates()
+                    })
                     await new Promise(resolve => setTimeout(resolve, 1500));
                 } else {
                     setSnackbarText("No internet connection")
                     setSnackError(true)
                 }
             } catch (e) {
+                console.log('Caught an error:')
                 console.warn(e);
             } finally {
                 setAppIsReady(true);
             }
         }
 
-        prepare().then(null);
+        prepare().then(() => null);
     }, []);
 
     const onLayoutRootView = useCallback(async () => {
@@ -198,10 +198,6 @@ function App() {
             return !(steamID == '' || steamID.match(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/? ]+/) || steamID.length === 0)
         }
 
-        const isNameEmpty = () => {
-            return (dataName === '' && steamID !== '')
-        }
-
         const getProfileData = async (sid) => {
             if (sid.length === 17) {
                 setLoading(true)
@@ -222,8 +218,9 @@ function App() {
                         setSteamID(sid)
                     })
             } else {
-                setSnackbarVisible(true)
-                await sleep(3000).then(() => setSnackbarVisible(false))
+                setSnackError(true)
+                setSnackbarText("SteamID must be at least 17 characters long")
+                await sleep(3000).then(() => setSnackError(false))
             }
         }
 
@@ -244,13 +241,24 @@ function App() {
             setUsers(newUsers)
         }
 
-        return (
-            <View style={{backgroundColor: '#fff', height: '100%'}} onLayout={onLayoutRootView}>
-                {/*<Text bold style={[styles.title]}>Find Steam profile</Text>
-                <Text style={[styles.title, {fontSize: resize(12)}]}>Enter SteamID64 and tap search button</Text>*/}
+        const [isProfileModalVisible, setProfileModalVisible] = useState(false);
+        const [profileModalData, setProfileModalData] = useState({name: '', id: ''});
 
+        const toggleModal = (profile) => {
+            if (!isProfileModalVisible) setProfileModalData(profile)
+            setProfileModalVisible(!isProfileModalVisible)
+        };
+
+        const copyToClipboard = async (copiedText) => {
+            Clipboard.setStringAsync(copiedText.toString()).then(() => {
+                setSnackbarVisible(true)
+                sleep(3000).then(() => setSnackbarVisible(false))
+            })
+        };
+
+        return (
+            <View style={{height: '100%'}} onLayout={onLayoutRootView}>
                 <View style={styles.inputView} disabled={isLoading}>
-                    {/*<Icon color='#333' name='at' type='font-awesome' size={resize(20)}/>*/}
                     <TextInput
                         style={{marginHorizontal: resize(8), flex: 1, height: resize(40), fontSize: resize(16), padding: 0}}
                         placeholder='Enter SteamID64'
@@ -261,20 +269,22 @@ function App() {
                         activeOutlineColor={'#1f4690'}
                         left={
                             <TextInput.Icon
-                                name={'at'}
-                                color={'#1f4690'}
+                                icon={() => (<Icon name={'at-sign'} type={'feather'} color={'#1f4690'} />)}
+
                                 size={resize(24)}
                                 style={{margin: 0, paddingTop: resize(8)}}
+                                name={'at'}
                                 forceTextInputFocus={false}
                             />
                         }
                         right={
                             <TextInput.Icon
+                                icon={() => (<Icon name={'search'} type={'feather'} color={'#1F4690'} />)}
                                 name='arrow-right'
                                 size={resize(36)}
-                                color={'#1F4690'}
                                 style={{margin: 0, paddingTop: resize(8)}}
                                 onPress={() => { getProfileData(steamIDtyped).then(() => null) }}
+                                forceTextInputFocus={false}
                             />
                         }
                     />
@@ -284,12 +294,6 @@ function App() {
                         textAlign: 'center',
                         paddingTop: resize(8)
                     }]}>{steamIDtyped.length} / 17</Text>
-
-                    {/*<TouchableOpacity style={{padding: 4}} onPress={() => {
-                        getProfileData(steamIDtyped).then(r => null)
-                    }}>
-                        {<Icon name='search' type='font-awesome' size={20}/>}
-                    </TouchableOpacity>*/}
                 </View>
 
                 <View style={[styles.profileSection, (dataName === '' && steamID === '') && {display: 'none'}]}>
@@ -314,26 +318,47 @@ function App() {
                 </View>
 
                 <Text bold style={[styles.title]}>Saved profiles</Text>
-                <Text style={[styles.title, {fontSize: resize(14)}]}>Tap to select profile</Text>
-                <Text style={[styles.title, {fontSize: resize(14)}]}>Long press profile to see more options</Text>
-                <UserSaves users={users} loadInv={navigateToLoad} nav={navigation} deleteUser={deleteProfile}/>
+                <Text style={[styles.title, {fontSize: resize(14)}]}><Text bold>Tap</Text> to select profile</Text>
+                <Text style={[styles.title, {fontSize: resize(14)}]}><Text bold>Long press</Text> profile to see more options</Text>
+                <UserSaves users={users} loadInv={navigateToLoad} nav={navigation} deleteUser={deleteProfile} toggleModal={toggleModal} />
 
                 <Snackbar
                     visible={snackbarVisible}
                     onDismiss={() => setSnackbarVisible(false)}
-                    style={{backgroundColor: "#193C6E"}}>
-                    <View><Text style={styles.snackbarText}>Steam ID must be <Text style={{fontWeight: 'bold'}}>17
-                        characters long</Text> and contain only <Text
-                        style={{fontWeight: 'bold'}}>numbers</Text>.</Text></View>
+                    style={{backgroundColor: "#9AD797"}}>
+                    <View style={{display: 'flex', flexDirection: 'row'}}>
+                        <Icon name={'check'} type={'font-awesome'} color={'#193130'} size={resize(20)} />
+                        <Text style={[styles.snackbarText, {fontSize: resize(18), marginLeft: resize(12), color: '#193130'}]}>SteamID64 copied to clipboard</Text>
+                    </View>
                 </Snackbar>
 
                 <Snackbar
                     visible={snackError}
                     onDismiss={() => setSnackError(false)}
-                    style={{backgroundColor: "#193C6E"}}>
-                    <View><Text style={styles.snackbarText}>Steam ID must be <Text style={{fontWeight: 'bold'}}>17
-                        characters long</Text> and contain only <Text bold>numbers</Text>.</Text></View>
+                    style={{backgroundColor: "#FF3732"}}>
+                    <View><Text style={[styles.snackbarText, {color: '#F4EDEC'}]}>{ snackbarText }</Text></View>
                 </Snackbar>
+
+                <Modal
+                    isVisible={isProfileModalVisible}
+                    onBackdropPress={() => setProfileModalVisible(false)}
+                    animationIn={'swing'}
+                    animationOut={'fadeOut'}
+                    animationInTiming={500}
+                >
+                    <View style={styles.profileModalView}>
+                        <Text bold style={styles.profileModalTitle}>Choose action</Text>
+                        <Text style={styles.profileModalUsername}>{profileModalData.name}</Text>
+
+                        <TouchableOpacity onPress={() => deleteProfile(profileModalData.id)} style={styles.profileModalButton}>
+                            <Text bold style={styles.profileModalButtonText}>Delete user</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => copyToClipboard(profileModalData.id)} style={styles.profileModalButton}>
+                            <Text bold style={styles.profileModalButtonText}>Copy SteamID64</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Modal>
             </View>
         )
     }
@@ -366,7 +391,7 @@ function App() {
         }
 
         return (
-            <View style={{backgroundColor: '#fff', height: '100%'}}>
+            <View style={{height: '100%'}}>
                 <InvGamesList
                     removeState={removeState}
                     hasState={hasState}
@@ -385,7 +410,7 @@ function App() {
         const steamID = route.params.steamID
 
         return (
-            <View style={{backgroundColor: '#fff', height: '100%'}}>
+            <View style={{height: '100%'}}>
                 <Inventory games={gamesList} steam={steamID} rates={rates} rate={rate} />
             </View>
         );
@@ -393,7 +418,7 @@ function App() {
 
     function TabSteamMarket() {
         return (
-            <View style={{backgroundColor: '#fff', height: '100%'}}>
+            <View style={{height: '100%'}}>
                 <SteamMarket exchange={rates[rate].exc} rate={rates[rate].abb} />
             </View>
         );
@@ -401,78 +426,62 @@ function App() {
 
     function TabMusicKit() {
         return (
-            <View style={{backgroundColor: '#fff', height: '100%'}}>
+            <View style={{height: '100%'}}>
                 <MusicKits rate={rates[rate].abb} exchange={rates[rate].exc} />
             </View>
         );
     }
 
-    /*function TabLoadout() {
-        return (
-            <View style={{backgroundColor: '#fff', height: '100%'}}>
-                <Text style={styles.title}>Loadouts will be available in the future version!</Text>
-            </View>
-        );
-    }*/
-
     function TabSettings() {
         return (
-            <View style={{backgroundColor: '#fff', height: '100%'}}>
+            <View style={{height: '100%'}}>
                 <Settings rates={rates} rate={rate} setRate={setRate} saveSetting={saveSetting} />
             </View>
         );
     }
 
+    enableScreens();
+
     return (
     <NavigationContainer>
-          <StatusBar backgroundColor='#fff' translucent={false} style={"dark"} />
+          <StatusBar backgroundColor={'#f2f2f2'} translucent={false} style={"dark"} />
           <Tab.Navigator tabBar={(props) => <CleanTabBar {...props} />}>
               <Tab.Screen name="Profiles" component={TabProfile}
                   options={{
-                      tabBarLabelStyle: {color: '#2F8F9D', fontSize: resize(14)},
-                      tabBarActiveTintColor: '#2F8F9D',
+                      tabBarLabelStyle: {color: '#2379D9', fontSize: resize(14)},
+                      tabBarActiveTintColor: '#2379D9',
                       icon: () => (
-                        <Icon name="home" type='font-awesome' color={'#51557E'} size={resize(28)} />
+                        <Icon name="users" type='feather' color={'#322A81'} size={resize(28)} />
                       ),
                       headerShown: false,
                   }}
               />
               <Tab.Screen name="Steam Market" component={TabSteamMarket}
                   options={{
-                      tabBarLabelStyle: {color: '#1F4690', fontSize: resize(14)},
-                      tabBarActiveTintColor: '#1F4690',
+                      tabBarLabelStyle: {color: '#2379D9', fontSize: resize(14)},
+                      tabBarActiveTintColor: '#2379D9',
                       tabBarIcon: () => (
-                      <Icon name="steam" type='font-awesome' color={'#51557E'} size={resize(28)} />
+                        <Icon name="steam" type={'material-community'} color={'#322A81'} size={resize(28)} />
                       ),
                       headerShown: false
                   }}
               />
               <Tab.Screen name="Music Kits" component={TabMusicKit}
                   options={{
-                      tabBarLabelStyle: {color: '#F15412', fontSize: resize(14)},
-                      tabBarActiveTintColor: '#F15412',
+                      tabBarLabelStyle: {color: '#2379D9', fontSize: resize(14)},
+                      tabBarActiveTintColor: '#2379D9',
                       tabBarIcon: () => (
-                      <Icon name="music" type='font-awesome' color={'#51557E'} size={resize(28)} />
+                        <Icon name="music" type='feather' color={'#322A81'} size={resize(28)} />
                       ),
                       headerShown: false
                   }}
               />
-              {/*<Tab.Screen name="Loadout" component={TabLoadout}
-                  options={{
-                      tabBarLabelStyle: {color: '#194D5C', fontSize: 11},
-                      tabBarActiveTintColor: '#30BF8E',
-                      tabBarIcon: () => (
-                      <Icon name="diamond" type='font-awesome' color={'#194D5C'} size={24} />
-                      ),
-                      headerShown: false,
-                  }}
-              />*/}
               <Tab.Screen name="Settings" component={TabSettings}
                   options={{
-                      tabBarLabelStyle: {color: '#5FD068', fontSize: resize(14)},
-                      tabBarActiveTintColor: '#5FD068',
+                      tabBarLabelStyle: {color: '#2379D9', fontSize: resize(14)},
+                      tabBarActiveTintColor: '#2379D9',
                       tabBarIcon: () => (
-                      <Icon name="wrench" type='font-awesome' color={'#51557E'} size={resize(28)} />
+                        <Icon name="settings" type='feather' color={'#322A81'} size={resize(28)} />
                       ),
                       headerShown: false
                   }}
@@ -595,6 +604,31 @@ const styles = StyleSheet.create({
         width: '100%',
         textAlign: 'left',
     },
+    profileModalView: {
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        padding: resize(8),
+        display: 'flex',
+        flexDirection: 'column',
+    },
+    profileModalTitle: {
+        fontSize: resize(26),
+        color: '#333',
+    },
+    profileModalUsername: {
+        fontSize: resize(16),
+        color: '#666',
+    },
+    profileModalButton: {
+        borderWidth: 0.5,
+        borderRadius: 8,
+        padding: resize(8),
+        marginTop: resize(12),
+    },
+    profileModalButtonText: {
+        fontSize: resize(18),
+        color: '#333',
+    }
 });
 
 export default Sentry.Native.wrap(App);

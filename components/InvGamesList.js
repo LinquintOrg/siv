@@ -51,11 +51,10 @@ export default function InvGamesList(props) {
 
     return(
         <View style={{height: '100%'}}>
-            <Text bold style={[styles.title, {fontSize: resize(24)}]}>Choose games</Text>
             <Text bold style={styles.title}>Use previously loaded games</Text>
             {
                 (prevGames.length === 0) ? <Text style={styles.previousGamesSubtitle}>You will be able to see previous games next time you use this profile</Text> :
-                    <Pressable style={styles.previousGames} onPress={() => {
+                    <TouchableOpacity style={styles.previousGames} onPress={() => {
                         props.setPrevState(prevGames[0]?.val)
                     }}>
                         {
@@ -63,10 +62,10 @@ export default function InvGamesList(props) {
                                 <Image style={{ height: resize(48), width: resize(48), borderRadius: 8, marginRight: 8 }} source={{uri: getGameImage(item)}} />
                             ))
                         }
-                    </Pressable>
+                    </TouchableOpacity>
             }
 
-            <Text bold style={styles.title}>Select games from the list</Text>
+            <Text bold style={styles.title}>or select games from the list</Text>
             <ScrollView style={{borderRadius: 8}}>
                 {
                     gj.games.map((item, index) => (
@@ -85,7 +84,7 @@ export default function InvGamesList(props) {
                                     <Text style={styles.appID}>{item.appid}</Text>
                                 </View>
 
-                                <Icon name={ (props.hasState(item.appid)) ? 'check-square-o' : 'square-o' } type='font-awesome' size={resize(24)}
+                                <Icon name={ (props.hasState(item.appid)) ? 'check-circle' : 'circle' } type='feather' size={resize(24)}
                                       style={{alignSelf: 'center'}} />
                             </TouchableOpacity>
 
@@ -111,7 +110,7 @@ export default function InvGamesList(props) {
             <Snackbar
                 visible={snackbarVisible}
                 onDismiss={() => setSnackbarVisible(false)}
-                style={{backgroundColor: "#193C6E"}}
+                style={{backgroundColor: "#FF3732"}}
                 action={{
                     label: 'OKAY',
                     onPress: () => {
@@ -160,16 +159,16 @@ const styles = StyleSheet.create ({
         alignSelf: "center",
         backgroundColor: '#FFF',
         width: '80%',
-        height: resize(40),
+        height: resize(50),
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 16,
-        marginBottom: 4,
-        marginTop: resize(8),
+        marginVertical: 8,
         display: 'flex',
         flexDirection: 'row',
-        borderWidth: 2.0,
+        borderWidth: 0.5,
         borderColor: '#193C6E',
+        elevation: 2,
     },
     buttonMediumText: {
         fontSize: resize(20),
@@ -184,9 +183,10 @@ const styles = StyleSheet.create ({
         display: 'flex',
         flexDirection: 'row',
         justifyContent: 'center',
-        backgroundColor: '#ddd',
-        borderRadius: 8,
+        backgroundColor: '#fff',
+        borderRadius: 16,
         padding: 4,
+        elevation: 2,
     },
     previousGamesSubtitle: {
         width: '90%',
@@ -196,7 +196,7 @@ const styles = StyleSheet.create ({
     },
     snackbarText: {
         fontSize: resize(13),
-        color: '#ddd'
+        color: '#F4EDEC'
     }
 
 })

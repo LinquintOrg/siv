@@ -80,15 +80,26 @@ export default function (props) {
             </View>*/}
             <Text bold style={styles.title}>Other</Text>
 
+            <Text bold style={styles.settingTitle}>Links</Text>
             <Text style={{fontSize: resize(14), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can check API status @ <Text style={{color: '#3342A3'}}>status.domr.xyz</Text></Text>
             <Text style={{fontSize: resize(14), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can find credits @ <Text style={{color: '#3342A3'}}>domr.xyz/credits</Text></Text>
+
+            <Divider width={4} style={{width: '20%', alignSelf: 'center', marginVertical: resize(16), borderRadius: 8}} color={'#0A5270'} />
 
             <Text bold style={styles.settingTitle}>Timeouts</Text>
             <Text style={{width: '85%', alignSelf: 'center', fontSize: resize(14)}}>
                 Steam Market allows only <Text bold>20</Text> request every <Text bold>5</Text> minutes, therefore you can conduct search across Steam Market once every <Text bold>15</Text> seconds.
             </Text>
 
-            <Divider width={4} style={{width: '90%', alignSelf: 'center', marginVertical: resize(16), borderRadius: 2}} color={'#22a'} />
+            {/*<Text bold style={styles.settingTitle}>Latest updates</Text>
+            <View style={styles.updatesCard}>
+                <Text bold style={styles.updatesTitle}>Music kits and prices.</Text>
+                <Text style={styles.updatesText}>Added missing 'Music Kits' and fixed an issue which left a few games with outdated prices. (Games: Artifact Classic,
+                    Killing Floor 2, Path Of Exile, SteamVR, Warframe and Z1 Battle Royale)</Text>
+                <Text style={styles.updatesDate}>Published on 2022-06-24</Text>
+            </View>*/}
+
+            <Divider width={4} style={{width: '20%', alignSelf: 'center', marginVertical: resize(16), borderRadius: 8}} color={'#0A5270'} />
 
             <View style={styles.textColumn}>
                 <Text style={{fontSize: resize(18), textAlign: 'center', width: '90%', alignSelf: 'center',}}>
@@ -204,5 +215,29 @@ const styles = StyleSheet.create({
     },
     selectedTextStyle: {
         fontSize: resize(16),
+    },
+    updatesCard: {
+        display: 'flex',
+        flexDirection: 'column',
+        padding: resize(12),
+        backgroundColor: '#fbfbfb',
+        borderRadius: 16,
+        marginHorizontal: resize(16),
+        alignSelf: 'center',
+        width: '90%',
+        elevation: 4,
+    },
+    updatesTitle: {
+        fontSize: resize(18),
+        color: '#555',
+    },
+    updatesDate: {
+        fontSize: resize(14),
+        color: '#777',
+    },
+    updatesText: {
+        fontSize: resize(14),
+        color: '#333',
+        textAlign: 'justify',
     },
 })

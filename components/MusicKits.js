@@ -1,25 +1,25 @@
 import {
     ActivityIndicator,
-    Dimensions,
+    Dimensions, FlatList,
     Image,
     ScrollView,
     StyleSheet,
-    TextInput, TouchableOpacity,
+    TouchableOpacity,
     View
 } from "react-native";
-import React, {useState} from "react";
+import React, {useCallback, useState} from "react";
 import {Audio} from 'expo-av';
 import {AdMobRewarded} from "expo-ads-admob";
 import {Divider, Icon} from "react-native-elements";
 import {Snackbar} from "react-native-paper";
 import NetInfo from "@react-native-community/netinfo";
 import Text from '../Elements/text'
+import {TextInput} from 'react-native-paper'
 
 export default function MusicKits(props) {
     const [loading, setLoading] = useState(true)
     const [loadingPrices, setLoadingPrices] = useState(false);
     const [kits, setKits] = useState({})
-    // const [sound, setSound] = useState();
     const [prices, setPrices] = useState([]);
     const imgNotFound = 'https://domr.xyz/api/Files/img/no-photo.png'
     const [numPlays, setNumPlays] = useState(5)                         // Save @numPlays to prevent app relaunch to get more plays
@@ -34,7 +34,7 @@ export default function MusicKits(props) {
         return Math.ceil(size * scale)
     }
 
-    const getMusicKits = async () => {
+    const getMusicKits = useCallback(async () => {
         let internetConnection = await NetInfo.fetch();
         if (internetConnection.isInternetReachable && internetConnection.isConnected) {
             await fetch('https://domr.xyz/api/Steam/rq/music_kits.json')
@@ -47,7 +47,19 @@ export default function MusicKits(props) {
             return true
         }
         return false
-    }
+    }, [])
+
+    const getMusicKitPrices = useCallback(async () => {
+        let didLoadPrices = false
+        await fetch('https://domr.xyz/api/Steam/rq/music_kit_prices.php')
+            .then((response) => response.json())
+            .then(json => {
+                setPrices(json)
+                setLoadingPrices(false)
+                didLoadPrices = true
+            })
+        return didLoadPrices
+    }, [])
 
     if (loading) {
         getMusicKits().then(r => {
@@ -59,12 +71,12 @@ export default function MusicKits(props) {
     }
 
     if (loadingPrices) {
-        fetch('https://domr.xyz/api/Steam/rq/music_kit_prices.php')
-            .then((response) => response.json())
-            .then(json => {
-                setPrices(json)
-                setLoadingPrices(false)
-            })
+        getMusicKitPrices().then(r => {
+            if (!r) {
+                setSnackbarVisible(true)
+                setSnackError('Couldn\'t load price data')
+            }
+        })
     }
 
     async function playSound(dir, artist, song) {
@@ -73,12 +85,12 @@ export default function MusicKits(props) {
                 const newNumPlays = numPlays - 1
                 setPlaybackTimeout(true)
 
-                const {sound} = await Audio.Sound.createAsync(
+                const {sound: playbackObject} = await Audio.Sound.createAsync(
                     {uri: 'https://domr.xyz/api/Files/csgo/musickits/' + dir + '/roundmvpanthem_01.mp3'},
                     {shouldPlay: true}
                 )
 
-                setSnackError(<Text style={{fontSize: resize(12)}}>Now Playing <Text bold style={{color: '#6FC8F7'}}>{song}</Text> by <Text style={{color: '#6FC8F7'}}>{artist}</Text></Text>)
+                setSnackError(<Text style={{fontSize: resize(12)}}>Now playing <Text bold style={{color: '#6FC8F7'}}>{song}</Text> by <Text style={{color: '#6FC8F7'}}>{artist}</Text></Text>)
                 setSnackbarVisible(true)
                 await sleep(5000)
                 setSnackbarVisible(false)
@@ -106,6 +118,13 @@ export default function MusicKits(props) {
         });
     }
 
+    const removeWhiteSpace = (str) => {
+        do {
+            str = str.replace(' ', '')
+        } while (str.includes(''))
+        return str
+    }
+
     const getMusicKitPrice = (kit) => {
         const title = (kit.artist + ',' + kit.song).toLowerCase()
         const stTitle = 'st ' + title
@@ -125,7 +144,7 @@ export default function MusicKits(props) {
 
         if (pNormal === null && pStat === null) {
             return (
-                <View style={styles.containerCol}>
+                <View style={[styles.containerCol]}>
                     <Text style={styles.price}>Cannot be sold</Text>
                 </View>
             )
@@ -148,11 +167,29 @@ export default function MusicKits(props) {
         }
         return (
             <View style={styles.containerCol}>
-                <Text style={styles.price}>{props.rate} {pNormal}</Text>
-                <Text style={[styles.price, {color: '#CF6A32'}]}>{props.rate} {pStat}</Text>
+                <Text style={styles.price}>{props.rate} {pNormal.toFixed(2)}</Text>
+                <Text style={[styles.price, {color: '#CF6A32'}]}>{props.rate} {pStat.toFixed(2)}</Text>
             </View>
         )
     }
+
+    const _renderMusicKit = ({item, index}) => (
+        (item.song.includes(search) || item.artist.includes(search)) ?
+            <View>
+                <TouchableOpacity style={styles.container} onPress={async () => {
+                    await playSound(item.dir, item.artist, item.song)
+                }}>
+                    <Image style={{width: resize(48), aspectRatio: 1, marginRight: 8}}
+                           source={{uri: (item.img || imgNotFound)}}/>
+                    <View style={[styles.containerCol]}>
+                        <Text bold style={styles.song}>{item.song}</Text>
+                        <Text bold style={styles.artist}>{item.artist}</Text>
+                    </View>
+                    {(!loadingPrices) ? getMusicKitPrice(item) : null}
+                </TouchableOpacity>
+                {(kits.musickit.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center',}} /> : null}
+            </View> : null
+    )
 
     return (
         (loading) ?
@@ -179,36 +216,40 @@ export default function MusicKits(props) {
                     </View>
 
                     <View style={styles.inputView}>
+                        <TextInput
+                            style={{marginHorizontal: resize(8), flex: 1, height: resize(40), fontSize: resize(16), padding: 0, marginBottom: resize(8)}}
+                            placeholder='Start typing artist or song name'
+                            mode={'outlined'}
+                            onChangeText={text => setSearch(text)}
+                            label={'Music kit search'}
+                            activeOutlineColor={'#1f4690'}
+                            left={
+                                <TextInput.Icon
+                                    icon={() => (<Icon name={'filter'} type={'feather'} color={'#1f4690'} />)}
+
+                                    size={resize(24)}
+                                    style={{margin: 0, paddingTop: resize(8)}}
+                                    name={'at'}
+                                    forceTextInputFocus={false}
+                                />
+                            }
+                        />
+                    </View>
+
+                    {/*<View style={styles.inputView}>
                         <Icon color='#333' name='filter' type='font-awesome' size={resize(20)}/>
                         <TextInput
                             style={{marginHorizontal: 8, borderBottomWidth: 1.0, flex: 1}}
                             placeholder='Filter by artist or song name'
                             onChangeText={text => setSearch(text)}
                         />
-                    </View>
+                    </View>*/}
 
-                    <ScrollView>
-                        {
-                            kits.musickit.map((item, index) => (
-                                (item.song.includes(search) || item.artist.includes(search)) ?
-                                    <View>
-                                        <TouchableOpacity style={styles.container} onPress={async () => {
-                                            await playSound(item.dir, item.artist, item.song)
-                                        }}>
-                                            <Image style={{width: resize(48), aspectRatio: 1, marginRight: 8}}
-                                                   source={{uri: (item.img || imgNotFound)}}/>
-                                            <View style={styles.containerCol}>
-                                                <Text bold style={styles.song}>{item.song}</Text>
-                                                <Text bold style={styles.artist}>{item.artist}</Text>
-                                            </View>
-                                            {(!loadingPrices) ? getMusicKitPrice(item) : null}
-                                        </TouchableOpacity>
-
-                                        { (kits.musickit.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center',}} /> : null }
-                                    </View> : null
-                            ))
-                        }
-                    </ScrollView>
+                    <FlatList
+                        data={kits.musickit}
+                        renderItem={_renderMusicKit}
+                        keyExtractor={item => item.dir}
+                    />
 
                     <Snackbar
                         visible={snackbarVisible}
@@ -273,12 +314,11 @@ const styles = StyleSheet.create({
     },
     title: {
         textAlign: 'center',
-        fontSize: resize(24),
-        marginVertical: 4,
+        fontSize: resize(20),
     },
     subTitle: {
         textAlign: 'center',
-        fontSize: resize(13),
+        fontSize: resize(14),
     },
     inputView: {
         width: '90%',
@@ -293,5 +333,5 @@ const styles = StyleSheet.create({
     snackbarText: {
         fontSize: resize(13),
         color: '#fff'
-    }
+    },
 })

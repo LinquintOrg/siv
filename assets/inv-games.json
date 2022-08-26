@@ -7,7 +7,7 @@
       "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/270880/2aec8af4b4b23cb6054d9aea06194621cdd66945.jpg"
     },
     {
-      "name": "Artifact",
+      "name": "Artifact Classic",
       "appid": 583950,
       "classid": 2,
       "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/583950/dee44586fb8e07add8b86bfb59c958071d08b0e2.jpg"
@@ -17,12 +17,6 @@
       "appid": 296300,
       "classid": 2,
       "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/296300/3dfbac7f837c33c2807d5631eaa7215d3b0bc600.jpg"
-    },
-    {
-      "name": "Black Squad",
-      "appid": 550650,
-      "classid": 2,
-      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/550650/213a736d8c5b75998b671de25e6621d1e7bc122a.jpg"
     },
     {
       "name": "BATTALION 1944",
@@ -41,6 +35,18 @@
       "appid": 730,
       "classid": 2,
       "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/730/69f7ebe2735c366c65c0b33dae00e12dc40edbe4.jpg"
+    },
+    {
+      "name": "Crab Game",
+      "appid": 1782210,
+      "classid": 2,
+      "url": "https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/1782210/e1afdaf96f55771d1d5ea4c9692d0f707ab0110b.jpg"
+    },
+    {
+      "name": "Dota 2",
+      "appid": 570,
+      "classid": 2,
+      "url": "https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/570/0bbb630d63262dd66d2fdd0f7d37e8661a410075.jpg"
     },
     {
       "name": "Euro Truck Simulator 2",
@@ -97,12 +103,6 @@
       "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/207140/65cfa21149c415430fe36d83c23e079e6db476cc.jpg"
     },
     {
-      "name": "Steam VR",
-      "appid": 250820,
-      "classid": 2,
-      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/250820/7f286d5ee22905b51663e0cea505e1c2f7500f36.jpg"
-    },
-    {
       "name": "Subnautica",
       "appid": 264710,
       "classid": 2,
@@ -113,12 +113,6 @@
       "appid": 230410,
       "classid": 2,
       "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/230410/22064646470f4c53388ba87774c7ac10f0a91ffa.jpg"
-    },
-    {
-      "name": "Z1 Battle Royale",
-      "appid": 433850,
-      "classid": 2,
-      "url": "https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/433850/aee7491abfd812e2fbb4ec3326ad5f4b85c8137a.jpg"
     }
   ]
 }

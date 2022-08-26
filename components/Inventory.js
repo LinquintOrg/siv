@@ -1,30 +1,135 @@
 import {
     ActivityIndicator,
-    Dimensions,
+    Dimensions, FlatList,
     Image,
     LayoutAnimation,
     Platform,
-    Pressable,
+    Pressable, SafeAreaView,
     ScrollView,
     StyleSheet,
-    TextInput,
     TouchableOpacity,
     UIManager,
     View,
+    SectionList
 } from "react-native";
-import React, {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
-import gamesJson from '../assets/inv-games.json'
+import React, {useLayoutEffect, useMemo, useRef, useState} from "react";
+import gamesJson from '../assets/inv-games.json';
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import {Divider, Icon} from "react-native-elements";
-import BSheet, {BottomSheetScrollView} from '@gorhom/bottom-sheet'
 import {Dropdown} from "react-native-element-dropdown";
-import {Modal, Portal, Provider, Snackbar} from "react-native-paper";
+import {Portal, Provider, Snackbar, FAB} from "react-native-paper";
 import NetInfo from "@react-native-community/netinfo";
-import Text from '../Elements/text'
+import Text from '../Elements/text';
+import { Sheet } from '@tamkeentech/react-native-bottom-sheet';
+import Modal from 'react-native-modal';
+import * as Clipboard from "expo-clipboard";
+import cloneDeep from 'lodash.clonedeep'
+import {TextInput} from "react-native-paper";
 
 if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental(true)
 }
+
+/*
+ *  Props:
+ *      steam - SteamID64 of the selected user
+ *      rate - exchange rate ID
+ *      rates - exchange rates array
+ *      games - array of selected games
+ */
+
+/*export default function Inventory(props) {
+    const [loadingInventory, setLoadingInventory] = useState(false)
+    const [activityText, setActivityText] = useState('')
+
+    // Error Snackbar
+    const [errSnackVisible, setErrSnackVisible] = useState(false)
+    const [errSnackMsg, setErrSnackMsg] = useState('')
+
+    function sleep(milliseconds) {
+        return new Promise((resolve) => {
+            setTimeout(resolve, milliseconds);
+        });
+    }
+
+    const getInventory = () => {
+        const user = useMemo(() => props.steam, [])
+        const games = useMemo(() => props.games, [])
+
+        console.log(`User: ${user} ${JSON.stringify(games)}`)
+
+        useEffect(async () => {
+            setLoadingInventory(true)
+            for (let i = 0; i < games.length; i++) {
+                if (i > 0 && games.length > 1) {
+                    setActivityText(`Paused for 5 seconds`)
+                    await sleep(5000)
+                }
+
+                const gameID = games[i]
+                setActivityText(`Loading data from Steam: ${gameID}`)
+
+                await fetch('https://steamcommunity.com/inventory/' + user + '/' + gameID + '/2/?count=1000')
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json()
+                        } else {
+                            return false
+                        }
+                    })
+                    .then(json => {
+                        if (!json) {
+                            setErrSnackVisible(true)
+                            setErrSnackMsg('Couldn\'t load inventory')
+                            setLoadingInventory(false)
+                        } else {
+                            json['appid'] = gameID
+                        }
+                    })
+
+                if (!loadingInventory) {
+                    break
+                }
+
+                if (i === games.length - 1) {
+                    setLoadingInventory(false)
+                }
+            }
+        }, [user, games])
+    }
+
+    getInventory()
+
+    const _renderInventoryItem = ({item}) => {
+        return (
+            <TouchableOpacity>
+
+            </TouchableOpacity>
+        )
+    }
+
+    return (
+        <View>
+            <Text>Work in progress :)</Text>
+            <Text>{activityText}</Text>
+
+            <Snackbar
+                visible={errSnackVisible}
+                onDismiss={() => setErrSnackVisible(false)}
+                style={{backgroundColor: "#193C6E"}}
+                action={{
+                    label: 'DISMISS',
+                    onPress: () => {
+                        setErrSnackVisible(false)
+                    },
+                }}>
+                <View>
+                    <Text style={styles.snackbarText}>{errSnackMsg}</Text>
+                </View>
+            </Snackbar>
+        </View>
+    )
+}*/
 
 export default function Inventory(props) {
     const [loaded, setLoaded] = useState(false)
@@ -39,6 +144,7 @@ export default function Inventory(props) {
         'avg24': 0,
         'avg7': 0,
         'avg30': 0,
+        missingPrices: 0,
         'cheapest': {
             'name': '',
             'price': 0
@@ -50,29 +156,319 @@ export default function Inventory(props) {
         'games': []
     })
     const games = gamesJson.games
-    const rates = props.rates
+    const rates = useMemo(() => props.rates, [props.rates])
     const [rate, setRate] = useState(rates[props.rate].exc)
     const [curr, setCurr] = useState(rates[props.rate].abb)
     let tempArray = []
     const [search, setSearch] = useState('')
-    const [sort, setSort] = useState(0)
     const [stickerPrices] = useState({})
     // const [invSize, setInvSize] = useState(0)
     const [snackbarVisible, setSnackbarVisible] = useState(false)
     const [snackError, setSnackError] = useState('')
     const [filterVisible, setFilterVisible] = useState(false)
     const [containsCSGO, setContainsCSGO] = useState(false)
+    const [inventoryData, setInventoryData] = useState([])
 
     const [scale] = useState(Dimensions.get('window').width / 423);
     const resize = (size) => {
         return Math.ceil(size * scale)
     }
 
-    const sortOptionsData = [
-        { label: 'Default', value: 0 },
-        { label: 'Price', value: 1 },
-        { label: 'Name', value: 2 }
-    ]
+    const loadInventory = () => {
+        const user = useMemo(() => props.steam, [props.steam])
+        const games = useMemo(() => props.games, [props.games])
+        const isLoaded = useMemo(() => loaded, [])
+
+        useLayoutEffect(() => {
+            async function loadInventoryOnEffect() {
+                setLoaded(false)
+                setLoading(true)
+                const itemArray = []
+
+                for (let i = 0; i < games.length; i++) {
+                    if (i > 0 && games.length > 1) {
+                        setAlert(`Paused for 5 seconds`)
+                        await sleep(5000)
+                    }
+
+                    const gameID = games[i]
+                    setAlert(`Loading data from Steam: ${gameID}`)
+
+                    await fetch('https://steamcommunity.com/inventory/' + user + '/' + gameID + '/' + ((gameID === 238960) ? user : (gameID === 264710) ? 1847277 : 2) + '/?count=1000')
+                        .then(response => {
+                            if (response.ok) {
+                                return response.json()
+                            } else {
+                                return false
+                            }
+                        })
+                        .then(json => {
+                            if (!json || json == null) {
+                                setSnackbarVisible(true)
+                                setSnackError('Couldn\'t load inventory')
+                                setLoading(false)
+                            } else {
+                                json['appid'] = gameID
+                                json['game'] = gameName(gameID)
+                                itemArray.push(json)
+                            }
+                        })
+                }
+                return itemArray
+            }
+
+            if (!isLoaded) {
+                loadInventoryOnEffect().then(async (items) => {
+                    setLoading(false)
+                    setAlert('Fetching Steam inventory and downloading prices...')
+                    setFetching(true)
+                    await fetchInventory(items).then(async (fetchedItems) => {
+                        if (fetchedItems == null) {
+                            setIsEmpty(true)
+                        } else {
+                            await getPrices(fetchedItems).then((prices) => {
+                                finalizeInventory(fetchedItems, prices)
+                                setFetching(false)
+                                setLoaded(true)
+                            })
+                        }
+                    })
+                })
+            }
+        }, [user])
+    }
+
+    const fetchInventory = async (gameItems) => {
+        const tempItems = []
+        let itemsAmount = 0
+
+        for (let i = 0; i < gameItems.length; i++) {
+            const items = gameItems[i]
+            itemsAmount += items.total_inventory_count
+            const tempGameData = {
+                is_empty: items.total_inventory_count === 0,
+                appid: items.appid,
+                game: items.game,
+                data: []
+            }
+            const assets = items.assets
+
+            if (!tempGameData.is_empty) {
+                for (let j = 0; j < items.descriptions.length; j++) {
+                    const item = items.descriptions[j]
+                    const itemID = item.classid + '-' + item.instanceid
+                    const tempItem = {
+                        amount: getItemCount(itemID, assets),
+                        marketable: item.marketable,
+                        tradable: item.tradable,
+                        name: item.market_name,
+                        hash_name: item.market_hash_name,
+                        type: (item.hasOwnProperty('tags')) ? item.tags[0].localized_tag_name : (items.appid === 232090) ? 'None' : (item.hasOwnProperty('type')) ? item.type : 'None',
+                        id: itemID,
+                        image: item.icon_url,
+                        rarity: (items.appid === 232090) ? item.type : (item.hasOwnProperty('tags')) ? getItemRarity(item.tags) : null,
+                        rarity_color: '#' + ((items.appid === 730) ? getRarityColor(item.tags) : (item.name_color != null) ? item.name_color : '229'),
+                        appid: items.appid
+                    }
+
+                    if (items.appid === 730) {
+                        tempItem['stickers'] = findStickers(item.descriptions)
+                        if (item.fraudwarnings != null) tempItem['nametag'] = item.fraudwarnings[0].replace('Name Tag: ', '')
+                    }
+                    tempGameData.data.push(tempItem)
+                }
+            }
+            tempItems.push(tempGameData)
+        }
+        if (itemsAmount === 0) return null
+        return tempItems
+    }
+
+    const getPrices = async (items) => {
+        const queries = []
+        let stickerQuery = []
+        items.forEach((game) => {
+            if (!game.is_empty) {
+                let query = {
+                    appid: game.appid,
+                    hashes: ''
+                }
+                game.data.forEach((item) => {
+                    let name = item.hash_name.replace(',', ';')
+                    query.hashes += name + ','
+
+                    if (game.appid === 730) {
+                        if (item.stickers != null) {
+                            item.stickers.stickers.forEach((sticker) => {
+                                if (!stickerQuery.includes(sticker.long_name)) {
+                                    stickerQuery.push(sticker.long_name)
+                                }
+                            })
+                        }
+                    }
+                })
+                queries.push(query)
+            }
+        })
+
+        const tmpPrices = {}
+        for (const query of queries) {
+            let myHeaders = new Headers()
+            myHeaders.append('Content-Type', 'application/json')
+
+            const options = {
+                method: 'POST',
+                body: JSON.stringify(query),
+                headers: myHeaders
+            }
+
+            await fetch('https://domr.xyz/api/Steam/v2/getPrices.php', options)
+                .then(response => {
+                    if (response.ok) {
+                        return response.json()
+                    } else {
+                        setFetching(false)
+                        setSnackError('Error occured while getting prices')
+                        setSnackbarVisible(true)
+                        return null
+                    }
+                }).then(async json => {
+                    if (json != null) {
+                        tmpPrices[query.appid] = json
+                    }
+                    await sleep(500)
+                })
+        }
+
+        if (stickerQuery.length > 0) {
+            await fetch('https://domr.xyz/api/Steam/rq/stickers.php?hashes=' + stickerQuery.toString())
+                .then(response => {
+                    if (response.ok) {
+                        return response.json()
+                    } else {
+                        setFetching(false)
+                        setSnackError('Error occured while getting prices')
+                        setSnackbarVisible(true)
+                        return null
+                    }
+                }).then(json => {
+                    stickerQuery.forEach((name, index) => {
+                        stickerPrices[name] = json[index]
+                    })
+                })
+        }
+        return tmpPrices
+    }
+
+    const finalizeInventory = (items, prices) => {
+        let min = 99999
+        let minName = ''
+        let max = 0
+        let maxName = ''
+
+        items.forEach((game) => {
+            const appid = game.appid
+            const priceData = prices[appid]
+
+            if (appid === 730) setContainsCSGO(true)
+
+            const gamePrice = {
+                price: 0, owned: 0, ownedTradeable: 0, avg24: 0, avg7: 0, avg30: 0, appid: appid, game: gameName(appid), stickerVal: 0, patchVal: 0
+            }
+
+            game.data.forEach((item) => {
+                item['has_price'] = priceData[item.hash_name].found
+                item['price'] = priceData[item.hash_name].price
+
+                if (priceData[item.hash_name].found) {
+                    const pd = priceData[item.hash_name].price
+                    stats.price += Math.round(pd.Price * rate * 100) * item.amount / 100
+                    stats.owned += item.amount
+                    stats.ownedTradeable += (item.marketable) ? item.amount : 0
+                    stats.avg24 += Math.round(pd.avg24 * rate * 1000) * item.amount / 1000
+                    stats.avg7 += Math.round(pd.avg7 * rate * 1000) * item.amount / 1000
+                    stats.avg30 += Math.round(pd.avg30 * rate * 1000) * item.amount / 1000
+
+                    gamePrice.price += Math.round(pd.Price * rate * 100) * item.amount / 100
+                    gamePrice.owned += item.amount
+                    gamePrice.ownedTradeable += (item.marketable) ? item.amount : 0
+                    gamePrice.avg24 += Math.round(pd.avg24 * rate * 1000) * item.amount / 1000
+                    gamePrice.avg7 += Math.round(pd.avg7 * rate * 1000) * item.amount / 1000
+                    gamePrice.avg30 += Math.round(pd.avg30 * rate * 1000) * item.amount / 1000
+
+                    if (appid === 730) {
+                        if (item.stickers != null) {
+                            const type = item.stickers.type
+                            item.stickers.stickers.forEach(sticker => {
+                                if (type === 'sticker') gamePrice.stickerVal += Math.round(stickerPrices[sticker.long_name].Price * rate * 100) / 100
+                                else gamePrice.patchVal += Math.round(stickerPrices[sticker.long_name].Price * rate * 100) / 100
+                            })
+                        }
+                    }
+
+                    if (pd.Price < min) {
+                        min = pd.Price
+                        minName = item.name
+                    }
+
+                    if (max < pd.Price) {
+                        max = pd.Price
+                        maxName = item.name
+                    }
+                } else {
+                    if (item.marketable && item.tradable) {
+                        stats.owned += item.amount
+                        stats.ownedTradeable += item.amount
+                        gamePrice.owned += item.amount
+                        gamePrice.ownedTradeable += item.amount
+                        stats.missingPrices += item.amount
+                    }
+                }
+
+                if (!item.marketable && !item.tradable) {
+                    stats.owned += item.amount
+                    gamePrice.owned += item.amount
+                }
+            })
+
+            stats.games.push(gamePrice)
+        })
+
+        stats.cheapest.name = minName
+        stats.cheapest.price = min
+        stats.expensive.price = max
+        stats.expensive.name = maxName
+
+        setInventoryData(items)
+        setFinalInventory(items)
+    }
+
+    loadInventory()
+
+    const getItemCount = (id, assets) => {
+        let count = 0
+        for (let i = 0; i < assets.length; i++) {
+            let assetID = assets[i].classid + '-' + assets[i].instanceid
+            if (id === assetID) count++
+        }
+        return count
+    }
+
+    const getItemRarity = (tags) => {
+        let rarity = null
+        tags.forEach(tag => {
+            if (tag.category.toLowerCase() === 'rarity') rarity = tag.localized_tag_name
+        })
+        return rarity
+    }
+
+    const getRarityColor = (tags) => {
+        let color = null
+        tags.forEach(tag => {
+            if (tag.category.toLowerCase() === 'rarity') color = tag.color
+        })
+        return color
+    }
 
     const getInventory = async (id, end) => {
         setAlert('Loading data from Steam')
@@ -96,7 +492,7 @@ export default function Inventory(props) {
 
                     if (end) {
                         setLoading(false)
-                        await fetchData()
+                        /*await fetchData()*/
                     }
                 } else {
                     setLoading(false)
@@ -132,13 +528,13 @@ export default function Inventory(props) {
         }
 
         let tmpArr = html.split(';')
-        let tmpNames = tmpArr[count].split(', ')
+        let tmpNames = tmpArr[count].replace(', Champion', '; Champion').replace(', Champion', '; Champion').replace(', Champion', '; Champion').replace(', Champion', '; Champion').replace(', Champion', '; Champion').split(', ')
         tmpArr = tmpArr.splice(0, count)
 
         let tmpStickers = []
         for (let j = 0; j < count; j++) {
             let abb = (type === 'sticker') ? 'Sticker | ' : 'Patch | '
-            let sticker = { name: tmpNames[j], img: tmpArr[j], long_name: abb + tmpNames[j] }
+            let sticker = { name: (tmpNames[j]).replace('; Champion', ', Champion'), img: tmpArr[j], long_name: (abb + tmpNames[j]).replace('; Champion', ', Champion') }
             tmpStickers.push(sticker)
         }
 
@@ -228,7 +624,7 @@ export default function Inventory(props) {
             const gameStats = { 'name': tempArray[i].game, 'value': 0, 'items': 0, 'avg24': 0, 'avg7': 0, 'avg30': 0, 'stickerVal': 0, 'patchVal': 0 }
             let skipped = 0;
 
-            const post = {
+            const postBody = {
                 "appid": queries[i].app,
                 "hashes": queries[i].hashes
             }
@@ -238,7 +634,7 @@ export default function Inventory(props) {
 
             const options = {
                 method: 'POST',
-                body: JSON.stringify(post),
+                body: JSON.stringify(postBody),
                 headers: myHeaders
             }
 
@@ -347,26 +743,29 @@ export default function Inventory(props) {
         }
     }
 
-    useLayoutEffect(() => {
+    /*useLayoutEffect(() => {
         setRate(rates[props.rate].exc)
         setCurr(rates[props.rate].abb)
-    }, [props.rate])
+    }, [props.rate])*/
 
-    useEffect(async () => {
-        if (!loaded) {
-            let internetConnection = await NetInfo.fetch();
-            if (!internetConnection.isInternetReachable && !internetConnection.isConnected) {
-                setAlert("No internet connection")
-                return
-            }
+    /*useEffect(() => {
+        async function loadInventoryOnCreate() {
+            if (!loaded) {
+                let internetConnection = await NetInfo.fetch();
+                if (!internetConnection.isInternetReachable && !internetConnection.isConnected) {
+                    setAlert("No internet connection")
+                    return
+                }
 
-            setLoading(true)
-            for (let i = 0; i < props.games.length; i++) {
-                await getInventory(props.games[i], i === props.games.length - 1).then(null)
-                if (i !== props.games.length - 1) await sleep(7000)
+                setLoading(true)
+                for (let i = 0; i < props.games.length; i++) {
+                    await getInventory(props.games[i], i === props.games.length - 1).then(null)
+                    if (i !== props.games.length - 1) await sleep(7000)
+                }
             }
         }
-    }, [])
+        loadInventoryOnCreate().then(() => null)
+    }, [loaded])*/
 
 
     const gameName = (id) => {
@@ -377,10 +776,54 @@ export default function Inventory(props) {
         }
     }
 
+    const [sortBy, setSortBy] = useState(0)
+    const [sortOrder, setSortOrder] = useState(0)
+
+    const changeSortBy = (sort) => {
+        if (sort !== sortBy) {
+            setSortBy(sort)
+            const tmpInventory = cloneDeep(inventoryData)
+
+            tmpInventory.forEach(game => {
+                if (sort === 1) {
+                    game.data.sort((a, b) => {
+                        return (b.name < a.name) ? 1 : -1
+                    })
+                }
+
+                if (sort === 2) {
+                    game.data.sort((a, b) => {
+                        if (a.has_price && b.has_price) return b.price.Price * b.amount - a.price.Price * a.amount
+                        if (!a.has_price && !b.has_price) return 0
+                        if (!a.has_price) return 1
+                        else return -1
+                    })
+                }
+
+                if (sortOrder === 1) game.data.reverse()
+            })
+
+            setFinalInventory(tmpInventory)
+        }
+    }
+
+    const changeSortOrder = (order) => {
+        if (order !== sortOrder) {
+            setSortOrder(order)
+            finalInventory.forEach(game => {
+                game.data.reverse()
+            })
+        }
+    }
+
     const [alert, setAlert] = useState('')
     const [renderUnsellable, setRenderUnsellable] = useState(false)
     const [renderNameTag, setRenderNameTag] = useState(false)
     const [renderAppliedSticker, setRenderAppliedSticker] = useState(false)
+    const [orderVisible, setOrderVisible] = useState(false)
+    const [finalInventory, setFinalInventory] = useState([])
+    const [itemVisible, setItemVisible] = useState(false)
+    const [modalItem, setModalItem] = useState({})
     const scrollRef = useRef();
 
     function displayItem(item) {
@@ -388,7 +831,7 @@ export default function Inventory(props) {
         let renderSearch = true
 
         if (search !== '') {
-            renderSearch = (item.market_name.toLowerCase().includes(search.toLowerCase()) || item.type.toLowerCase().includes(search.toLowerCase()))
+            renderSearch = (item.name.toLowerCase().includes(search.toLowerCase()) || item.type.toLowerCase().includes(search.toLowerCase()))
         }
 
         if (renderUnsellable) {
@@ -397,11 +840,13 @@ export default function Inventory(props) {
 
         if (item.appid === 730) {
             if (renderNameTag) {
-                render = item.hasOwnProperty('fraudwarnings') && render
+                render = item.hasOwnProperty('nametag') && render
             }
 
             if (renderAppliedSticker) {
-                render = item.hasOwnProperty('stickers') && render
+                if (item.hasOwnProperty('stickers')) {
+                    render = item.stickers != null && render
+                }
             }
         }
         return (render && renderSearch)
@@ -414,6 +859,46 @@ export default function Inventory(props) {
             </View>
         );
     };
+
+    const _renderInventoryItem = ({item}) => {
+        return (
+            displayItem(item) ?
+                <Pressable style={styles.itemContainer} onPress={() => {
+                    setModalItem(item)
+                    setItemVisible(true)
+                    console.log(item)
+                }}>
+                    <View style={[styles.column, {width: '70%'}]}>
+                        <Text bold style={styles.itemName}>{ item.name }</Text>
+                        <Text style={[styles.itemType]}>{ item.type }</Text>
+                    </View>
+
+                    <View style={[styles.column, {justifyContent: 'space-between', width: '30%'}]}>
+                        <Text style={styles.itemPriceSingular}><Text bold>{curr} { (rate * item.price.Price).toFixed(2) }</Text> x { item.amount }</Text>
+                        <Text bold style={styles.itemPriceTotal}>{curr} { (rate * item.price.Price * item.amount).toFixed(2) }</Text>
+                    </View>
+                </Pressable> : null
+        )
+    }
+
+    const _renderSectionHeader = ({section: {game}}) => {
+        return (
+            <View style={styles.sectionContainer}>
+                <Text bold style={styles.sectionText}>{ game }</Text>
+            </View>
+        )
+    }
+
+    const [fabVisible, setFabVisible] = useState(false)
+    const [showSheet, setShowSheet] = useState(false);
+
+    const getAppliedValue = (applied) => {
+        let tmpPrice = 0.0
+        applied.forEach(apply => {
+            tmpPrice += (Math.round(stickerPrices[apply.long_name].Price * 100 * rate)) / 100
+        })
+        return tmpPrice
+    }
 
     return(
         <View>
@@ -428,20 +913,28 @@ export default function Inventory(props) {
                     <View style={styles.column}>
                         <ActivityIndicator style={{marginTop: Dimensions.get('window').height / 2 - 36}} size="large" color='#000' />
                         <Text style={{textAlign: 'center'}}>{alert}</Text>
-                        {(props.games.length > 1) ?
-                            <Text style={{textAlign: 'center', alignSelf: 'center', marginVertical: resize(16), width: '70%'}}>You have selected { props.games.length } games, therefore it will take a bit longer to complete</Text>
-                            : null
-                        }
                     </View> :
                     <View style={[styles.column, {alignItems: 'center', marginVertical: resize(8)}]}>
                         <View style={styles.inputView}>
                             <TextInput
-                                style={styles.searchInput}
-                                placeholder={'Search for items'}
+                                style={{marginHorizontal: resize(8), flex: 1, height: resize(40), fontSize: resize(16), padding: 0,}}
+                                placeholder='Start typing item name'
+                                mode={'outlined'}
                                 onChangeText={text => setSearch(text)}
+                                label={'Item search'}
+                                activeOutlineColor={'#1f4690'}
+                                left={
+                                    <TextInput.Icon
+                                        icon={() => (<Icon name={'filter'} type={'feather'} color={'#1f4690'} />)}
+                                        size={resize(24)}
+                                        style={{margin: 0, paddingTop: resize(8)}}
+                                        name={'at'}
+                                        forceTextInputFocus={false}
+                                    />
+                                }
                             />
                         </View>
-                        <View style={styles.fsRow}>
+                        {/*<View style={styles.fsRow}>
                             <View style={styles.fsCell}>
                                 <Dropdown
                                     style={styles.dropdown}
@@ -467,93 +960,291 @@ export default function Inventory(props) {
                                     <Text style={styles.filterPressableText}>Filter options</Text>
                                 </Pressable>
                             </View>
-                        </View>
+                        </View>*/}
 
                     </View>
                 }
-                <ScrollView ref={scrollRef}>
-                    {
+                <SectionList
+                    renderItem={_renderInventoryItem}
+                    renderSectionHeader={_renderSectionHeader}
+                    sections={finalInventory}
+                    stickySectionHeadersEnabled={true}
+                    ref={scrollRef}
+                    nestedScrollEnabled={true}
+                    ListEmptyComponent={() => (
                         (loaded) ?
-                            inventory.map((item) => (
-                                <View>
-                                    <Text bold style={styles.gameName}>{item.game}</Text>
-                                    {
-                                        (item.total_inventory_count === 0) ?
-                                            <View>
-                                                <Text style={{fontSize: resize(18), color: '#444', textAlign: 'center', marginBottom: resize(16)}}>Game inventory is empty.</Text>
-                                            </View> :
-                                            item.descriptions.map((inv, index) => (
-                                                (displayItem(inv)) ?
-                                                    <View>
-                                                        <Item inv={inv} rate={rate} curr={curr} stPrices={stickerPrices} />
-
-                                                        {(item.descriptions.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center'}} /> : null}
-                                                    </View> : null
-                                            ))
-                                    }
-                                </View>
-                            ))
-                        : null
-                    }
-                    {
-                        loaded ?
-                            <TouchableOpacity style={styles.scrollProgress} onPress={() => scrollRef.current?.scrollTo({animated: true, y: 0})}>
+                            <Text>Inventory is empty</Text> : null
+                    )}
+                    ListFooterComponent={() => (
+                        (loaded) ?
+                            <TouchableOpacity style={styles.scrollProgress} onPress={() => {
+                                scrollRef.current?.scrollToLocation({itemIndex: 0, sectionIndex: 0, animated: true})
+                            }}>
                                 <Icon name={'angle-double-up'} type={'font-awesome'} size={resize(48)} color={'#555'} />
                                 <Text style={{fontSize: resize(14)}}>This is the end of the inventory</Text>
                                 <Text style={{fontSize: resize(14)}}>Tap to scroll back to top</Text>
                             </TouchableOpacity> : null
-                    }
-                </ScrollView>
+                    )}
+                />
             </View>
 
-            { (loaded) ? <Summary stats={stats} curr={rates[props.rate].abb} rate={rates[props.rate].exc} steam={props.steam} games={props.games} /> : null}
+            { (loaded) ?
+                <Summary
+                    stats={stats}
+                    curr={rates[props.rate].abb}
+                    rate={rates[props.rate].exc}
+                    steam={props.steam}
+                    games={props.games}
+                    showSheet={showSheet}
+                    setShowSheet={setShowSheet}
+                /> : null}
 
             <Provider>
                 <Portal>
-                    <Modal visible={filterVisible} onDismiss={() => setFilterVisible(false)} contentContainerStyle={styles.containerStyle}>
-                        <Text bold style={styles.fModalTitle}>Filter</Text>
-
-                        <Text bold style={styles.fModalGameTitle}>All Games</Text>
-                        <BouncyCheckbox
-                            isChecked={renderUnsellable}
-                            onPress={(isChecked) => setRenderUnsellable(isChecked)}
-                            text={<Text style={{fontSize:resize(14)}}>Display <Text bold>non-tradable</Text> items</Text>}
-                            textStyle={{textDecorationLine: "none"}}
-                            fillColor={'#229'}
-                            iconStyle={{borderWidth:resize(3)}}
-                            style={{marginLeft: resize(16)}}
-                            size={resize(22)}
-                        />
-
-                        { (containsCSGO) ?
-                            <View>
-                                <Text bold style={styles.fModalGameTitle}>Counter-Strike: Global Offensive</Text>
-                                <BouncyCheckbox
-                                    isChecked={renderNameTag}
-                                    onPress={(isChecked) => setRenderNameTag(isChecked)}
-                                    text={<Text style={{fontSize:resize(14)}}>Display items with <Text bold>Name Tags</Text> only</Text>}
-                                    textStyle={{textDecorationLine: "none"}}
-                                    fillColor={'#229'}
-                                    iconStyle={{borderWidth:resize(3)}}
-                                    style={{marginLeft: resize(16), marginVertical: resize(8),}}
-                                    size={resize(22)}
-                                />
-
-                                <BouncyCheckbox
-                                    isChecked={renderAppliedSticker}
-                                    onPress={(isChecked) => setRenderAppliedSticker(isChecked)}
-                                    text={<Text style={{fontSize:resize(14)}}>Display items with <Text bold>Stickers</Text> only</Text>}
-                                    textStyle={{textDecorationLine: "none"}}
-                                    fillColor={'#229'}
-                                    iconStyle={{borderWidth:resize(3)}}
-                                    style={{marginLeft: resize(16), marginVertical: resize(8),}}
-                                    size={resize(22)}
-                                />
-                            </View> : null
-                        }
-                    </Modal>
+                    { (loaded) ? <FAB.Group
+                        open={fabVisible}
+                        icon={() => (<Icon name={fabVisible ? 'minus' : 'plus'} type={'feather'} color={'#2379D9'} size={resize(24)}/>)}
+                        fabStyle={{backgroundColor: '#322A81', borderRadius: 16}}
+                        actions={[
+                            {
+                                icon: () => (
+                                    <Icon name={'list'} type={'feather'} color={'#2379D9'} size={resize(24)}/>),
+                                onPress: () => setShowSheet(true),
+                                label: 'Summary',
+                                labelTextColor: '#322A81',
+                            },
+                            {
+                                icon: () => (
+                                    <Icon name={'bar-chart'} type={'feather'} color={'#2379D9'} size={resize(24)}/>),
+                                label: 'Sort order',
+                                labelTextColor: '#322A81',
+                                onPress: () => setOrderVisible(true)
+                            },
+                            {
+                                icon: () => (
+                                    <Icon name={'filter'} type={'feather'} color={'#2379D9'} size={resize(24)}/>),
+                                label: 'Filter options',
+                                labelTextColor: '#322A81',
+                                onPress: () => setFilterVisible(true),
+                            }
+                        ]}
+                        onStateChange={() => setFabVisible(!fabVisible)}
+                    /> : null}
                 </Portal>
             </Provider>
+
+            <Modal
+                isVisible={filterVisible}
+                onBackdropPress={() => setFilterVisible(false)}
+                animationIn={'rubberBand'}
+                animationOut={'fadeOutDown'}
+                animationInTiming={200}
+            >
+                <SafeAreaView style={styles.containerStyle}>
+                    <Text bold style={styles.fModalTitle}>Filter</Text>
+
+                    <Text bold style={styles.fModalGameTitle}>All Games</Text>
+                    <BouncyCheckbox
+                        isChecked={renderUnsellable}
+                        onPress={(isChecked) => setRenderUnsellable(isChecked)}
+                        text={<Text style={{fontSize:resize(14), color: '#f07167'}}>Display <Text bold>non-tradable</Text> items</Text>}
+                        textStyle={{textDecorationLine: "none"}}
+                        fillColor={'#f07167'}
+                        iconStyle={{borderWidth:resize(3)}}
+                        style={{marginLeft: resize(16)}}
+                        size={resize(22)}
+                    />
+
+                    { (containsCSGO) ?
+                        <View>
+                            <Text bold style={styles.fModalGameTitle}>Counter-Strike: Global Offensive</Text>
+                            <BouncyCheckbox
+                                isChecked={renderNameTag}
+                                onPress={(isChecked) => setRenderNameTag(isChecked)}
+                                text={<Text style={{fontSize:resize(14), color: '#f07167'}}>Display items with <Text bold>Name Tags</Text> only</Text>}
+                                textStyle={{textDecorationLine: "none"}}
+                                fillColor={'#f07167'}
+                                iconStyle={{borderWidth:resize(3)}}
+                                style={{marginLeft: resize(16), marginVertical: resize(8),}}
+                                size={resize(22)}
+                            />
+
+                            <BouncyCheckbox
+                                isChecked={renderAppliedSticker}
+                                onPress={(isChecked) => setRenderAppliedSticker(isChecked)}
+                                text={<Text style={{fontSize:resize(14), color: '#f07167'}}>Display items with <Text bold>Stickers</Text> only</Text>}
+                                textStyle={{textDecorationLine: "none"}}
+                                fillColor={'#f07167'}
+                                iconStyle={{borderWidth:resize(3)}}
+                                style={{marginLeft: resize(16), marginVertical: resize(8),}}
+                                size={resize(22)}
+                            />
+                        </View> : null
+                    }
+                </SafeAreaView>
+            </Modal>
+
+            <Modal
+                isVisible={orderVisible}
+                onBackdropPress={() => setOrderVisible(false)}
+                animationIn={'rubberBand'}
+                animationOut={'fadeOutDown'}
+                animationInTiming={200}
+            >
+                <SafeAreaView style={styles.containerStyle}>
+                    <Text bold style={styles.fModalTitle}>Sort inventory</Text>
+
+                    <View style={styles.row}>
+                        <View style={[styles.column, {width: '50%'}]}>
+                            <Text style={styles.fModalGameTitle}>Sort by</Text>
+
+                            <TouchableOpacity style={[styles.sortButton, sortBy === 0 ? {backgroundColor: '#f07167'} : null]} onPress={() => changeSortBy(0)}>
+                                <Text style={[styles.sortButtonText, sortBy === 0 ? {color: '#fff'} : null]}>Date</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.sortButton, sortBy === 1 ? {backgroundColor: '#f07167'} : null]} onPress={() => changeSortBy(1)}>
+                                <Text style={[styles.sortButtonText, sortBy === 1 ? {color: '#fff'} : null]}>Name</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.sortButton, sortBy === 2 ? {backgroundColor: '#f07167'} : null]} onPress={() => changeSortBy(2)}>
+                                <Text style={[styles.sortButtonText, sortBy === 2 ? {color: '#fff'} : null]}>Price</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={[styles.column, {width: '50%'}]}>
+                            <Text style={styles.fModalGameTitle}>Sort order</Text>
+
+                            <TouchableOpacity style={[styles.sortButton, sortOrder === 0 ? {backgroundColor: '#f07167'} : null]} onPress={() => changeSortOrder(0)}>
+                                <Text style={[styles.sortButtonText, sortOrder === 0 ? {color: '#fff'} : null]}>{
+                                    sortBy === 0 ? 'Newest first' : sortBy === 1 ? 'A to Z' : 'Expensive first'
+                                }</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.sortButton, sortOrder === 1 ? {backgroundColor: '#f07167'} : null]} onPress={() => changeSortOrder(1)}>
+                                <Text style={[styles.sortButtonText, sortOrder === 1 ? {color: '#fff'} : null]}>{
+                                    sortBy === 0 ? 'Oldest first' : sortBy === 1 ? 'Z to A' : 'Cheapest first'
+                                }</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </SafeAreaView>
+            </Modal>
+
+            {(loaded) ?
+                <Modal
+                    isVisible={itemVisible}
+                    onBackdropPress={() => setItemVisible(false)}
+                    animationIn={'fadeInUpBig'}
+                    animationOut={'fadeOutDown'}
+                    animationInTiming={200}
+                    animationOutTiming={200}
+                    onBackButtonPress={() => setItemVisible(false)}
+                >
+                    <SafeAreaView style={[styles.containerStyle, {backgroundColor: '#fff'}]}>
+
+                        <Text style={styles.itemModalTitle}>{ modalItem.name }</Text>
+                        <View style={[styles.row, {alignSelf: 'center'}]}>
+                            <Icon name={'type'} type={'feather'} color={'#666'} size={resize(16)} style={{marginRight: resize(4)}} />
+                            <Text style={styles.itemModalSubtitle}>{ modalItem.type }</Text>
+                            {
+                                (modalItem.rarity != null) ?
+                                    <View style={[styles.row, {marginLeft: resize(16)}]}>
+                                        <Icon name={'circle'} type={'font-awesome'} color={modalItem.rarity_color} size={resize(16)} style={{marginRight: resize(4)}} />
+                                        <Text style={[styles.itemModalSubtitle, {color: modalItem.rarity_color}]}>{ modalItem.rarity }</Text>
+                                    </View> : null
+                            }
+                        </View>
+
+                        {
+                            (modalItem.nametag != null) ?
+                                <Text bold style={styles.itemModalSubtitle}>{ modalItem.nametag }</Text> : null
+                        }
+
+                        {(!modalItem.marketable || !modalItem.tradable) ?
+                            <View style={[styles.row, {alignSelf: 'center'}]}>
+                                <Icon name={'alert-circle'} type={'feather'} size={resize(16)} color={'#f07167'} />
+                                <Text style={styles.itemModalAlert}>
+                                    {!modalItem.marketable && !modalItem.tradable ? 'Item cannot be sold or traded' : !modalItem.marketable ? 'Item cannot be sold' : 'Item cannot be traded' }
+                                </Text>
+                            </View> : null
+                        }
+
+                        <Image
+                            source={{uri: 'https://community.cloudflare.steamstatic.com/economy/image/' + modalItem.image}}
+                            resizeMode={"contain"}
+                            style={[styles.itemIcon, (modalItem.rarity_color != null) ? {borderColor: modalItem.rarity_color} : null]}
+                        />
+
+                        {modalItem.stickers != null ?
+                            <View style={styles.column}>
+                                {modalItem.stickers.stickers.map(sticker => (
+                                    <View style={[styles.row, {justifyContent: 'space-evenly'}]}>
+                                        <Image
+                                            source={{uri: sticker.img}}
+                                            style={[{width: resize(40), height: resize(40)}]}
+                                            resizeMode={"cover"}
+                                        />
+
+                                        <Text style={{width: resize(200), textAlignVertical: 'center', fontSize: resize(14),}}>
+                                            { sticker.long_name.replace('Sticker | ', '').replace('Patch | ', '') }
+                                        </Text>
+
+                                        <Text bold style={{width: resize(94), textAlignVertical: 'center', textAlign: 'right', fontSize: resize(14),}}>
+                                            { curr } { (stickerPrices[sticker.long_name].Price * rate).toFixed(2) }
+                                        </Text>
+                                    </View>
+                                ))}
+
+                                <View style={[styles.row, {justifyContent: 'space-between', marginTop: resize(4),}]}>
+                                    <Text style={styles.totalAppliedValueText}>Total applied { modalItem.stickers.type } value:</Text>
+                                    <Text bold style={styles.totalAppliedValue}>{ curr } { (getAppliedValue(modalItem.stickers.stickers)).toFixed(2) }</Text>
+                                </View>
+
+                            </View> : null
+                        }
+
+                        <Divider style={{marginVertical: resize(8)}} />
+
+                        {
+                            (modalItem.has_price) ?
+                                <View>
+                                    <View style={[styles.row, {alignSelf: 'center'}]}>
+                                        <Text style={styles.itemModalUpdated}>Last updated </Text>
+                                        <Text style={styles.itemModalUpdated} bold>{ Math.floor(modalItem.price.Updated / 60 / 60) }</Text>
+                                        <Text style={styles.itemModalUpdated}> hours </Text>
+                                        <Text style={styles.itemModalUpdated} bold>{ Math.floor(modalItem.price.Updated / 60 % 60) }</Text>
+                                        <Text style={styles.itemModalUpdated}> minutes ago</Text>
+                                    </View>
+
+                                    <View style={[styles.row, {alignSelf: 'center'}]}>
+                                        <Text bold style={[styles.itemModalListed]}>{ modalItem.price.Listed } </Text>
+                                        <Text style={styles.itemModalListed}>listings on Steam Market</Text>
+                                    </View>
+
+                                    <View style={[styles.row, {justifyContent: 'space-evenly', marginTop: resize(4),}]}>
+                                        <Text style={styles.itemModalAvgTitle}>24h average</Text>
+                                        <Text style={styles.itemModalAvgTitle}>7d average</Text>
+                                        <Text style={styles.itemModalAvgTitle}>30d average</Text>
+                                    </View>
+
+                                    <View style={[styles.row, {justifyContent: 'space-evenly', marginBottom: resize(12),}]}>
+                                        <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.avg24 * rate).toFixed(3) }</Text>
+                                        <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.avg7 * rate).toFixed(3) }</Text>
+                                        <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.avg30 * rate).toFixed(3) }</Text>
+                                    </View>
+
+                                    <View style={[styles.row,]}>
+                                        <Text style={styles.itemModalPriceOwned}><Text bold>{ curr } { (modalItem.price.Price * rate).toFixed(2) }</Text> x { modalItem.amount }</Text>
+                                        <Text bold style={styles.itemModalPrice}>{ curr } { (Math.round(modalItem.price.Price * rate * 100) * modalItem.amount / 100).toFixed(2) }</Text>
+                                    </View>
+                                </View> : (!modalItem.marketable && !modalItem.tradable) ?
+                                <Text bold style={{textAlign: 'center'}}>Item cannot be sold or traded</Text> :
+                                    <Text bold style={{textAlign: 'center'}}>Price was not found in the database</Text>
+                        }
+
+                    </SafeAreaView>
+                </Modal> : null
+            }
 
             <Snackbar
                 visible={snackbarVisible}
@@ -698,77 +1389,81 @@ function Summary(props) {
         return Math.ceil(size * scale)
     }
 
-    const sumRef = useRef();
-    const snapPoints = useMemo(() => [resize(70), '60%', '100%'], []);
-    const handleSheetChanges = useCallback((index: number) => {
-        console.log('handleSheetChanges', index);
-    }, []);
-
     const stats = props.stats
     const curr = props.curr
     const rate = props.rate
 
     return (
-        <BSheet
-            index={0}
-            snapPoints={snapPoints}
-            onChange={handleSheetChanges}
-            detached={false}
-            ref={sumRef}
-            overDragResistanceFactor={0}
-            handleIndicatorStyle={{backgroundColor: '#333', height: resize(8), width: resize(40)}}
-            handleStyle={{ alignSelf: 'center', width: resize(64), backgroundColor: '#bbb', borderTopLeftRadius: 16, borderTopRightRadius: 16}}
-            backgroundStyle={{backgroundColor: '#ffffff00'}}>
-            <View style={{flex: 1, alignItems: 'center', backgroundColor: '#fff', borderTopWidth: 3, borderTopColor: '#bbb'}}>
+        <Sheet
+            show={props.showSheet}
+            onClose={() => props.setShowSheet(false)}
+            contentContainerStyle={{height: resize(540)}}
+        >
+            <View style={{flex: 1, alignItems: 'center', backgroundColor: '#fff', height: '100%'}}>
                 <View style={{marginBottom: resize(8), alignItems: 'center', width: '100%',}}>
                     <Text bold style={[styles.gameTitle, {fontSize: resize(24), color: '#555'}]}>Inventory Details</Text>
                     <Text style={{color: '#777'}}>SteamID: <Text bold style={{ color: '#444'}}>{props.steam}</Text></Text>
                     <Text style={{color: '#777'}}>Games loaded (appid): <Text bold style={{ color: '#444'}}>{JSON.stringify(props.games)}</Text></Text>
                 </View>
 
-                <BottomSheetScrollView>
+                <ScrollView>
                     <View style={{alignItems: 'center'}}>
                         <View style={[styles.column, {width: '95%'}]}>
 
-                            <View style={styles.summarySection}>
+                            <View style={[styles.summarySection]}>
                                 <View style={styles.row}>
                                     <Text style={styles.statsTitle}>Total value</Text>
-                                    <Text bold style={styles.statsDetails}>{curr} {Math.round(stats['price'] * rate * 100) / 100} ({stats['ownedTradeable']} items)</Text>
+                                    <Text bold style={styles.statsDetails}>{curr} {(Math.round(stats['price'] * rate * 100) / 100).toFixed(2)}</Text>
+                                </View>
+
+                                <View style={styles.row}>
+                                    <Text style={styles.statsTitle}>Items owned</Text>
+                                    <Text bold style={styles.statsDetails}>{ stats['owned'] }</Text>
+                                </View>
+
+                                <View style={styles.row}>
+                                    <Text style={styles.statsTitle}>Of which marketable</Text>
+                                    <Text bold style={styles.statsDetails}>{ stats['ownedTradeable'] }</Text>
                                 </View>
 
                                 <View style={styles.row}>
                                     <Text style={styles.statsTitle}>Average item price</Text>
-                                    <Text bold style={styles.statsDetails}>{curr} {(Math.round(stats['price'] / stats['ownedTradeable'] * rate * 100) / 100)} / item</Text>
+                                    <Text bold style={styles.statsDetails}>{curr} {(Math.round(stats['price'] / stats['ownedTradeable'] * rate * 100) / 100).toFixed(2)} / item</Text>
+                                </View>
+
+                                <View style={styles.row}>
+                                    <Text style={styles.statsTitle}>Missing prices</Text>
+                                    <Text bold style={styles.statsDetails}>{ stats.missingPrices }</Text>
                                 </View>
                             </View>
 
-                            <Divider width={2} style={{width: '95%', alignSelf: 'center'}} />
+                            <Divider width={resize(4)} color={'#0A5270'} style={{width: resize(64), alignSelf: 'center', borderRadius: 8,}} />
 
                             <View style={styles.summarySection}>
                                 <View style={styles.row}>
                                     <Text style={styles.statsTitle}>24 hour average value</Text>
-                                    <Text bold style={styles.statsDetails}>{curr} {Math.round(stats['avg24'] * rate * 1000) / 1000}</Text>
+                                    <Text bold style={styles.statsDetails}>{curr} {(Math.round(stats['avg24'] * rate * 1000) / 1000).toFixed(2)}</Text>
                                 </View>
 
                                 <View style={styles.row}>
                                     <Text style={styles.statsTitle}>7 day average value</Text>
-                                    <Text bold style={styles.statsDetails}>{curr} {Math.round(stats['avg7'] * rate * 1000) / 1000}</Text>
+                                    <Text bold style={styles.statsDetails}>{curr} {(Math.round(stats['avg7'] * rate * 1000) / 1000).toFixed(2)}</Text>
                                 </View>
 
                                 <View style={styles.row}>
                                     <Text style={styles.statsTitle}>30 day average value</Text>
-                                    <Text bold style={styles.statsDetails}>{curr} {Math.round(stats['avg30'] * rate * 1000) / 1000}</Text>
+                                    <Text bold style={styles.statsDetails}>{curr} {(Math.round(stats['avg30'] * rate * 1000) / 1000).toFixed(2)}</Text>
                                 </View>
                             </View>
 
-                            <Divider width={2} style={{width: '95%', alignSelf: 'center'}} />
+                            <Divider width={resize(4)} color={'#0A5270'} style={{width: resize(64), alignSelf: 'center', borderRadius: 8,}} />
 
                             <View style={styles.summarySection}>
                                 <View style={styles.row}>
                                     <Text style={styles.statsTitle}>Most expensive item</Text>
                                     <View style={[styles.column, {width: '55%'}]}>
                                         <Text style={[styles.statsDetailsS, {width: '100%'}]}>{stats['expensive'].name}</Text>
-                                        <Text bold style={[styles.statsDetails, {width: '100%'}]}>{curr} {Math.round(stats['expensive'].price * rate * 100) / 100}</Text>
+                                        <Text bold style={[styles.statsDetails, {width: '100%'}]}>{curr} {(Math.round(stats['expensive'].price * rate * 100) / 100).toFixed(2)}</Text>
                                     </View>
                                 </View>
 
@@ -776,7 +1471,7 @@ function Summary(props) {
                                     <Text style={styles.statsTitle}>Cheapest item</Text>
                                     <View style={[styles.column, {width: '55%'}]}>
                                         <Text style={[styles.statsDetailsS, {width: '100%'}]}>{stats['cheapest'].name}</Text>
-                                        <Text bold style={[styles.statsDetails, {width: '100%'}]}>{curr} {Math.round(stats['cheapest'].price * rate * 100) / 100}</Text>
+                                        <Text bold style={[styles.statsDetails, {width: '100%'}]}>{curr} {(Math.round(stats['cheapest'].price * rate * 100) / 100).toFixed(2)}</Text>
                                     </View>
                                 </View>
                             </View>
@@ -785,60 +1480,70 @@ function Summary(props) {
 
                             {
                                 stats.games.map((data, index) => (
-                                    <View style={styles.summarySection}>
-                                        <Text bold style={styles.sumGame}>{ data.name }</Text>
+                                    <View style={[styles.summarySection, {paddingVertical: 0}]}>
+                                        <Text bold style={styles.sumGame}>{ data.game }</Text>
 
                                         <View style={styles.row}>
                                             <Text style={styles.statsTitle}>Value</Text>
-                                            <Text bold style={styles.statsDetails}>{curr} {Math.round(data.value * rate * 100) / 100}</Text>
+                                            <Text bold style={styles.statsDetails}>{curr} {(Math.round(data.price * rate * 100) / 100).toFixed(2)}</Text>
                                         </View>
 
                                         <View style={styles.row}>
                                             <Text style={styles.statsTitle}>Items owned</Text>
-                                            <Text bold style={styles.statsDetails}>{data.items}</Text>
+                                            <Text bold style={styles.statsDetails}>{data.owned}</Text>
+                                        </View>
+
+                                        <View style={styles.row}>
+                                            <Text style={styles.statsTitle}>Of which marketable</Text>
+                                            <Text bold style={styles.statsDetails}>{data.ownedTradeable}</Text>
                                         </View>
 
                                         <View style={styles.row}>
                                             <Text style={styles.statsTitle}>Average 24 hour</Text>
-                                            <Text bold style={styles.statsDetails}>{curr} {Math.round(data.avg24 * rate * 1000) / 1000}</Text>
+                                            <Text bold style={styles.statsDetails}>{curr} {(Math.round(data.avg24 * rate * 1000) / 1000).toFixed(2)}</Text>
                                         </View>
 
                                         <View style={styles.row}>
                                             <Text style={styles.statsTitle}>Average 7 day</Text>
-                                            <Text bold style={styles.statsDetails}>{curr} {Math.round(data.avg7 * rate * 1000) / 1000}</Text>
+                                            <Text bold style={styles.statsDetails}>{curr} {(Math.round(data.avg7 * rate * 1000) / 1000).toFixed(2)}</Text>
                                         </View>
 
                                         <View style={styles.row}>
                                             <Text style={styles.statsTitle}>Average 30 day</Text>
-                                            <Text bold style={styles.statsDetails}>{curr} {Math.round(data.avg30 * rate * 1000) / 1000}</Text>
+                                            <Text bold style={styles.statsDetails}>{curr} {(Math.round(data.avg30 * rate * 1000) / 1000).toFixed(2)}</Text>
                                         </View>
 
                                         {
-                                            (data.name === 'Counter-Strike: Global Offensive') ?
+                                            (data.appid === 730) ?
                                                 <View>
                                                     <View style={styles.row}>
                                                         <Text style={styles.statsTitle}>Applied stickers value</Text>
-                                                        <Text bold style={styles.statsDetails}>{curr} {Math.round(data.stickerVal * rate * 100) / 100}</Text>
+                                                        <Text bold style={styles.statsDetails}>{curr} {(Math.round(data.stickerVal * rate * 100) / 100).toFixed(2)}</Text>
                                                     </View>
 
                                                     <View style={styles.row}>
                                                         <Text style={styles.statsTitle}>Applied patches value</Text>
-                                                        <Text bold style={styles.statsDetails}>{curr} {Math.round(data.patchVal * rate * 100) / 100}</Text>
+                                                        <Text bold style={styles.statsDetails}>{curr} {(Math.round(data.patchVal * rate * 100) / 100).toFixed(2)}</Text>
                                                     </View>
                                                 </View> : null
                                         }
 
-                                        {(stats.games.length - 1 !== index) ? <Divider width={2} style={{width: '95%', alignSelf: 'center'}}/> : null}
+                                        <Divider width={resize(4)} color={'#0A5270'} style={{width: resize(64), alignSelf: 'center', borderRadius: 8, marginVertical: resize(16),}} />
+
+                                        {
+                                            (stats.games.length - 1 === index) ?
+                                                <Text bold style={{textAlign: 'center', color: '#0A5270', fontSize: resize(16), paddingBottom: resize(96),}}>The end of summary</Text> : null
+                                        }
                                     </View>
                                 ))
                             }
 
                         </View>
                     </View>
-                </BottomSheetScrollView>
+                </ScrollView>
             </View>
 
-        </BSheet>
+        </Sheet>
     )
 }
 
@@ -848,6 +1553,41 @@ const resize = (size) => {
 }
 
 const styles = StyleSheet.create ({
+    sectionContainer: {
+        backgroundColor: '#F2F2F2',
+        paddingVertical: resize(8),
+        paddingLeft: resize(8),
+    },
+    sectionText: {
+        fontSize: resize(24),
+        color: '#0A5270',
+    },
+    itemContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: resize(8),
+        marginVertical: resize(8),
+        elevation: 2,
+        width: '92%',
+        alignSelf: 'center',
+        display: 'flex',
+        flexDirection: 'row'
+    },
+    itemPriceSingular: {
+        fontSize: resize(14),
+        color: '#0B4F6C',
+        textAlign: 'right',
+    },
+    itemPriceTotal: {
+        fontSize: resize(16),
+        color: '#131B23',
+        textAlign: 'right',
+    },
+    itemImageSmall: {
+        height: resize(64),
+        width: resize(64),
+        marginRight: 8,
+    },
     container: {
         marginTop: 6,
         marginBottom: 6,
@@ -907,19 +1647,23 @@ const styles = StyleSheet.create ({
         color: '#333',
     },
     itemIcon: {
-        width: resize(56),
-        height: resize(56),
+        width: resize(160),
+        height: resize(160),
+        borderWidth: 1,
+        borderColor: '#00a',
+        borderRadius: 8,
+        backgroundColor: '#fff',
+        marginTop: resize(8),
         alignSelf: 'center',
     },
     itemName: {
-        fontSize: resize(16),
-        width: '100%',
-        color: '#555',
+        fontSize: resize(15),
+        color: '#485A70',
+        height: resize(48),
     },
     itemType: {
         fontSize: resize(13),
-        color: '#777',
-        fontStyle: 'italic',
+        color: '#5F7895',
     },
     itemPriceTitle: {
         width: '33%',
@@ -974,14 +1718,14 @@ const styles = StyleSheet.create ({
         color: '#333',
     },
     statsTitle: {
-        fontSize: resize(12),
+        fontSize: resize(14),
         textAlignVertical: 'center',
         textAlign: 'left',
         width: '45%',
         color: '#555',
     },
     statsDetails: {
-        fontSize: resize(14),
+        fontSize: resize(16),
         textAlign: 'right',
         width: '55%',
         color: '#333',
@@ -1005,22 +1749,18 @@ const styles = StyleSheet.create ({
         marginBottom: 82,
     },
     summarySection: {
-        paddingVertical: resize(8),
-        marginBottom: 8,
+        paddingVertical: resize(12),
         alignSelf: 'center',
     },
     inputView: {
         width: '90%',
-        backgroundColor: '#fff',
-        paddingHorizontal: resize(8),
+        height: resize(44),
+        borderRadius: 8,
+        paddingHorizontal: resize(10),
         display: "flex",
         flexDirection: 'row',
         alignItems: 'center',
         alignSelf: "center",
-        borderWidth: 2.0,
-        borderColor: '#229',
-        borderRadius: 8,
-        marginTop: resize(4),
     },
     searchInput: {
         fontSize: resize(14),
@@ -1102,41 +1842,39 @@ const styles = StyleSheet.create ({
         textAlign: 'center',
     },
     sumGame: {
-        fontSize: resize(16),
+        fontSize: resize(20),
         textAlign: 'center',
-        marginHorizontal: 4,
-        color: '#666',
+        marginBottom: 4,
+        color: '#0A5270',
     },
     totalAppliedValueText: {
         fontSize: resize(16),
-        marginTop: 4,
         marginBottom: resize(8),
-        width: '100%',
-        textAlign: 'center',
         color: '#777',
     },
     totalAppliedValue: {
         fontSize: resize(16),
         color: '#333',
+        textAlign: 'right',
     },
     snackbarText: {
         fontSize: resize(12),
         color: '#ddd'
     },
     containerStyle: {
-        backgroundColor: 'white',
-        padding: resize(20),
-        width: '90%',
+        backgroundColor: '#fdfcdc',
+        padding: resize(16),
         alignSelf: 'center',
-        borderRadius: 8,
+        borderRadius: 24,
+        width: '100%',
     },
     fModalTitle: {
-        textAlign: 'center',
-        color: '#555',
+        textAlign: 'left',
+        color: '#0081a7',
         fontSize: resize(28),
     },
     fModalGameTitle: {
-        color: '#777',
+        color: '#0081a7',
         fontSize: resize(20),
         marginVertical: resize(8),
     },
@@ -1146,4 +1884,73 @@ const styles = StyleSheet.create ({
     detail: {
         fontSize: resize(14),
     },
+    sortButton: {
+        borderRadius: 16,
+        borderWidth: 1,
+        marginHorizontal: resize(12),
+        marginVertical: resize(8),
+        backgroundColor: '#ffffff00',
+        borderColor: '#f07167',
+    },
+    sortButtonText: {
+        height: resize(48),
+        fontSize: resize(18),
+        color: '#f07167',
+        textAlign: 'center',
+        textAlignVertical: 'center',
+    },
+    itemModalTitle: {
+        fontSize: resize(18),
+        textAlign: 'center',
+        color: '#333',
+    },
+    itemModalSubtitle: {
+        fontSize: resize(16),
+        textAlign: 'center',
+        color: '#666',
+    },
+    itemModalAlert: {
+        fontSize: resize(14),
+        textAlign: 'center',
+        color: '#f07167',
+        marginLeft: resize(4),
+    },
+    itemModalStickerImage: {
+        width: resize(64),
+        height: resize(64),
+        marginRight: resize(12),
+    },
+    itemModalUpdated: {
+        fontSize: resize(12),
+        color: '#666',
+    },
+    itemModalAvgTitle: {
+        fontSize: resize(14),
+        color: '#666',
+        width: '33.3%',
+        textAlign: 'center',
+    },
+    itemModalAvgValue: {
+        fontSize: resize(14),
+        color: '#444',
+        width: '33.3%',
+        textAlign: 'center',
+    },
+    itemModalPriceOwned: {
+        fontSize: resize(16),
+        color: '#555',
+        width: '50%',
+        textAlign: 'center',
+        textAlignVertical: 'center',
+    },
+    itemModalPrice: {
+        fontSize: resize(18),
+        color: '#333',
+        width: '50%',
+        textAlign: 'center',
+    },
+    itemModalListed: {
+        fontSize: resize(14),
+        color: '#555',
+    }
 })

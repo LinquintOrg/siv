@@ -23,7 +23,7 @@ export default function (props) {
             <View>
                 {users.map((item, index) => (
                     <View>
-                        <TouchableOpacity style={styles.profileSection} onPress={() => props.loadInv(props.nav, item.id)} onLongPress={() => props.deleteUser(item.id)}>
+                        <TouchableOpacity style={styles.profileSection} onPress={() => props.loadInv(props.nav, item.id)} onLongPress={() => props.toggleModal(item)}>
                             <Image style={styles.profilePicture} source={ { uri: item.url } } />
                             <View style={[styles.column, {paddingTop: resize(6)}]}>
                                 <Text bold style={styles.profileID}>{item.id}</Text>
