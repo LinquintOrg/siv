@@ -7,7 +7,7 @@ import {
     View
 } from "react-native";
 import React, {useState} from "react";
-import {Divider} from "react-native-elements";
+import {Divider, Icon} from "react-native-elements";
 import Text from '../Elements/text'
 
 export default function (props) {
@@ -23,9 +23,25 @@ export default function (props) {
             <View>
                 {users.map((item, index) => (
                     <View>
-                        <TouchableOpacity style={styles.profileSection} onPress={() => props.loadInv(props.nav, item.id)} onLongPress={() => props.toggleModal(item)}>
+                        <TouchableOpacity style={styles.profileSection} onPress={() => {
+                                if (item.public) props.loadInv(props.nav, item.id)
+                                else props.displayErr()
+                            }} onLongPress={() => props.toggleModal(item)}>
                             <Image style={styles.profilePicture} source={ { uri: item.url } } />
-                            <View style={[styles.column, {paddingTop: resize(6)}]}>
+                            <View style={[styles.column]}>
+                                <View style={styles.row}>
+                                    {
+                                        (item.state === 0) ? <Icon name={'circle'} type={'font-awesome'} color={'#f00'} size={resize(16)} />
+                                        : (item.state === 1) ? <Icon name={'circle'} type={'font-awesome'} color={'#0a0'} size={resize(16)} />
+                                        : (item.state === 2) ? <Icon name={'circle'} type={'font-awesome'} color={'#fa0'} size={resize(16)} />
+                                        : <Icon name={'sleep'} type={'material-community'} color={'#44f'} size={resize(16)} />
+                                    }
+                                    <Text bold style={[{fontSize: resize(14), marginLeft: 8, color: (item.public) ? '#337' : '#f00'}]}>{(!item.public) ? 'Profile is set to PRIVATE' : 
+                                    (item.state === 0) ? 'Offline'
+                                    : (item.state === 1) ? 'Online'
+                                    : (item.state === 2) ? 'Busy'
+                                    : 'Away'}</Text>
+                                </View>
                                 <Text bold style={styles.profileID}>{item.id}</Text>
                                 <Text bold style={styles.profileName}>{item.name}</Text>
                             </View>
@@ -71,5 +87,9 @@ const styles = StyleSheet.create({
         fontSize: resize(14),
         color: '#444'
     },
-
+    row: {
+        display: 'flex',
+        flexDirection: 'row',
+        width: '100%'
+    }
 })

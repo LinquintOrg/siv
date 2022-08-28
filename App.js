@@ -36,7 +36,7 @@ function App() {
     Sentry.init({
         dsn: 'https://755f445790cc440eb625404426d380d7@o1136798.ingest.sentry.io/6188926',
         enableInExpoDevelopment: true,
-        debug: true, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending the event. Set it to `false` in production
+        debug: false, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending the event. Set it to `false` in production
         tracesSampleRate: 1.0,
         integrations: [
             new Sentry.Native.ReactNativeTracing({
@@ -71,10 +71,13 @@ function App() {
 
                 let internetConnection = await NetInfo.fetch();
                 if (internetConnection.isInternetReachable && internetConnection.isConnected) {
-                    updateProfiles().then(() => {
-                        getRates()
+                    let isPrepared = false
+                    await updateProfiles().then(async () => {
+                        await getRates().then(() => isPrepared = true)
                     })
-                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    if (!isPrepared) {
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                    }
                 } else {
                     setSnackbarText("No internet connection")
                     setSnackError(true)
@@ -104,13 +107,13 @@ function App() {
         navigation.navigate('Choose games', { steamId: steamID })
     }
 
-    function getRates() {
+    async function getRates() {
         fetch('https://domr.xyz/rates_full.php')
             .then(response => response.json())
             .then(json => setRates(json.rates))
     }
 
-    async function saveProfile(id, name, url) {
+    async function saveProfile(id, name, url, isPublic, state) {
         for (let i = 0; i < users.length; i++) {
             if (users[i].id === id) return;
         }
@@ -118,7 +121,9 @@ function App() {
         let tmp = {
             'id': id,
             'name': name,
-            'url': url
+            'url': url,
+            'public': isPublic,
+            'state': state
         }
         await AsyncStorage.setItem(id, JSON.stringify(tmp))
         setUsers(users.concat(tmp))
@@ -152,7 +157,9 @@ function App() {
                             let tmp = {
                                 'id': user.steamid,
                                 'name': user.personaname,
-                                'url': user.avatar
+                                'url': user.avatarmedium,
+                                'public': user.communityvisibilitystate === 3,
+                                'state': user.personastate
                             }
 
                             await AsyncStorage.removeItem(user.steamid).then(async () => {
@@ -193,15 +200,42 @@ function App() {
         const [isLoading, setLoading] = useState(false);        // Are search results still loading
         const [dataName, setName] = useState('');       // Search Profile name
         const [dataPfp, setPfp] = useState('https://domr.xyz/api/Files/img/profile.png') // search profile picture
+        const [dataPublic, setDataPublic] = useState(false)
+        const [dataState, setDataState] = useState(0)
 
-        function isSteamIDValid() {
-            return !(steamID == '' || steamID.match(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/? ]+/) || steamID.length === 0)
+        function isSteamIDValid(steamID) {
+            return !(steamID == '' || steamID.match(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/? ]+/) || steamID.match(/[a-zA-Z]/) || steamID.length === 0)
         }
 
         const getProfileData = async (sid) => {
-            if (sid.length === 17) {
+            const id = '7401764DA0F7B99794826E9E2512E311';
+            if (!(sid.length === 17 && isSteamIDValid(sid))) {
                 setLoading(true)
-                let id = '7401764DA0F7B99794826E9E2512E311';
+                await fetch('https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=' + id + '&vanityurl=' + sid)
+                .then((response) => {
+                    if (response.ok) return response.json()
+                    else return null
+                })
+                .then(async json => {
+                    if (json == null) {
+                        setSnackError(true)
+                        setSnackbarText("Couldn't retrieve user")
+                        await sleep(3000).then(() => setSnackError(false))
+                        return
+                    } else {
+                        if (json.response.success === 1) {
+                            sid = json.response.steamid
+                        } else {
+                            setSnackError(true)
+                            setSnackbarText("Couldn't retrieve user")
+                            await sleep(3000).then(() => setSnackError(false))
+                            return
+                        }
+                    }
+                })
+            }
+
+            if (sid.length === 17 && isSteamIDValid(sid)) {
                 setLoading(true)
 
                 await fetch(
@@ -210,7 +244,9 @@ function App() {
                     .then((response) => response.json())
                     .then((json) => {
                         setName(json.response.players[0].personaname)
-                        setPfp(json.response.players[0].avatarfull)
+                        setPfp(json.response.players[0].avatarmedium)
+                        setDataState(json.response.players[0].personastate)
+                        setDataPublic(json.response.players[0].communityvisibilitystate === 3)
                     })
                     .catch((error) => console.error(error))
                     .finally(() => {
@@ -219,7 +255,7 @@ function App() {
                     })
             } else {
                 setSnackError(true)
-                setSnackbarText("SteamID must be at least 17 characters long")
+                setSnackbarText("Entered SteamID64 is incorrect")
                 await sleep(3000).then(() => setSnackError(false))
             }
         }
@@ -256,6 +292,12 @@ function App() {
             })
         };
 
+        async function displayPrivateProfileErr() {
+            setSnackError(true)
+            setSnackbarText("Selected profile privacy is set to PRIVATE")
+            await sleep(3000).then(() => setSnackError(false))
+        }
+
         return (
             <View style={{height: '100%'}} onLayout={onLayoutRootView}>
                 <View style={styles.inputView} disabled={isLoading}>
@@ -288,12 +330,16 @@ function App() {
                             />
                         }
                     />
-                    <Text style={[(steamIDtyped.length === 17) ? {color: '#0f0'} : {color: '#f00'}, {
+                    <Text style={[(steamIDtyped.length === 17 || steamIDtyped.match(/[a-zA-Z]+/)) ? {color: '#0f0'} : {color: '#f00'}, {
                         fontSize: resize(14),
                         width: resize(45),
                         textAlign: 'center',
                         paddingTop: resize(8)
-                    }]}>{steamIDtyped.length} / 17</Text>
+                    }]}>
+                        {
+                            (steamIDtyped.match(/[a-zA-Z]+/)) ? 'CustomURL' : (steamIDtyped.length + ' / 17')
+                        }
+                    </Text>
                 </View>
 
                 <View style={[styles.profileSection, (dataName === '' && steamID === '') && {display: 'none'}]}>
@@ -309,7 +355,7 @@ function App() {
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.buttonSmall}
-                                              onPress={() => saveProfile(steamID, dataName, dataPfp)}
+                                              onPress={() => saveProfile(steamID, dataName, dataPfp, dataPublic, dataState)}
                                               disabled={!isSteamIDValid(steamID)}>
                                 <Text style={styles.buttonSmallText}>SAVE</Text>
                             </TouchableOpacity>
@@ -320,7 +366,7 @@ function App() {
                 <Text bold style={[styles.title]}>Saved profiles</Text>
                 <Text style={[styles.title, {fontSize: resize(14)}]}><Text bold>Tap</Text> to select profile</Text>
                 <Text style={[styles.title, {fontSize: resize(14)}]}><Text bold>Long press</Text> profile to see more options</Text>
-                <UserSaves users={users} loadInv={navigateToLoad} nav={navigation} deleteUser={deleteProfile} toggleModal={toggleModal} />
+                <UserSaves users={users} loadInv={navigateToLoad} nav={navigation} deleteUser={deleteProfile} toggleModal={toggleModal} displayErr={displayPrivateProfileErr} />
 
                 <Snackbar
                     visible={snackbarVisible}

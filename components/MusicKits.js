@@ -40,7 +40,7 @@ export default function MusicKits(props) {
             await fetch('https://domr.xyz/api/Steam/rq/music_kits.json')
                 .then((response) => response.json())
                 .then((json) => {
-                    setKits(json)
+                    setKits(json.musickit)
                     setLoading(false)
                     setLoadingPrices(true)
                 })
@@ -54,6 +54,7 @@ export default function MusicKits(props) {
         await fetch('https://domr.xyz/api/Steam/rq/music_kit_prices.php')
             .then((response) => response.json())
             .then(json => {
+
                 setPrices(json)
                 setLoadingPrices(false)
                 didLoadPrices = true
@@ -118,15 +119,15 @@ export default function MusicKits(props) {
         });
     }
 
-    const removeWhiteSpace = (str) => {
+    const transformHash = (str) => {
         do {
-            str = str.replace(' ', '')
-        } while (str.includes(''))
+            str = str.replace(', ', ',')
+        } while (str.includes(', '))
         return str
     }
 
     const getMusicKitPrice = (kit) => {
-        const title = (kit.artist + ',' + kit.song).toLowerCase()
+        const title = transformHash((kit.artist + ',' + kit.song).toLowerCase())
         const stTitle = 'st ' + title
 
         let pNormal = null
@@ -153,14 +154,14 @@ export default function MusicKits(props) {
             return (
                 <View style={styles.containerCol}>
                     <Text style={styles.price}>NaN</Text>
-                    <Text style={[styles.price, {color: '#CF6A32'}]}>{props.rate} {pStat}</Text>
+                    <Text style={[styles.price, {color: '#CF6A32'}]}>{props.rate} {pStat.toFixed(2)}</Text>
                 </View>
             )
         }
         if (pStat === null) {
             return (
                 <View style={styles.containerCol}>
-                    <Text style={styles.price}>{props.rate} {pNormal}</Text>
+                    <Text style={styles.price}>{props.rate} {pNormal.toFixed(2)}</Text>
                     <Text style={[styles.price, {color: '#CF6A32'}]}>NaN</Text>
                 </View>
             )
@@ -171,6 +172,11 @@ export default function MusicKits(props) {
                 <Text style={[styles.price, {color: '#CF6A32'}]}>{props.rate} {pStat.toFixed(2)}</Text>
             </View>
         )
+    }
+
+    const [musicKits, setMusicKits] = useState([])
+    const sortOrder = () => {
+        
     }
 
     const _renderMusicKit = ({item, index}) => (
@@ -187,7 +193,7 @@ export default function MusicKits(props) {
                     </View>
                     {(!loadingPrices) ? getMusicKitPrice(item) : null}
                 </TouchableOpacity>
-                {(kits.musickit.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center',}} /> : null}
+                {(kits.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center',}} /> : null}
             </View> : null
     )
 
@@ -196,13 +202,13 @@ export default function MusicKits(props) {
             <View style={[styles.containerCol, {alignSelf: 'center'}]}>
                 <ActivityIndicator style={{marginTop: Dimensions.get('window').height / 2 - 36}} size="large"
                                    color='#000'/>
-                <Text style={{textAlign: 'center'}}>Loading</Text>
+                <Text style={{textAlign: 'center'}}>Downloading list of music kits...</Text>
             </View> :
             (loadingPrices) ?
                 <View>
                     <ActivityIndicator style={{marginTop: Dimensions.get('window').height / 2 - 36}} size="large"
                                        color='#000'/>
-                    <Text style={{textAlign: 'center'}}>Downloading music kit prices</Text>
+                    <Text style={{textAlign: 'center'}}>Downloading music kit prices...</Text>
                 </View> :
                 <View style={{height: '100%'}}>
                     <View style={{marginVertical: resize(8)}}>
@@ -236,17 +242,8 @@ export default function MusicKits(props) {
                         />
                     </View>
 
-                    {/*<View style={styles.inputView}>
-                        <Icon color='#333' name='filter' type='font-awesome' size={resize(20)}/>
-                        <TextInput
-                            style={{marginHorizontal: 8, borderBottomWidth: 1.0, flex: 1}}
-                            placeholder='Filter by artist or song name'
-                            onChangeText={text => setSearch(text)}
-                        />
-                    </View>*/}
-
                     <FlatList
-                        data={kits.musickit}
+                        data={kits}
                         renderItem={_renderMusicKit}
                         keyExtractor={item => item.dir}
                     />

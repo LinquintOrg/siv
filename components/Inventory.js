@@ -793,6 +793,15 @@ export default function Inventory(props) {
 
                 if (sort === 2) {
                     game.data.sort((a, b) => {
+                        if (a.has_price && b.has_price) return b.price.Price - a.price.Price
+                        if (!a.has_price && !b.has_price) return 0
+                        if (!a.has_price) return 1
+                        else return -1
+                    })
+                }
+
+                if (sort === 3) {
+                    game.data.sort((a, b) => {
                         if (a.has_price && b.has_price) return b.price.Price * b.amount - a.price.Price * a.amount
                         if (!a.has_price && !b.has_price) return 0
                         if (!a.has_price) return 1
@@ -1108,6 +1117,10 @@ export default function Inventory(props) {
 
                             <TouchableOpacity style={[styles.sortButton, sortBy === 2 ? {backgroundColor: '#f07167'} : null]} onPress={() => changeSortBy(2)}>
                                 <Text style={[styles.sortButtonText, sortBy === 2 ? {color: '#fff'} : null]}>Price</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.sortButton, sortBy === 3 ? {backgroundColor: '#f07167'} : null]} onPress={() => changeSortBy(3)}>
+                                <Text style={[styles.sortButtonText, sortBy === 3 ? {color: '#fff'} : null]}>Total Price</Text>
                             </TouchableOpacity>
                         </View>
 
