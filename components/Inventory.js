@@ -12,7 +12,7 @@ import {
     View,
     SectionList
 } from "react-native";
-import React, {useLayoutEffect, useMemo, useRef, useState} from "react";
+import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
 import gamesJson from '../assets/inv-games.json';
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import {Divider, Icon} from "react-native-elements";
@@ -25,6 +25,7 @@ import Modal from 'react-native-modal';
 import * as Clipboard from "expo-clipboard";
 import cloneDeep from 'lodash.clonedeep'
 import {TextInput} from "react-native-paper";
+import ActionList from '../Elements/actionList'
 
 if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental(true)
@@ -174,10 +175,14 @@ export default function Inventory(props) {
         return Math.ceil(size * scale)
     }
 
+    const [actionList] = useState([])
+    const [actionID, setActionID] = useState(-1)
+
     const loadInventory = () => {
         const user = useMemo(() => props.steam, [props.steam])
         const games = useMemo(() => props.games, [props.games])
         const isLoaded = useMemo(() => loaded, [])
+        let tmpAct = 0
 
         useLayoutEffect(() => {
             async function loadInventoryOnEffect() {
@@ -186,13 +191,15 @@ export default function Inventory(props) {
                 const itemArray = []
 
                 for (let i = 0; i < games.length; i++) {
-                    if (i > 0 && games.length > 1) {
-                        setAlert(`Paused for 5 seconds`)
-                        await sleep(5000)
-                    }
+                    // Action: 0 - game inventory, 1 - pause, 2 - price
+                    actionList.push({action: 0, extra: gameName(games[i])})
+                    actionList.push({action: 1, extra: (games.length > 4) ? 12 : (games.length === 1) ? 2 : 6})
+                }
+                actionList.push({action: 2, extra: games.length})
 
+                for (let i = 0; i < games.length; i++) {
                     const gameID = games[i]
-                    setAlert(`Loading data from Steam: ${gameID}`)
+                    setActionID(tmpAct++)
 
                     await fetch('https://steamcommunity.com/inventory/' + user + '/' + gameID + '/' + ((gameID === 238960) ? user : (gameID === 264710) ? 1847277 : 2) + '/?count=1000')
                         .then(response => {
@@ -202,7 +209,7 @@ export default function Inventory(props) {
                                 return false
                             }
                         })
-                        .then(json => {
+                        .then(async json => {
                             if (!json || json == null) {
                                 setSnackbarVisible(true)
                                 setSnackError('Couldn\'t load inventory')
@@ -212,15 +219,18 @@ export default function Inventory(props) {
                                 json['game'] = gameName(gameID)
                                 itemArray.push(json)
                             }
+
+                            setActionID(tmpAct++)
+                            await sleep((games.length > 4) ? 12000 : (games.length === 1) ? 2000 : 6000)
                         })
                 }
+                setActionID(tmpAct++)
                 return itemArray
             }
 
             if (!isLoaded) {
                 loadInventoryOnEffect().then(async (items) => {
                     setLoading(false)
-                    setAlert('Fetching Steam inventory and downloading prices...')
                     setFetching(true)
                     await fetchInventory(items).then(async (fetchedItems) => {
                         if (fetchedItems == null) {
@@ -919,10 +929,7 @@ export default function Inventory(props) {
                         <Text style={{textAlign: 'center'}}>Choose different games and try again</Text>
                     </View> :
                     (loading || fetching) ?
-                    <View style={styles.column}>
-                        <ActivityIndicator style={{marginTop: Dimensions.get('window').height / 2 - 36}} size="large" color='#000' />
-                        <Text style={{textAlign: 'center'}}>{alert}</Text>
-                    </View> :
+                    <ActionList list={actionList} act={actionID} /> :
                     <View style={[styles.column, {alignItems: 'center', marginVertical: resize(8)}]}>
                         <View style={styles.inputView}>
                             <TextInput

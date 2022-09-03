@@ -4,7 +4,8 @@ import {
     StyleSheet,
     View,
     TouchableOpacity,
-    Image, Dimensions
+    Image, Dimensions,
+    ActivityIndicator
 } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -113,9 +114,20 @@ function App() {
             .then(json => setRates(json.rates))
     }
 
+    function sleep(milliseconds) {
+        return new Promise((resolve) => {
+            setTimeout(resolve, milliseconds);
+        });
+    }
+
     async function saveProfile(id, name, url, isPublic, state) {
         for (let i = 0; i < users.length; i++) {
-            if (users[i].id === id) return;
+            if (users[i].id === id) {
+                setSnackError(true)
+                setSnackbarText("Profile is already saved")
+                await sleep(2500).then(() => setSnackError(false))
+                return;
+            }
         }
 
         let tmp = {
@@ -209,6 +221,7 @@ function App() {
 
         const getProfileData = async (sid) => {
             const id = '7401764DA0F7B99794826E9E2512E311';
+            let validValue = false
             if (!(sid.length === 17 && isSteamIDValid(sid))) {
                 setLoading(true)
                 await fetch('https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=' + id + '&vanityurl=' + sid)
@@ -221,23 +234,25 @@ function App() {
                         setSnackError(true)
                         setSnackbarText("Couldn't retrieve user")
                         await sleep(3000).then(() => setSnackError(false))
+                        setLoading(false)
                         return
                     } else {
                         if (json.response.success === 1) {
+                            validValue = true
                             sid = json.response.steamid
                         } else {
                             setSnackError(true)
                             setSnackbarText("Couldn't retrieve user")
                             await sleep(3000).then(() => setSnackError(false))
+                            setLoading(false)
                             return
                         }
                     }
                 })
             }
 
+            if (!validValue) return
             if (sid.length === 17 && isSteamIDValid(sid)) {
-                setLoading(true)
-
                 await fetch(
                     'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=' + id + '&steamids=' + sid
                 )
@@ -257,13 +272,8 @@ function App() {
                 setSnackError(true)
                 setSnackbarText("Entered SteamID64 is incorrect")
                 await sleep(3000).then(() => setSnackError(false))
+                setLoading(false)
             }
-        }
-
-        function sleep(milliseconds) {
-            return new Promise((resolve) => {
-                setTimeout(resolve, milliseconds);
-            });
         }
 
         async function deleteProfile(id) {
@@ -306,7 +316,7 @@ function App() {
                         placeholder='Enter SteamID64'
                         mode={'outlined'}
                         onChangeText={text => setSteamIDtyped(text)}
-                        onEndEditing={() => setSteamID(steamIDtyped)}
+                        onSubmitEditing={() => {getProfileData(steamIDtyped)}}
                         label={'Steam ID64'}
                         activeOutlineColor={'#1f4690'}
                         left={
@@ -330,38 +340,45 @@ function App() {
                             />
                         }
                     />
-                    <Text style={[(steamIDtyped.length === 17 || steamIDtyped.match(/[a-zA-Z]+/)) ? {color: '#0f0'} : {color: '#f00'}, {
+                    <Text bold style={[(steamIDtyped.length === 17 || steamIDtyped.match(/[a-zA-Z]+/)) ? {color: '#0f0'} : {color: '#f00'}, {
                         fontSize: resize(14),
-                        width: resize(45),
+                        width: resize(56),
                         textAlign: 'center',
                         paddingTop: resize(8)
                     }]}>
                         {
-                            (steamIDtyped.match(/[a-zA-Z]+/)) ? 'CustomURL' : (steamIDtyped.length + ' / 17')
+                            (steamIDtyped.match(/[a-zA-Z]+/)) ? 'Custom URL' : (steamIDtyped.length + ' / 17')
                         }
                     </Text>
                 </View>
 
-                <View style={[styles.profileSection, (dataName === '' && steamID === '') && {display: 'none'}]}>
-                    <Image style={styles.profilePicture} source={{uri: dataPfp}}/>
-                    <View style={styles.flowDown}>
-                        <Text bold style={styles.profileID}>{steamID}</Text>
-                        <Text bold style={styles.profileName} numberOfLines={1}>{dataName}</Text>
-
-                        <View style={styles.flowRow}>
-                            <TouchableOpacity style={styles.buttonSmall} onPress={() => navigateToLoad(navigation, steamID)}
-                                              disabled={!isSteamIDValid(steamID)}>
-                                <Text style={styles.buttonSmallText}>LOAD</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={styles.buttonSmall}
-                                              onPress={() => saveProfile(steamID, dataName, dataPfp, dataPublic, dataState)}
-                                              disabled={!isSteamIDValid(steamID)}>
-                                <Text style={styles.buttonSmallText}>SAVE</Text>
-                            </TouchableOpacity>
+                {
+                    isLoading ? 
+                        <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-around', alignSelf: 'center', marginVertical: resize(16),}}>
+                            <ActivityIndicator size="small" color='#12428D' />
+                            <Text bold style={{color: '#12428D', fontSize: resize(20), marginLeft: resize(8),}}>Getting Steam profile data...</Text>
+                        </View> :
+                        <View style={[styles.profileSection, (dataName === '' && steamID === '') && {display: 'none'}]}>
+                            <Image style={styles.profilePicture} source={{uri: dataPfp}}/>
+                            <View style={styles.flowDown}>
+                                <Text bold style={styles.profileID}>{steamID}</Text>
+                                <Text bold style={styles.profileName} numberOfLines={1}>{dataName}</Text>
+        
+                                <View style={styles.flowRow}>
+                                    <TouchableOpacity style={styles.buttonSmall} onPress={() => navigateToLoad(navigation, steamID)}
+                                                    disabled={!isSteamIDValid(steamID)}>
+                                        <Text style={styles.buttonSmallText}>LOAD</Text>
+                                    </TouchableOpacity>
+        
+                                    <TouchableOpacity style={styles.buttonSmall}
+                                                    onPress={() => saveProfile(steamID, dataName, dataPfp, dataPublic, dataState)}
+                                                    disabled={!isSteamIDValid(steamID)}>
+                                        <Text style={styles.buttonSmallText}>SAVE</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
                         </View>
-                    </View>
-                </View>
+                }
 
                 <Text bold style={[styles.title]}>Saved profiles</Text>
                 <Text style={[styles.title, {fontSize: resize(14)}]}><Text bold>Tap</Text> to select profile</Text>
@@ -432,8 +449,8 @@ function App() {
             setSelState(state)
         }
 
-        function proceedLoading() {
-            navigation.navigate('Inventory', { games: selState, steamID: route.params.steamId, rates: rates, rate: rate })
+        function proceedLoading(selection = selState) {
+            navigation.navigate('Inventory', { games: selection, steamID: route.params.steamId, rates: rates, rate: rate })
         }
 
         return (

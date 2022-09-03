@@ -5,7 +5,6 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    TextInput,
     TouchableOpacity,
     View
 } from "react-native";
@@ -13,7 +12,8 @@ import {Divider, Icon} from "react-native-elements";
 import {Dropdown} from "react-native-element-dropdown";
 import Text from '../Elements/text'
 import { Sheet } from '@tamkeentech/react-native-bottom-sheet';
-import {AnimatedFAB, Snackbar} from "react-native-paper";
+import {AnimatedFAB, Snackbar, TextInput} from "react-native-paper";
+import BouncyCheckbox from "react-native-bouncy-checkbox";
 
 export default function (props) {
     const [loading, setLoading] = useState(true)
@@ -71,24 +71,34 @@ export default function (props) {
 
     function getSortIcon() {
         if (sortBy === 1) {
-            if (sortAsc) return ( <Icon name={'sort-amount-asc'} type={'font-awesome'} /> )
-            else return ( <Icon name={'sort-amount-desc'} type={'font-awesome'} /> )
+            if (sortAsc) return ( <Icon name={'sort-amount-asc'} type={'font-awesome'} color='#1f4690' /> )
+            else return ( <Icon name={'sort-amount-desc'} type={'font-awesome'} color='#1f4690' /> )
         }
 
         if (sortBy === 2) {
-            if (sortAsc) return ( <Icon name={'sort-alpha-asc'} type={'font-awesome'} /> )
-            else return ( <Icon name={'sort-alpha-desc'} type={'font-awesome'} /> )
+            if (sortAsc) return ( <Icon name={'sort-alpha-asc'} type={'font-awesome'} color='#1f4690' /> )
+            else return ( <Icon name={'sort-alpha-desc'} type={'font-awesome'} color='#1f4690' /> )
         }
 
-        return ( <Icon name={'align-justify'} type={'font-awesome'} /> )
+        return ( <Icon name={'align-justify'} type={'font-awesome'} color='#1f4690' /> )
     }
 
     const search = async (url) => {
         let tempResults = []
         await fetch(url)
-            .then(response => response.json())
+            .then(response => {
+                if (response.ok) return response.json()
+                else {
+                    setSnackError(true)
+                    setSnackbarText("Couldn't initiate the search...")
+                    return null
+                }
+            })
             .then(json => {
-                tempResults = json.results
+                if (json != null) tempResults = json.results
+                else {
+
+                }
             })
         return tempResults
     }
@@ -102,8 +112,10 @@ export default function (props) {
             const column = (sortBy === 0) ? '' : (sortBy === 1) ? '&sort_column=price' : '&sort_column=name'
             const dir = (sortAsc) ? 'asc' : 'desc'
             const url = 'https://steamcommunity.com/market/search/render/?search_descriptions=' + sd + column + '&sort_dir=' + dir + '&appid=' + filterGame + '&norender=1&count=100&start=0&query=' + searchQuery
-            setLoadingResults(false)
-            setSearchResults(await search(url))
+            setSearchResults(await search(url).then((r) => {
+                setLoadingResults(false)
+                return r
+            }))
         }
     }
 
@@ -111,6 +123,18 @@ export default function (props) {
         return new Promise((resolve) => {
             setTimeout(resolve, milliseconds);
         });
+    }
+
+    const [timeoutLen, setTimeoutLen] = useState(0)
+    const timeoutCountdown = async (tLen) => {
+        if (tLen > 0) {
+            setTimeoutLen(Math.round(tLen / 1000))
+            await sleep(1000)
+            timeoutCountdown(tLen - 1000)
+        } else {
+            setTimeoutLen(0)
+            setSearchTimeout(false)
+        }
     }
 
     const _renderItem = item => {
@@ -139,7 +163,7 @@ export default function (props) {
                 <Text bold style={styles.listingGame}>{item.app_name}</Text>
             </View>
             <View style={styles.column}>
-                <Text bold style={styles.listingPrice}>{props.rate} {Math.round(item.sell_price * props.exchange) / 100}</Text>
+                <Text bold style={styles.listingPrice}>{props.rate} {(Math.round(item.sell_price * props.exchange) / 100).toFixed(2)}</Text>
                 <Text style={styles.listingAmount}>{item.sell_listings} listed</Text>
             </View>
         </View>
@@ -211,94 +235,105 @@ export default function (props) {
                 onClose={() => setShowSheet(false)}
                 contentContainerStyle={{height: resize(540)}}
             >
-                <View>
-                    <Text bold style={styles.sheetTitle}>Search</Text>
+                <Text bold style={styles.sheetTitle}>Search</Text>
 
-                    <Text style={{fontSize: resize(14), textAlign: 'center'}}>Search timeout is <Text bold>{ (searchTimeout) ? 'active' : 'inactive' }</Text></Text>
-                    <Text bold style={styles.sheetSubtitle}>Search Query</Text>
-                    <View style={styles.inputView}>
-                        <Icon name={'search'} type={'font-awesome'} size={resize(24)} />
-                        <TextInput
-                            style={{marginHorizontal: 4, borderWidth: 1.0, borderRadius: 8, flex: 1, paddingHorizontal: 8, fontSize: resize(14)}}
-                            onChangeText={(text => setSearchQuery(text))}
+                <TextInput
+                    style={{fontSize: resize(16), padding: 0, marginHorizontal: resize(16), height: resize(40), backgroundColor: '#fff'}}
+                    placeholder='Search query'
+                    mode={'outlined'}
+                    onChangeText={text => setSearchQuery(text)}
+                    label={'Search query'}
+                    activeOutlineColor={'#1f4690'}
+                    left={
+                        <TextInput.Icon
+                            icon={() => (<Icon name={'search'} type={'ionicons'} color={'#1f4690'} />)}
+                            size={resize(24)}
+                            style={{margin: 0, marginTop: resize(8),}}
+                            name={'at'}
+                            forceTextInputFocus={false}
                         />
-                    </View>
+                    }
+                />
+
+                <Text bold style={[styles.sheetSubtitle, {marginTop: resize(12),}]}>Game</Text>
+                <Dropdown
+                    data={games}
+                    search
+                    label={"Game"}
+                    searchPlaceholder={"Search for game..."}
+                    labelField={'label'}
+                    valueField={'value'}
+                    placeholder={"Select a game..."}
+                    maxHeight={resize(320)}
+                    onChange={item => setFilterGame(item.value)}
+                    value={filterGame}
+                    renderItem={item => _renderItem(item)}
+                    renderLeftIcon={() => (
+                        <Icon name="gamepad" type={'font-awesome'} size={resize(20)} color="#1f4690" style={{marginRight: resize(8)}} />
+                    )}
+                    inputSearchStyle={styles.dropdownInput}
+                    style={styles.dropdown}
+                    selectedTextStyle={styles.selectedTextStyle}
+                />
+
+                <Text bold style={[styles.sheetSubtitle, {marginTop: resize(12)}]}>Sort by</Text>
+                <Text style={{textAlign: 'left', width: '90%', alignSelf: 'center', fontSize: resize(14), marginTop: 0}}>Tap on the right icon to change sort order</Text>
+                <View style={styles.inputView}>
+                    <Dropdown
+                        data={sortByValues}
+                        label={"Sort by"}
+                        labelField={'label'}
+                        valueField={'value'}
+                        placeholder={"Select a sort option..."}
+                        maxHeight={resize(170)}
+                        onChange={item => setSortBy(item.value)}
+                        value={sortBy}
+                        renderItem={item => _renderItem(item)}
+                        renderLeftIcon={() => (
+                            <Icon name="sort" type={'font-awesome'} size={resize(20)} color="#1f4690" style={{marginRight: resize(8)}} />
+                        )}
+                        inputSearchStyle={styles.dropdownInput}
+                        style={styles.dropdown}
+                        selectedTextStyle={styles.selectedTextStyle}
+                    />
+                    <Pressable onPress={() => setSortAsc(!sortAsc)}>{ getSortIcon() }</Pressable>
                 </View>
 
-                <View>
-                    <Text bold style={styles.sheetSubtitle}>Game</Text>
-                    <View style={styles.inputView}>
-                        <Dropdown
-                            data={games}
-                            search
-                            label={"Game"}
-                            searchPlaceholder={"Search for game..."}
-                            labelField={'label'}
-                            valueField={'value'}
-                            placeholder={"Select a game..."}
-                            maxHeight={resize(320)}
-                            onChange={item => setFilterGame(item.value)}
-                            value={filterGame}
-                            renderItem={item => _renderItem(item)}
-                            renderLeftIcon={() => (
-                                <Icon name="gamepad" type={'font-awesome'} size={resize(20)} color="#000" style={{marginRight: resize(8)}} />
-                            )}
-                            inputSearchStyle={styles.dropdownInput}
-                            style={styles.dropdown}
-                            selectedTextStyle={styles.selectedTextStyle}
-                        />
-                    </View>
+                <BouncyCheckbox
+                    isChecked={searchDesc}
+                    onPress={(isChecked) => setSearchDesc(isChecked)}
+                    text={<Text style={{fontSize:resize(16), color: '#1f4690'}}>Search in <Text bold>item description</Text></Text>}
+                    textStyle={{textDecorationLine: "none"}}
+                    fillColor={'#1f4690'}
+                    iconStyle={{borderWidth:resize(3), borderColor: '#1f4690'}}
+                    style={{marginVertical: resize(16), alignSelf: 'center',}}
+                    size={resize(26)}
+                />
 
-                    <Text bold style={styles.sheetSubtitle}>Sort by</Text>
-                    <Text style={{textAlign: 'left', width: '90%', alignSelf: 'center', fontSize: 12}}>Tap on the right icon to change sort order</Text>
-                    <View style={styles.inputView}>
-                        <Dropdown
-                            data={sortByValues}
-                            label={"Sort by"}
-                            labelField={'label'}
-                            valueField={'value'}
-                            placeholder={"Select a sort option..."}
-                            maxHeight={resize(170)}
-                            onChange={item => setSortBy(item.value)}
-                            value={sortBy}
-                            renderItem={item => _renderItem(item)}
-                            renderLeftIcon={() => (
-                                <Icon name="sort" type={'font-awesome'} size={resize(20)} color="#000" style={{marginRight: resize(8)}} />
-                            )}
-                            inputSearchStyle={styles.dropdownInput}
-                            style={styles.dropdown}
-                            selectedTextStyle={styles.selectedTextStyle}
-                        />
-                        <Pressable onPress={() => setSortAsc(!sortAsc)}>{ getSortIcon() }</Pressable>
-                    </View>
-
-                    <View style={styles.inputView}>
-                        <Text bold style={styles.sheetSubtitle}>Search in description</Text>
-                        <Pressable onPress={() => setSearchDesc(!searchDesc)}>
-                            <Icon name={searchDesc ? 'check-square-o' : 'square-o' } type={'font-awesome'} />
-                        </Pressable>
-                    </View>
-
-                    <View style={[styles.inputView, {width: '40%'}]}>
-                        <Pressable style={{marginHorizontal: 4, borderWidth: 1.0, borderRadius: 8, flex: 1, padding: 4}} onPress={() => {
+                <View style={[styles.inputView, {width: '40%'}]}>
+                    <Pressable style={{marginHorizontal: 4, borderWidth: 2.0, borderRadius: 8, flex: 1, paddingVertical: resize(8), borderColor: '#1f4690',}}
+                        onPress={() => {
                             searchMarket().then(async () => {
                                 setSearchTimeout(true)
-                                await sleep(15000)
-                                setSearchTimeout(false)
+                                timeoutCountdown(15000)
                             })
-                        }}>
-                            <Text bold style={{textAlign: 'center', fontSize: resize(20)}}>SEARCH</Text>
-                        </Pressable>
-                    </View>
+                        }} disabled={searchTimeout}>
+                        <Text bold style={{textAlign: 'center', fontSize: resize(20), color: '#1f4690'}}>SEARCH{(timeoutLen > 0) ? ' (' + timeoutLen + ')' : ''}</Text>
+                    </Pressable>
                 </View>
-
             </Sheet>
 
             <AnimatedFAB
                 icon={() => (<Icon name={'search'} type={'feather'} size={resize(24)} />)}
                 label={'Search'}
                 extended={isExpanded}
-                onPress={() => setShowSheet(true)}
+                onPress={() => {
+                    if (loadedGames) setShowSheet(true)
+                    else {
+                        setSnackError(true)
+                        setSnackbarText("Steam market games list couldn't be loaded")
+                    }
+                }}
                 uppercase={false}
                 visible={true}
                 animateFrom={'right'}
@@ -334,13 +369,14 @@ const styles = StyleSheet.create({
         borderTopColor: '#bbb',
     },
     sheetTitle: {
-        fontSize: resize(24),
-        marginVertical: resize(8),
+        fontSize: resize(28),
+        marginBottom: resize(12),
         textAlign: 'center',
+        color: '#1f4690',
     },
     sheetSubtitle: {
-        fontSize: resize(16),
-        color: '#555',
+        fontSize: resize(20),
+        color: '#248',
         textAlign: 'left',
         width: '90%',
         alignSelf: 'center',

@@ -31,19 +31,19 @@ export default function (props) {
                             <View style={[styles.column]}>
                                 <View style={styles.row}>
                                     {
-                                        (item.state === 0) ? <Icon name={'circle'} type={'font-awesome'} color={'#f00'} size={resize(16)} />
-                                        : (item.state === 1) ? <Icon name={'circle'} type={'font-awesome'} color={'#0a0'} size={resize(16)} />
-                                        : (item.state === 2) ? <Icon name={'circle'} type={'font-awesome'} color={'#fa0'} size={resize(16)} />
-                                        : <Icon name={'sleep'} type={'material-community'} color={'#44f'} size={resize(16)} />
+                                        (item.state === 0) ? <Icon name={'circle'} type={'font-awesome'} color={'#f00'} size={resize(12)} />
+                                        : (item.state === 1) ? <Icon name={'circle'} type={'font-awesome'} color={'#0a0'} size={resize(12)} />
+                                        : (item.state === 2) ? <Icon name={'do-not-disturb'} color={'#fa0'} size={resize(12)} />
+                                        : <Icon name={'sleep'} type={'material-community'} color={'#44f'} size={resize(12)} />
                                     }
-                                    <Text bold style={[{fontSize: resize(14), marginLeft: 8, color: (item.public) ? '#337' : '#f00'}]}>{(!item.public) ? 'Profile is set to PRIVATE' : 
+                                    <Text bold style={[{fontSize: resize(14), marginLeft: resize(4), color: (item.public) ? '#337' : '#f00'}]}>{(!item.public) ? 'Profile is set to PRIVATE' : 
                                     (item.state === 0) ? 'Offline'
                                     : (item.state === 1) ? 'Online'
                                     : (item.state === 2) ? 'Busy'
                                     : 'Away'}</Text>
                                 </View>
-                                <Text bold style={styles.profileID}>{item.id}</Text>
                                 <Text bold style={styles.profileName}>{item.name}</Text>
+                                <Text style={styles.profileID}>{item.id}</Text>
                             </View>
                         </TouchableOpacity>
                         { (users.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center',}} /> : null }
@@ -80,11 +80,11 @@ const styles = StyleSheet.create({
         marginEnd: resize(8)
     },
     profileName: {
-        fontSize: resize(14),
+        fontSize: resize(16),
         color: '#666'
     },
     profileID: {
-        fontSize: resize(14),
+        fontSize: resize(13),
         color: '#444'
     },
     row: {

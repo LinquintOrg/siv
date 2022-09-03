@@ -51,21 +51,7 @@ export default function InvGamesList(props) {
 
     return(
         <View style={{height: '100%'}}>
-            <Text bold style={styles.title}>Use previously loaded games</Text>
-            {
-                (prevGames.length === 0) ? <Text style={styles.previousGamesSubtitle}>You will be able to see previous games next time you use this profile</Text> :
-                    <TouchableOpacity style={styles.previousGames} onPress={() => {
-                        props.setPrevState(prevGames[0]?.val)
-                    }}>
-                        {
-                            prevGames[0]?.val.map((item) => (
-                                <Image style={{ height: resize(48), width: resize(48), borderRadius: 8, marginRight: 8 }} source={{uri: getGameImage(item)}} />
-                            ))
-                        }
-                    </TouchableOpacity>
-            }
-
-            <Text bold style={styles.title}>or select games from the list</Text>
+            <Text bold style={styles.title}>Select games</Text>
             <ScrollView style={{borderRadius: 8}}>
                 {
                     gj.games.map((item, index) => (
@@ -85,15 +71,54 @@ export default function InvGamesList(props) {
                                 </View>
 
                                 <Icon name={ (props.hasState(item.appid)) ? 'check-circle' : 'circle' } type='feather' size={resize(24)}
-                                      style={{alignSelf: 'center'}} />
+                                      style={{alignSelf: 'center'}} color='#12428D' />
                             </TouchableOpacity>
 
-                            { (gj.games.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center',}} /> : null }
+                            { (gj.games.length - 1 !== index) ? <Divider width={2} style={{width: '95%', alignSelf: 'center', marginVertical: resize(2), borderRadius: 4}} color='#12428D' /> : null }
                         </View>
 
                     ))
                 }
             </ScrollView>
+
+            <Text bold style={styles.title}>Previously used games</Text>
+            {
+                (prevGames.length === 0) ? <Text style={styles.previousGamesSubtitle}>You haven't used this profile previously</Text> :
+                    <View style={{width: '95%', alignSelf: 'center', flexDirection: 'row', display: 'flex', justifyContent: 'center',}}>
+                        <TouchableOpacity style={styles.previousGames} onPress={() => {
+                            props.setPrevState(prevGames[0]?.val)
+                        }}>
+                            <ScrollView style={{width: '100%', display: 'flex', flexDirection: 'row', flexWrap: 'wrap',}} horizontal showsHorizontalScrollIndicator={false}>
+                            {
+                                prevGames[0]?.val.map((item) => (
+                                    <Image style={{ height: resize(48), width: resize(48), borderRadius: 8, marginRight: 8 }} source={{uri: getGameImage(item)}} />
+                                ))
+                            }
+                            </ScrollView>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={{
+                                backgroundColor: '#12428D',
+                                borderTopRightRadius: 16,
+                                borderBottomRightRadius: 16,
+                                flexDirection: 'row',
+                                display: 'flex',
+                                width: '30%',
+                                justifyContent: 'space-between',
+                                elevation: 3,
+                                marginBottom: resize(8),
+                                paddingTop: resize(16),
+                                paddingHorizontal: resize(8),
+                            }}
+                            onPress={async () => {
+                                props.proceed(prevGames[0]?.val)
+                            }}
+                            >
+                                <Text bold style={styles.buttonMediumText}>Select</Text>
+                                <Icon type={'font-awesome-5'} name={'angle-double-right'} size={resize(24)} color={'#F2FAFD'} />
+                        </TouchableOpacity>
+                    </View>
+            }
 
             <TouchableOpacity style={styles.buttonProceed} onPress={() => {
                 if (props.state.length > 0) {
@@ -104,13 +129,13 @@ export default function InvGamesList(props) {
                 }
             }}>
                 <Text bold style={styles.buttonMediumText}>Proceed</Text>
-                <Icon type={'font-awesome-5'} name={'angle-double-right'} size={resize(32)} color={'#193C6E'} />
+                <Icon type={'font-awesome-5'} name={'angle-double-right'} size={resize(32)} color={'#F2FAFD'} />
             </TouchableOpacity>
 
             <Snackbar
                 visible={snackbarVisible}
                 onDismiss={() => setSnackbarVisible(false)}
-                style={{backgroundColor: "#FF3732"}}
+                style={{backgroundColor: "#722", color: '#fff'}}
                 action={{
                     label: 'OKAY',
                     onPress: () => {
@@ -151,48 +176,48 @@ const styles = StyleSheet.create ({
         borderColor: '#0f0',
     },
     title: {
-        textAlign: 'center',
-        fontSize: resize(20),
-        marginVertical: 4,
+        textAlign: 'left',
+        fontSize: resize(24),
+        marginVertical: resize(8),
+        marginLeft: resize(8),
+        color: '#12428D'
     },
     buttonProceed: {
         alignSelf: "center",
-        backgroundColor: '#FFF',
+        backgroundColor: '#12428D',
         width: '80%',
-        height: resize(50),
+        height: resize(48),
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         borderRadius: 16,
         marginVertical: 8,
         display: 'flex',
         flexDirection: 'row',
-        borderWidth: 0.5,
-        borderColor: '#193C6E',
         elevation: 2,
+        paddingHorizontal: resize(16),
     },
     buttonMediumText: {
         fontSize: resize(20),
-        color: '#193C6E',
+        color: '#F2FAFD',
         marginHorizontal: 8,
-        width: '75%',
     },
     previousGames: {
-        width: '80%',
+        width: '65%',
         alignSelf: 'center',
         alignItems: 'center',
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'center',
         backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 4,
-        elevation: 2,
+        borderTopLeftRadius: 16,
+        borderBottomLeftRadius: 16,
+        padding: resize(4),
+        elevation: 3,
+        marginBottom: resize(8),
     },
     previousGamesSubtitle: {
         width: '90%',
         alignSelf: 'center',
         textAlign: 'center',
-        fontSize: resize(14)
+        fontSize: resize(16),
+        marginVertical: resize(8),
     },
     snackbarText: {
         fontSize: resize(13),

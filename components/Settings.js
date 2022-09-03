@@ -1,8 +1,9 @@
 import React, {useState} from "react";
-import {View, StyleSheet, ScrollView, Dimensions} from "react-native";
+import {View, StyleSheet, ScrollView, Dimensions, Pressable} from "react-native";
 import {Dropdown} from 'react-native-element-dropdown';
-import {Divider} from "react-native-elements";
+import {Divider, Icon} from "react-native-elements";
 import Text from '../Elements/text'
+import * as Clipboard from 'expo-clipboard';
 
 export default function (props) {
     const rates = props.rates
@@ -81,14 +82,41 @@ export default function (props) {
             <Text bold style={styles.title}>Other</Text>
 
             <Text bold style={styles.settingTitle}>Links</Text>
-            <Text style={{fontSize: resize(14), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can check API status @ <Text style={{color: '#3342A3'}}>status.domr.xyz</Text></Text>
-            <Text style={{fontSize: resize(14), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can find credits @ <Text style={{color: '#3342A3'}}>domr.xyz/credits</Text></Text>
+            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>Website URL @ <Text bold style={{color: '#3342A3'}}>domr.xyz</Text></Text>
+            <Pressable onPress={() => Clipboard.setStringAsync("https://domr.xyz/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
+                <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
+                <Text bold style={styles.copyText}>Copy Link</Text>
+            </Pressable>
+
+            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can check API status @ <Text bold style={{color: '#3342A3'}}>status.domr.xyz</Text></Text>
+            <Pressable onPress={() => Clipboard.setStringAsync("https://status.domr.xyz/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
+                <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
+                <Text bold style={styles.copyText}>Copy Link</Text>
+            </Pressable>
+
+            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can find credits @ <Text bold style={{color: '#3342A3'}}>domr.xyz/credits</Text></Text>
+            <Pressable onPress={() => Clipboard.setStringAsync("https://domr.xyz/credits/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
+                <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
+                <Text bold style={styles.copyText}>Copy Link</Text>
+            </Pressable>
+
+            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can find changelogs @ <Text bold style={{color: '#3342A3'}}>domr.xyz/changelogs</Text></Text>
+            <Pressable onPress={() => Clipboard.setStringAsync("https://domr.xyz/changelogs/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
+                <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
+                <Text bold style={styles.copyText}>Copy Link</Text>
+            </Pressable>
 
             <Divider width={4} style={{width: '20%', alignSelf: 'center', marginVertical: resize(16), borderRadius: 8}} color={'#0A5270'} />
 
-            <Text bold style={styles.settingTitle}>Timeouts</Text>
-            <Text style={{width: '85%', alignSelf: 'center', fontSize: resize(14)}}>
-                Steam Market allows only <Text bold>20</Text> request every <Text bold>5</Text> minutes, therefore you can conduct search across Steam Market once every <Text bold>15</Text> seconds.
+            <Text bold style={styles.settingTitle}>Steam Market search timeout</Text>
+            <Text style={{width: '85%', alignSelf: 'center', fontSize: resize(14), textAlign: 'justify',}}>
+                Steam Market allows only <Text bold>20</Text> requests every <Text bold>5</Text> minutes. For this reason you can search across Steam Market once every <Text bold>15</Text> seconds.
+            </Text>
+
+            <Text bold style={styles.settingTitle}>Steam Inventory timeout</Text>
+            <Text style={{width: '85%', alignSelf: 'center', fontSize: resize(14), textAlign: 'justify',}}>
+                Steam allows only <Text bold>5</Text> requests every <Text bold>minute</Text>. Because of this when you choose <Text bold>5 or more games</Text> there's
+                <Text bold> 12</Text> second timeout, otherwise there's <Text bold>6</Text> second timeout.
             </Text>
 
             {/*<Text bold style={styles.settingTitle}>Latest updates</Text>
@@ -240,4 +268,23 @@ const styles = StyleSheet.create({
         color: '#333',
         textAlign: 'justify',
     },
+    copyButton: {
+        padding: resize(8),
+        width: '40%',
+        alignSelf: 'center',
+        justifyContent: 'center',
+        display: 'flex',
+        flexDirection: 'row',
+        borderColor: '#3342A3',
+        borderWidth: 3,
+        borderRadius: 16,
+        marginBottom: resize(8),
+        elevation: 3,
+        backgroundColor: '#fff',
+    },
+    copyText: {
+        color: '#3342A3',
+        fontSize: resize(14),
+        marginLeft: resize(8),
+    }
 })

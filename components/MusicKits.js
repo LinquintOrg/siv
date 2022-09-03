@@ -80,6 +80,16 @@ export default function MusicKits(props) {
         })
     }
 
+    const whatIsPlaying = async (song, artist, musicLen) => {
+        setSnackError(<Text style={{fontSize: resize(14)}}>
+                Now playing <Text bold style={{color: '#6FC8F7'}}>{song}</Text> by <Text style={{color: '#6FC8F7'}}>{artist}</Text>{"\n"}
+                Length: <Text bold style={{color: '#6FC8F7'}}>{Math.ceil(musicLen / 1000)}</Text> seconds
+            </Text>)
+        setSnackbarVisible(true)
+        await sleep(5000)
+        setSnackbarVisible(false)
+    }
+
     async function playSound(dir, artist, song) {
         if (!playbackTimeout) {
             if (numPlays > 0) {
@@ -88,16 +98,19 @@ export default function MusicKits(props) {
 
                 const {sound: playbackObject} = await Audio.Sound.createAsync(
                     {uri: 'https://domr.xyz/api/Files/csgo/musickits/' + dir + '/roundmvpanthem_01.mp3'},
-                    {shouldPlay: true}
+                    {shouldPlay: false}
                 )
+                
+                let soundLen = 15000
+                await playbackObject.getStatusAsync().then((status) => {
+                    soundLen = status.durationMillis
+                })
 
-                setSnackError(<Text style={{fontSize: resize(12)}}>Now playing <Text bold style={{color: '#6FC8F7'}}>{song}</Text> by <Text style={{color: '#6FC8F7'}}>{artist}</Text></Text>)
-                setSnackbarVisible(true)
-                await sleep(5000)
-                setSnackbarVisible(false)
-                await sleep(9000)
+                whatIsPlaying(song, artist, soundLen)
+                await playbackObject.playAsync()
+                await sleep(soundLen + 2000)
                 setNumPlays(newNumPlays)
-                setPlaybackTimeout(false);
+                setPlaybackTimeout(false)
             } else {
                 setSnackbarRewardAd(true)
             }
@@ -174,11 +187,6 @@ export default function MusicKits(props) {
         )
     }
 
-    const [musicKits, setMusicKits] = useState([])
-    const sortOrder = () => {
-        
-    }
-
     const _renderMusicKit = ({item, index}) => (
         (item.song.includes(search) || item.artist.includes(search)) ?
             <View>
@@ -212,8 +220,7 @@ export default function MusicKits(props) {
                 </View> :
                 <View style={{height: '100%'}}>
                     <View style={{marginVertical: resize(8)}}>
-                        <Text bold style={styles.title}>Music Kits</Text>
-                        <Text style={styles.subTitle}>Tap to play MVP anthem</Text>
+                        <Text style={styles.title}>Tap to play <Text bold>MVP anthem</Text></Text>
                         <Text style={styles.subTitle}>Available playbacks: <Text bold style={[numPlays === 0 ? {color: '#a00'} : {color: '#0a0'}]}>{numPlays}</Text></Text>
                         <Text style={{fontSize: resize(14), textAlign: 'center'}}>
                             Timeout:
