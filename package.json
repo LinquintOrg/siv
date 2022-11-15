@@ -13,7 +13,7 @@
     "@react-native-community/netinfo": "8.2.0",
     "@react-navigation/bottom-tabs": "^6.0.9",
     "@react-navigation/native-stack": "^6.2.4",
-    "@sentry/react-native": "^4.8.0",
+    "@sentry/react-native": "^3.1.1",
     "@tamkeentech/react-native-bottom-sheet": "^1.0.1",
     "axios": "^0.27.2",
     "eas-cli": "^2.7.0",
@@ -47,7 +47,7 @@
     "react-native-vector-icons": ">7.0.0",
     "react-native-web": "0.17.7",
     "react-navigation-tabbar-collection": "^1.0.0",
-    "sentry-expo": "^5.0.2"
+    "sentry-expo": "^4.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",
