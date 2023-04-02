@@ -37,13 +37,8 @@ function App() {
     Sentry.init({
         dsn: 'https://755f445790cc440eb625404426d380d7@o1136798.ingest.sentry.io/6188926',
         enableInExpoDevelopment: true,
-        debug: false, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending the event. Set it to `false` in production
+        debug: __DEV__, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending the event. Set it to `false` in production
         tracesSampleRate: 1.0,
-        integrations: [
-            new Sentry.Native.ReactNativeTracing({
-                tracingOrigins: ["localhost", "domr.xyz"],
-            }),
-        ],
     });
 
     useFonts({
@@ -56,13 +51,12 @@ function App() {
         return Math.ceil(size * scale)
     }
 
-    const [rate, setRate] = useState(46)         // selected currency
-    const [rates, setRates] = useState()        // downloaded rates from database
-    const [users, setUsers] = useState([])      // Saved profiles
-    const [snackbarVisible, setSnackbarVisible] = useState(false)
-    const [snackbarText, setSnackbarText] = useState("")
-    const [snackError, setSnackError] = useState(false)
-
+    const [rate, setRate] = useState(46);           // selected currency
+    const [rates, setRates] = useState();           // downloaded rates from database
+    const [users, setUsers] = useState([]);         // Saved profiles
+    const [snackbarVisible, setSnackbarVisible] = useState(false);
+    const [snackbarText, setSnackbarText] = useState("");
+    const [snackError, setSnackError] = useState(false);
     const [appIsReady, setAppIsReady] = useState(false);
 
     useEffect(() => {
@@ -100,16 +94,14 @@ function App() {
         }
     }, [appIsReady]);
 
-    if (!appIsReady) {
-        return null;
-    }
+    if (!appIsReady) return null
 
     function navigateToLoad(navigation, steamID) {
         navigation.navigate('Choose games', { steamId: steamID })
     }
 
     async function getRates() {
-        fetch('https://domr.xyz/rates_full.php')
+        fetch('https://inventory.linquint.dev/rates_full.php')
             .then(response => response.json())
             .then(json => setRates(json.rates))
     }
@@ -211,7 +203,7 @@ function App() {
         const [steamID, setSteamID] = useState('');
         const [isLoading, setLoading] = useState(false);        // Are search results still loading
         const [dataName, setName] = useState('');       // Search Profile name
-        const [dataPfp, setPfp] = useState('https://domr.xyz/api/Files/img/profile.png') // search profile picture
+        const [dataPfp, setPfp] = useState('https://inventory.linquint.dev/api/Files/img/profile.png') // search profile picture
         const [dataPublic, setDataPublic] = useState(false)
         const [dataState, setDataState] = useState(0)
 
@@ -220,10 +212,20 @@ function App() {
         }
 
         const getProfileData = async (sid) => {
-            const id = '7401764DA0F7B99794826E9E2512E311';
-            let validValue = false
+            const id = '7401764DA0F7B99794826E9E2512E311'
+            setLoading(true);
+            let validValue = isSteamIDValid(sid)
+
+            let internetConnection = await NetInfo.fetch();
+            if (!(internetConnection.isInternetReachable && internetConnection.isConnected)) {
+                setSnackError(true)
+                setSnackbarText("No internet connection")
+                await sleep(3000).then(() => setSnackError(false))
+                return
+            }
+
             if (!(sid.length === 17 && isSteamIDValid(sid))) {
-                setLoading(true)
+                setProfileSearchText("Finding Steam profile...")
                 await fetch('https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=' + id + '&vanityurl=' + sid)
                 .then((response) => {
                     if (response.ok) return response.json()
@@ -253,6 +255,7 @@ function App() {
 
             if (!validValue) return
             if (sid.length === 17 && isSteamIDValid(sid)) {
+                setProfileSearchText("Getting Steam profile data...")
                 await fetch(
                     'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=' + id + '&steamids=' + sid
                 )
@@ -289,6 +292,7 @@ function App() {
 
         const [isProfileModalVisible, setProfileModalVisible] = useState(false);
         const [profileModalData, setProfileModalData] = useState({name: '', id: ''});
+        const [profileSearchText, setProfileSearchText] = useState("Getting Steam profile data...")
 
         const toggleModal = (profile) => {
             if (!isProfileModalVisible) setProfileModalData(profile)
@@ -356,7 +360,7 @@ function App() {
                     isLoading ? 
                         <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-around', alignSelf: 'center', marginVertical: resize(16),}}>
                             <ActivityIndicator size="small" color='#12428D' />
-                            <Text bold style={{color: '#12428D', fontSize: resize(20), marginLeft: resize(8),}}>Getting Steam profile data...</Text>
+                            <Text bold style={{color: '#12428D', fontSize: resize(20), marginLeft: resize(8),}}>{profileSearchText}</Text>
                         </View> :
                         <View style={[styles.profileSection, (dataName === '' && steamID === '') && {display: 'none'}]}>
                             <Image style={styles.profilePicture} source={{uri: dataPfp}}/>
@@ -367,13 +371,13 @@ function App() {
                                 <View style={styles.flowRow}>
                                     <TouchableOpacity style={styles.buttonSmall} onPress={() => navigateToLoad(navigation, steamID)}
                                                     disabled={!isSteamIDValid(steamID)}>
-                                        <Text style={styles.buttonSmallText}>LOAD</Text>
+                                        <Text bold style={styles.buttonSmallText}>Load</Text>
                                     </TouchableOpacity>
         
                                     <TouchableOpacity style={styles.buttonSmall}
                                                     onPress={() => saveProfile(steamID, dataName, dataPfp, dataPublic, dataState)}
                                                     disabled={!isSteamIDValid(steamID)}>
-                                        <Text style={styles.buttonSmallText}>SAVE</Text>
+                                        <Text bold style={styles.buttonSmallText}>Save</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -602,12 +606,12 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     buttonSmall: {
-        backgroundColor: '#379C63',
+        backgroundColor: '#91bcec',
         width: '35%',
         height: resize(40),
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 8,
+        borderRadius: resize(20),
         marginTop: 4,
     },
     buttonText: {
@@ -616,7 +620,7 @@ const styles = StyleSheet.create({
     },
     buttonSmallText: {
         fontSize: resize(18),
-        color: '#fff',
+        color: '#12428D',
     },
     buttonMediumText: {
         fontSize: resize(24),
@@ -683,14 +687,15 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     profileModalButton: {
-        borderWidth: 0.5,
+        borderWidth: 3,
         borderRadius: 8,
         padding: resize(8),
         marginTop: resize(12),
+        borderColor: '#3342A3',
     },
     profileModalButtonText: {
         fontSize: resize(18),
-        color: '#333',
+        color: '#3342A3',
     }
 });
 

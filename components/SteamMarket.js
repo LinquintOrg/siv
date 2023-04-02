@@ -11,9 +11,10 @@ import {
 import {Divider, Icon} from "react-native-elements";
 import {Dropdown} from "react-native-element-dropdown";
 import Text from '../Elements/text'
-import { Sheet } from '@tamkeentech/react-native-bottom-sheet';
 import {AnimatedFAB, Snackbar, TextInput} from "react-native-paper";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
+import NetInfo from '@react-native-community/netinfo';
+import Modal from "react-native-modal";
 
 export default function (props) {
     const [loading, setLoading] = useState(true)
@@ -36,8 +37,16 @@ export default function (props) {
     }
 
     const loadSteamGames = useCallback(async () => {
+        let internetConnection = await NetInfo.fetch();
+        if (!(internetConnection.isInternetReachable && internetConnection.isConnected)) {
+            setSnackError(true)
+            setSnackbarText("No internet connection")
+            await sleep(3000).then(() => setSnackError(false))
+            return
+        }
+
         let didLoadGames = false
-        await fetch('https://domr.xyz/api/Steam/getGames.php')
+        await fetch('https://inventory.linquint.dev/api/Steam/getGames.php')
             .then((response) => response.json())
             .then((json) => {
                 setLoadedGames(true)
@@ -84,6 +93,14 @@ export default function (props) {
     }
 
     const search = async (url) => {
+        let internetConnection = await NetInfo.fetch();
+        if (!(internetConnection.isInternetReachable && internetConnection.isConnected)) {
+            setSnackError(true)
+            setSnackbarText("No internet connection")
+            await sleep(3000).then(() => setSnackError(false))
+            return null
+        }
+        
         let tempResults = []
         await fetch(url)
             .then(response => {
@@ -202,35 +219,110 @@ export default function (props) {
                 onScroll={onScroll}
             />
 
-            {/*<ScrollView ref={scrollRef} onScroll={onScroll}>
-                {
-                    searchResults.map((item, index) => (
-                        <View>
-                            <View style={styles.listingRow}>
-                                <View style={[styles.column, {width: '80%'}]}>
-                                    <Text style={styles.listingName}>{item.name}</Text>
-                                    <Text bold style={styles.listingGame}>{item.app_name}</Text>
-                                </View>
-                                <View style={styles.column}>
-                                    <Text bold style={styles.listingPrice}>{props.rate} {Math.round(item.sell_price * props.exchange) / 100}</Text>
-                                    <Text style={styles.listingAmount}>{item.sell_listings} listed</Text>
-                                </View>
-                            </View>
-                            {(searchResults.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center'}} /> : null}
-                        </View>
-                    ))
-                }
-                {
-                    (searchResults.length > 4) ?
-                        <TouchableOpacity style={styles.scrollProgress} onPress={() => scrollRef.current?.scrollTo({animated: true, y: 0})}>
-                            <Icon name={'angle-double-up'} type={'font-awesome'} size={resize(48)} color={'#555'} />
-                            <Text style={{fontSize: resize(14)}}>This is the end of the search results</Text>
-                            <Text style={{fontSize: resize(14)}}>Tap to scroll back to top</Text>
-                        </TouchableOpacity> : null
-                }
-            </ScrollView>*/}
+            <Modal
+                isVisible={showSheet}
+                onBackdropPress={() => setShowSheet(false)}
+                animationIn={'slideInUp'}
+                animationOut={'slideOutDown'}
+                animationInTiming={250}
+                style={{width: '100%', height: '100%', padding: 0, margin: 0}}
+            >
+                <View style={styles.searchModal}>
+                    <View style={styles.searchTopBar}>
+                        <TouchableOpacity onPress={() => setShowSheet(false)}>
+                            <Icon name={'cross'} type={'entypo'} size={resize(40)} style={{marginRight: resize(16)}} />
+                        </TouchableOpacity>
+                        <Text bold style={styles.searchBarTitle}>Search community market</Text>
+                    </View>
 
-            <Sheet
+                    <TextInput
+                        style={{fontSize: resize(16), padding: 0, marginHorizontal: resize(16), height: resize(40), backgroundColor: '#fff'}}
+                        placeholder='Search query'
+                        mode={'outlined'}
+                        onChangeText={text => setSearchQuery(text)}
+                        label={'Search query'}
+                        activeOutlineColor={'#1f4690'}
+                        left={
+                            <TextInput.Icon
+                                icon={() => (<Icon name={'search'} type={'ionicons'} color={'#1f4690'} />)}
+                                size={resize(24)}
+                                style={{margin: 0, marginTop: resize(8),}}
+                                name={'at'}
+                                forceTextInputFocus={false}
+                            />
+                        }
+                    />
+
+                    <Text bold style={[styles.sheetSubtitle, {marginTop: resize(12),}]}>Game</Text>
+                    <Dropdown
+                        data={games}
+                        search
+                        label={"Game"}
+                        searchPlaceholder={"Search for game..."}
+                        labelField={'label'}
+                        valueField={'value'}
+                        placeholder={"Select a game..."}
+                        maxHeight={resize(320)}
+                        onChange={item => setFilterGame(item.value)}
+                        value={filterGame}
+                        renderItem={item => _renderItem(item)}
+                        renderLeftIcon={() => (
+                            <Icon name="gamepad" type={'font-awesome'} size={resize(20)} color="#1f4690" style={{marginRight: resize(8)}} />
+                        )}
+                        inputSearchStyle={styles.dropdownInput}
+                        style={styles.dropdown}
+                        selectedTextStyle={styles.selectedTextStyle}
+                    />
+
+                    <Text bold style={[styles.sheetSubtitle, {marginTop: resize(12)}]}>Sort by</Text>
+                    <Text style={{textAlign: 'left', width: '90%', alignSelf: 'center', fontSize: resize(14), marginTop: 0}}>Tap on the right icon to change sort order</Text>
+                    <View style={styles.inputView}>
+                        <Dropdown
+                            data={sortByValues}
+                            label={"Sort by"}
+                            labelField={'label'}
+                            valueField={'value'}
+                            placeholder={"Select a sort option..."}
+                            maxHeight={resize(170)}
+                            onChange={item => setSortBy(item.value)}
+                            value={sortBy}
+                            renderItem={item => _renderItem(item)}
+                            renderLeftIcon={() => (
+                                <Icon name="sort" type={'font-awesome'} size={resize(20)} color="#1f4690" style={{marginRight: resize(8)}} />
+                            )}
+                            inputSearchStyle={styles.dropdownInput}
+                            style={styles.dropdown}
+                            selectedTextStyle={styles.selectedTextStyle}
+                        />
+                        <Pressable onPress={() => setSortAsc(!sortAsc)}>{ getSortIcon() }</Pressable>
+                    </View>
+
+                    <BouncyCheckbox
+                        isChecked={searchDesc}
+                        onPress={(isChecked) => setSearchDesc(isChecked)}
+                        text={<Text style={{fontSize:resize(16), color: '#1f4690'}}>Search in <Text bold>item description</Text></Text>}
+                        textStyle={{textDecorationLine: "none"}}
+                        fillColor={'#1f4690'}
+                        iconStyle={{borderWidth:resize(3), borderColor: '#1f4690'}}
+                        style={{marginVertical: resize(16), alignSelf: 'center',}}
+                        size={resize(26)}
+                    />
+
+                    <View style={[styles.inputView, {width: '40%'}]}>
+                        <Pressable style={{marginHorizontal: 4, borderWidth: 2.0, borderRadius: resize(32), flex: 1, paddingVertical: resize(8), borderColor: '#1f4690',}}
+                            onPress={() => {
+                                searchMarket().then(async () => {
+                                    setSearchTimeout(true)
+                                    timeoutCountdown(15000)
+                                })
+                            }} disabled={searchTimeout}>
+                            <Text bold style={{textAlign: 'center', fontSize: resize(20), color: '#1f4690'}}>SEARCH{(timeoutLen > 0) ? ' (' + timeoutLen + ')' : ''}</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* <Sheet
                 show={showSheet}
                 onClose={() => setShowSheet(false)}
                 contentContainerStyle={{height: resize(540)}}
@@ -321,10 +413,10 @@ export default function (props) {
                         <Text bold style={{textAlign: 'center', fontSize: resize(20), color: '#1f4690'}}>SEARCH{(timeoutLen > 0) ? ' (' + timeoutLen + ')' : ''}</Text>
                     </Pressable>
                 </View>
-            </Sheet>
+            </Sheet> */}
 
             <AnimatedFAB
-                icon={() => (<Icon name={'search'} type={'feather'} size={resize(24)} />)}
+                icon={() => (<Icon name={'search'} type={'feather'} size={resize(24)} color={'#12428D'} />)}
                 label={'Search'}
                 extended={isExpanded}
                 onPress={() => {
@@ -340,6 +432,8 @@ export default function (props) {
                 iconMode={'dynamic'}
                 style={[styles.fabStyle]}
                 loading={true}
+                size={'medium'}
+                color={'#12428D'}
             />
 
             <Snackbar
@@ -496,8 +590,27 @@ const styles = StyleSheet.create({
         marginBottom: 82,
     },
     fabStyle: {
-        bottom: 8,
-        right: 8,
+        bottom: 16,
+        right: 16,
         position: 'absolute',
+        backgroundColor: '#91BCEC',
+        borderRadius: 16,
+        height: resize(56),
+    },
+    searchModal: {
+        backgroundColor: '#fff',
+        padding: resize(12),
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+    },
+    searchTopBar: {
+        display: 'flex',
+        flexDirection: 'row',
+        marginBottom: resize(12),
+    },
+    searchBarTitle: {
+        fontSize: resize(24),
+        textAlignVertical: 'center',
     },
 });

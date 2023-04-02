@@ -4,6 +4,7 @@ import {Dropdown} from 'react-native-element-dropdown';
 import {Divider, Icon} from "react-native-elements";
 import Text from '../Elements/text'
 import * as Clipboard from 'expo-clipboard';
+import NetInfo from '@react-native-community/netinfo';
 
 export default function (props) {
     const rates = props.rates
@@ -69,39 +70,39 @@ export default function (props) {
             <View>
                 <div>Icons made by <a href="https://www.flaticon.com/authors/apien" title="apien">apien</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
                 <View style={styles.iconCreditRow}>
-                    <Image style={styles.iconCreditSize} source={{uri: 'https://domr.xyz/api/Files/img/no-photo.png'}} />
+                    <Image style={styles.iconCreditSize} source={{uri: 'https://inventory.linquint.dev/api/Files/img/no-photo.png'}} />
                     <Text style={styles.iconCreditTitle}>Icon made by <Text style={styles.iconCreditAuthorURL}>apien</Text><Text style={styles.iconCreditSubtitle}> | source <Text style={styles.iconCreditAuthorURL}>www.flaticon.com</Text></Text></Text>
                 </View>
 
                 <div>Icons made by <a href="https://www.flaticon.com/authors/pixelmeetup" title="Pixelmeetup">Pixelmeetup</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
                 <View style={styles.iconCreditRow}>
-                    <Image style={styles.iconCreditSize} source={{uri: 'https://domr.xyz/api/Files/img/profile.png'}} />
+                    <Image style={styles.iconCreditSize} source={{uri: 'https://inventory.linquint.dev/api/Files/img/profile.png'}} />
                     <Text style={styles.iconCreditTitle}>Icon made by <Text style={styles.iconCreditAuthorURL}>Pixelmeetup</Text><Text style={styles.iconCreditSubtitle}> | source <Text style={styles.iconCreditAuthorURL}>www.flaticon.com</Text></Text></Text>
                 </View>
             </View>*/}
             <Text bold style={styles.title}>Other</Text>
 
             <Text bold style={styles.settingTitle}>Links</Text>
-            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>Website URL @ <Text bold style={{color: '#3342A3'}}>domr.xyz</Text></Text>
-            <Pressable onPress={() => Clipboard.setStringAsync("https://domr.xyz/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
+            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>Website URL @ <Text bold style={{color: '#3342A3'}}>inventory.linquint.dev</Text></Text>
+            <Pressable onPress={() => Clipboard.setStringAsync("https://inventory.linquint.dev/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
                 <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
                 <Text bold style={styles.copyText}>Copy Link</Text>
             </Pressable>
 
-            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can check API status @ <Text bold style={{color: '#3342A3'}}>status.domr.xyz</Text></Text>
-            <Pressable onPress={() => Clipboard.setStringAsync("https://status.domr.xyz/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
+            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can check API status @ <Text bold style={{color: '#3342A3'}}>status.inventory.linquint.dev</Text></Text>
+            <Pressable onPress={() => Clipboard.setStringAsync("https://status.inventory.linquint.dev/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
                 <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
                 <Text bold style={styles.copyText}>Copy Link</Text>
             </Pressable>
 
-            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can find credits @ <Text bold style={{color: '#3342A3'}}>domr.xyz/credits</Text></Text>
-            <Pressable onPress={() => Clipboard.setStringAsync("https://domr.xyz/credits/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
+            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can find credits @ <Text bold style={{color: '#3342A3'}}>inventory.linquint.dev/credits</Text></Text>
+            <Pressable onPress={() => Clipboard.setStringAsync("https://inventory.linquint.dev/credits/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
                 <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
                 <Text bold style={styles.copyText}>Copy Link</Text>
             </Pressable>
 
-            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can find changelogs @ <Text bold style={{color: '#3342A3'}}>domr.xyz/changelogs</Text></Text>
-            <Pressable onPress={() => Clipboard.setStringAsync("https://domr.xyz/changelogs/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
+            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can find changelogs @ <Text bold style={{color: '#3342A3'}}>inventory.linquint.dev/changelogs</Text></Text>
+            <Pressable onPress={() => Clipboard.setStringAsync("https://inventory.linquint.dev/changelogs/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
                 <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
                 <Text bold style={styles.copyText}>Copy Link</Text>
             </Pressable>

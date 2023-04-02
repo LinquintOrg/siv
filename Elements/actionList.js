@@ -44,7 +44,7 @@ export default function (props) {
                 {id === props.act ? <ActivityIndicator size={'small'} color={'#E8E0C5'} /> : 
                     id < props.act ? <Icon name={'check'} type={'entypo'} size={resize(20)} color={'#CC705B'} /> : 
                     <Icon name={'query-builder'} size={resize(20)} color={'#CC705B'} /> }
-                <Text style={[styles.text, id === props.act ? {color: '#E8E0C5'} : {color: '#CC705B'}]}>{((id === props.act) ? 'Loading ' : 'Load ')}prices of { len } games</Text>
+                <Text style={[styles.text, id === props.act ? {color: '#E8E0C5'} : {color: '#CC705B'}]}>{((id === props.act) ? 'Loading ' : 'Load ')}{ (len == 1) ? '1 game ' : (len + ' games ')}prices</Text>
             </View>
         )
     }

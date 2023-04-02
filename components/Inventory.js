@@ -17,15 +17,16 @@ import gamesJson from '../assets/inv-games.json';
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import {Divider, Icon} from "react-native-elements";
 import {Dropdown} from "react-native-element-dropdown";
-import {Portal, Provider, Snackbar, FAB} from "react-native-paper";
+import {Portal, Provider, Snackbar, FAB, AnimatedFAB} from "react-native-paper";
 import NetInfo from "@react-native-community/netinfo";
 import Text from '../Elements/text';
-import { Sheet } from '@tamkeentech/react-native-bottom-sheet';
 import Modal from 'react-native-modal';
 import * as Clipboard from "expo-clipboard";
 import cloneDeep from 'lodash.clonedeep'
 import {TextInput} from "react-native-paper";
 import ActionList from '../Elements/actionList'
+import Summary from "../Elements/Inventory/Summary";
+import { GestureHandlerRootView, NativeViewGestureHandler } from "react-native-gesture-handler";
 
 if (Platform.OS === 'android') {
     UIManager.setLayoutAnimationEnabledExperimental(true)
@@ -145,6 +146,7 @@ export default function Inventory(props) {
         'avg24': 0,
         'avg7': 0,
         'avg30': 0,
+        'p30ago': 0,
         missingPrices: 0,
         'cheapest': {
             'name': '',
@@ -162,13 +164,14 @@ export default function Inventory(props) {
     const [curr, setCurr] = useState(rates[props.rate].abb)
     let tempArray = []
     const [search, setSearch] = useState('')
-    const [stickerPrices] = useState({})
+    const [stickerPrices, setStickerPrices] = useState({})
     // const [invSize, setInvSize] = useState(0)
     const [snackbarVisible, setSnackbarVisible] = useState(false)
     const [snackError, setSnackError] = useState('')
     const [filterVisible, setFilterVisible] = useState(false)
     const [containsCSGO, setContainsCSGO] = useState(false)
     const [inventoryData, setInventoryData] = useState([])
+    const [loadStatus, setLoadStatus] = useState(null)
 
     const [scale] = useState(Dimensions.get('window').width / 423);
     const resize = (size) => {
@@ -201,19 +204,24 @@ export default function Inventory(props) {
                     const gameID = games[i]
                     setActionID(tmpAct++)
 
-                    await fetch('https://steamcommunity.com/inventory/' + user + '/' + gameID + '/' + ((gameID === 238960) ? user : (gameID === 264710) ? 1847277 : 2) + '/?count=1000')
+                    let url = (__DEV__) ? 'https://inventory.linquint.dev/api/Steam/dev/inv730.php' : 'https://steamcommunity.com/inventory/' + user + '/' + gameID + '/' + ((gameID === 238960) ? user : (gameID === 264710) ? 1847277 : 2) + '/?count=1000';
+                    await fetch(url)
                         .then(response => {
                             if (response.ok) {
+                                setLoadStatus(response.status)
                                 return response.json()
                             } else {
-                                return false
+                                setLoadStatus(response.status)
+                                return {ok: false, status: response.status}
                             }
                         })
                         .then(async json => {
-                            if (!json || json == null) {
+                            if ((!json.ok && JSON.stringify(json).length < 30) || json == null) {
                                 setSnackbarVisible(true)
-                                setSnackError('Couldn\'t load inventory')
+                                if (json.status == 429) setSnackError('Too many requests')
+                                else setSnackError('Couldn\'t load inventory')
                                 setLoading(false)
+                                return false
                             } else {
                                 json['appid'] = gameID
                                 json['game'] = gameName(gameID)
@@ -231,6 +239,7 @@ export default function Inventory(props) {
             if (!isLoaded) {
                 loadInventoryOnEffect().then(async (items) => {
                     setLoading(false)
+                    if (!items) return
                     setFetching(true)
                     await fetchInventory(items).then(async (fetchedItems) => {
                         if (fetchedItems == null) {
@@ -332,12 +341,13 @@ export default function Inventory(props) {
                 headers: myHeaders
             }
 
-            await fetch('https://domr.xyz/api/Steam/v2/getPrices.php', options)
+            await fetch('https://inventory.linquint.dev/api/Steam/v3/prices_test.php', options)
                 .then(response => {
                     if (response.ok) {
                         return response.json()
                     } else {
                         setFetching(false)
+                        setLoadStatus(1)
                         setSnackError('Error occured while getting prices')
                         setSnackbarVisible(true)
                         return null
@@ -351,19 +361,20 @@ export default function Inventory(props) {
         }
 
         if (stickerQuery.length > 0) {
-            await fetch('https://domr.xyz/api/Steam/rq/stickers.php?hashes=' + stickerQuery.toString())
+            await fetch('https://inventory.linquint.dev/api/Steam/v3/stickers.php?hashes=' + stickerQuery.toString())
                 .then(response => {
                     if (response.ok) {
                         return response.json()
                     } else {
                         setFetching(false)
+                        setLoadStatus(1)
                         setSnackError('Error occured while getting prices')
                         setSnackbarVisible(true)
                         return null
                     }
                 }).then(json => {
-                    stickerQuery.forEach((name, index) => {
-                        stickerPrices[name] = json[index]
+                    Object.keys(json).forEach((key) => {
+                        stickerPrices[key] = json[key]
                     })
                 })
         }
@@ -383,28 +394,29 @@ export default function Inventory(props) {
             if (appid === 730) setContainsCSGO(true)
 
             const gamePrice = {
-                price: 0, owned: 0, ownedTradeable: 0, avg24: 0, avg7: 0, avg30: 0, appid: appid, game: gameName(appid), stickerVal: 0, patchVal: 0
+                price: 0, owned: 0, ownedTradeable: 0, avg24: 0, avg7: 0, avg30: 0, p30ago: 0, appid: appid, game: gameName(appid), stickerVal: 0, patchVal: 0
             }
 
             game.data.forEach((item) => {
-                item['has_price'] = priceData[item.hash_name].found
-                item['price'] = priceData[item.hash_name].price
+                item['price'] = priceData[item.hash_name]
 
                 if (priceData[item.hash_name].found) {
-                    const pd = priceData[item.hash_name].price
-                    stats.price += Math.round(pd.Price * rate * 100) * item.amount / 100
+                    const pd = priceData[item.hash_name]
+                    stats.price += Math.round(pd.price * rate * 100) * item.amount / 100
                     stats.owned += item.amount
                     stats.ownedTradeable += (item.marketable) ? item.amount : 0
                     stats.avg24 += Math.round(pd.avg24 * rate * 1000) * item.amount / 1000
                     stats.avg7 += Math.round(pd.avg7 * rate * 1000) * item.amount / 1000
                     stats.avg30 += Math.round(pd.avg30 * rate * 1000) * item.amount / 1000
+                    stats.p30ago += Math.round(pd.p30ago * rate * 100) * item.amount / 100
 
-                    gamePrice.price += Math.round(pd.Price * rate * 100) * item.amount / 100
+                    gamePrice.price += Math.round(pd.price * rate * 100) * item.amount / 100
                     gamePrice.owned += item.amount
                     gamePrice.ownedTradeable += (item.marketable) ? item.amount : 0
                     gamePrice.avg24 += Math.round(pd.avg24 * rate * 1000) * item.amount / 1000
                     gamePrice.avg7 += Math.round(pd.avg7 * rate * 1000) * item.amount / 1000
                     gamePrice.avg30 += Math.round(pd.avg30 * rate * 1000) * item.amount / 1000
+                    gamePrice.p30ago += Math.round(pd.p30ago * rate * 100) * item.amount / 100
 
                     if (appid === 730) {
                         if (item.stickers != null) {
@@ -416,13 +428,13 @@ export default function Inventory(props) {
                         }
                     }
 
-                    if (pd.Price < min) {
-                        min = pd.Price
+                    if (pd.price < min) {
+                        min = pd.price
                         minName = item.name
                     }
 
-                    if (max < pd.Price) {
-                        max = pd.Price
+                    if (max < pd.price) {
+                        max = pd.price
                         maxName = item.name
                     }
                 } else {
@@ -480,37 +492,6 @@ export default function Inventory(props) {
         return color
     }
 
-    const getInventory = async (id, end) => {
-        setAlert('Loading data from Steam')
-        setLoading(true)
-        await fetch('https://steamcommunity.com/inventory/' + props.steam + '/' + id + '/2/?count=1000')
-            .then((response) => {
-                if (response.ok) {
-                    return response.json()
-                } else {
-                    setSnackError('Couldn\'t acquire data from Steam.')
-                    setSnackbarVisible(true)
-                    return null
-                }
-            })
-            .then(async (json) => {
-                if (json !== null) {
-                    json['appid'] = id
-                    json['game'] = gameName(id)
-                    if (id === 730) setContainsCSGO(true)
-                    tempArray.push(json)
-
-                    if (end) {
-                        setLoading(false)
-                        /*await fetchData()*/
-                    }
-                } else {
-                    setLoading(false)
-                    setFetching(false)
-                }
-            })
-    }
-
     function findStickers(desc) {
         let hasStickers = false;
         let dID;
@@ -555,202 +536,10 @@ export default function Inventory(props) {
         }
     }
 
-    const getLoadingItemsAmount = () => {
-        let tmpLen = 0;
-        for (let i = 0; i < tempArray.length; i++) {
-            if (tempArray[i].total_inventory_count > 0) tmpLen += tempArray[i].assets.length
-        }
-        return tmpLen
-    }
-
-    const fetchData = async () => {
-        setFetching(true)
-        const itemsAmount = getLoadingItemsAmount()
-
-        if (itemsAmount === 0) {
-            setIsEmpty(true)
-            return
-        } else if (itemsAmount > 700) {
-            setAlert('Getting prices... It may take a few minutes to complete...')
-        } else if (itemsAmount > 300) {
-            setAlert('Getting prices... It may take up to a minute to complete...')
-        } else {
-            setAlert('Getting prices... This shouldn\'t take long...')
-        }
-        let queries = []
-        let tmpStickers = []
-
-        for (let i = 0; i < tempArray.length; i++) {
-            if (tempArray[i].total_inventory_count > 0) {
-                let query = {
-                    app: tempArray[i].appid,
-                    hashes: ''
-                }
-
-                let tmpHash = ''
-
-                let assets = tempArray[i].assets
-                let items = tempArray[i].descriptions
-
-                for (let j = 0; j < items.length; j++) {
-                    let num = 0
-                    let id = items[j].classid + items[j].instanceid
-
-                    if (items[j].marketable === 1) {
-                        let item_hash = items[j].market_name.replace(',', ';')
-                        tmpHash += item_hash + ','
-                    }
-
-                    for (let k = 0; k < assets.length; k++) {
-                        let aID = assets[k].classid + assets[k].instanceid
-                        if (id === aID) num++
-                    }
-
-                    // if CSGO, get info about stickers
-                    if (tempArray[i].appid === 730) {
-                        let tmp = findStickers(tempArray[i].descriptions[j].descriptions)
-                        if (tmp !== null) {
-                            tempArray[i].descriptions[j]['stickers'] = tmp
-                            tempArray[i].descriptions[j]['stickers'].stickers.forEach(sticker => {
-                                if (!tmpStickers.includes(sticker.long_name)) {
-                                    tmpStickers.push(sticker.long_name)
-                                }
-                            })
-                        }
-                    }
-
-                    tempArray[i].descriptions[j]['amount'] = num
-                    stats['owned'] += num
-                    if (items[j].marketable === 1 && items[j].tradable === 1) {
-                        stats['ownedTradeable'] += num
-                    }
-                }
-                query.hashes = tmpHash.substring(0, tmpHash.length - 1)
-                queries.push(query)
-            }
-        }
-
-        for (let i = 0; i < queries.length; i++) {
-            const gameStats = { 'name': tempArray[i].game, 'value': 0, 'items': 0, 'avg24': 0, 'avg7': 0, 'avg30': 0, 'stickerVal': 0, 'patchVal': 0 }
-            let skipped = 0;
-
-            const postBody = {
-                "appid": queries[i].app,
-                "hashes": queries[i].hashes
-            }
-
-            let myHeaders = new Headers()
-            myHeaders.append('Content-Type', 'application/json')
-
-            const options = {
-                method: 'POST',
-                body: JSON.stringify(postBody),
-                headers: myHeaders
-            }
-
-            await fetch('https://domr.xyz/api/Steam/rq/getPrices.php', options)
-                .then(response => {
-                    if (response.ok) {
-                        return response.json()
-                    } else {
-                        setFetching(false)
-                        setSnackError('Error occured while getting prices')
-                        setSnackbarVisible(true)
-                        return null
-                    }
-                })
-                .then(async (json) => {
-                    if (json === null) return
-                    for (let j = 0; j < json.length; j++) {
-                        if (tempArray[i].descriptions[j + skipped].marketable === 1) {
-                            let p = json[j]
-                            tempArray[i].descriptions[j + skipped]['Price'] = p.Price
-                            tempArray[i].descriptions[j + skipped]['Listed'] = p.Listed
-                            tempArray[i].descriptions[j + skipped]['Updated'] = p.Updated
-                            tempArray[i].descriptions[j + skipped]['avg24'] = p.avg24
-                            tempArray[i].descriptions[j + skipped]['avg7'] = p.avg7
-                            tempArray[i].descriptions[j + skipped]['avg30'] = p.avg30
-                            stats['price'] += tempArray[i].descriptions[j + skipped]['amount'] * p.Price
-                            gameStats['value'] += tempArray[i].descriptions[j + skipped]['amount'] * p.Price
-                            stats['avg24'] += tempArray[i].descriptions[j + skipped]['amount'] * p.avg24
-                            gameStats['avg24'] += tempArray[i].descriptions[j + skipped]['amount'] * p.avg24
-                            stats['avg7'] += tempArray[i].descriptions[j + skipped]['amount'] * p.avg7
-                            gameStats['avg7'] += tempArray[i].descriptions[j + skipped]['amount'] * p.avg7
-                            stats['avg30'] += tempArray[i].descriptions[j + skipped]['amount'] * p.avg30
-                            gameStats['avg30'] += tempArray[i].descriptions[j + skipped]['amount'] * p.avg30
-                            gameStats['items'] += tempArray[i].descriptions[j + skipped]['amount']
-
-                            if (stats['cheapest'].price === 0) {
-                                stats['cheapest'].price = p.Price
-                                stats['cheapest'].name = tempArray[i].descriptions[j + skipped]['market_name']
-                            }
-
-                            if (stats['cheapest'].price > p.Price) {
-                                stats['cheapest'].price = p.Price
-                                stats['cheapest'].name = tempArray[i].descriptions[j + skipped]['market_name']
-                            }
-
-                            if (stats['expensive'].price * 100 < tempArray[i].descriptions[j + skipped]['Price'] * 100) {
-                                stats['expensive'].price = tempArray[i].descriptions[j + skipped]['Price']
-                                stats['expensive'].name = tempArray[i].descriptions[j + skipped]['market_name']
-                            }
-                        } else {
-                            tempArray[i].descriptions[j + skipped]['Price']     = 'NaN'
-                            tempArray[i].descriptions[j + skipped]['Listed']    = 'NaN'
-                            tempArray[i].descriptions[j + skipped]['Updated']   = 'NaN'
-                            tempArray[i].descriptions[j + skipped]['avg24']     = 'NaN'
-                            tempArray[i].descriptions[j + skipped]['avg7']      = 'NaN'
-                            tempArray[i].descriptions[j + skipped]['avg30']     = 'NaN'
-                            skipped++
-                            j--
-                        }
-                    }
-                    stats.games.push(gameStats)
-
-                    if (i === queries.length - 1) {
-                        await getStickerPrices(tmpStickers).then(() => {
-                            setInventory(tempArray)
-                            setLoaded(true)
-                            setFetching(false)
-                        })
-                    } else {
-                        await sleep(1000)
-                    }
-                })
-        }
-    }
-
     function sleep(milliseconds) {
         return new Promise((resolve) => {
             setTimeout(resolve, milliseconds);
         });
-    }
-
-    async function getStickerPrices(stickers) {
-        if (stickers.length > 0) {
-            let stickersURL = 'https://domr.xyz/api/Steam/rq/stickers.php?hashes=' + stickers.toString()
-
-            await fetch(stickersURL)
-                .then(response => {
-                    return response.json()
-                })
-                .then(json => {
-                    let stickerTotal = 0.0
-                    let patchTotal = 0.0
-                    json.forEach((price, index) => {
-                        stickerPrices[stickers[index]] = price['Price']
-                        if (stickers[index].toLowerCase().includes('sticker')) stickerTotal += parseFloat(price['Price'])
-                        else patchTotal += parseFloat(price['Price'])
-                    })
-
-                    stats.games.forEach((game, index) => {
-                        if (game.name === 'Counter-Strike: Global Offensive') {
-                            stats.games[index].stickerVal = stickerTotal
-                            stats.games[index].patchVal = patchTotal
-                        }
-                    })
-                })
-        }
     }
 
     /*useLayoutEffect(() => {
@@ -803,18 +592,18 @@ export default function Inventory(props) {
 
                 if (sort === 2) {
                     game.data.sort((a, b) => {
-                        if (a.has_price && b.has_price) return b.price.Price - a.price.Price
-                        if (!a.has_price && !b.has_price) return 0
-                        if (!a.has_price) return 1
+                        if (a.price.found && b.price.found) return b.price.price - a.price.price
+                        if (!a.price.found && !b.price.found) return 0
+                        if (!a.price.found) return 1
                         else return -1
                     })
                 }
 
                 if (sort === 3) {
                     game.data.sort((a, b) => {
-                        if (a.has_price && b.has_price) return b.price.Price * b.amount - a.price.Price * a.amount
-                        if (!a.has_price && !b.has_price) return 0
-                        if (!a.has_price) return 1
+                        if (a.price.found && b.price.found) return b.price.price * b.amount - a.price.price * a.amount
+                        if (!a.price.found && !b.price.found) return 0
+                        if (!a.price.found) return 1
                         else return -1
                     })
                 }
@@ -842,7 +631,7 @@ export default function Inventory(props) {
     const [orderVisible, setOrderVisible] = useState(false)
     const [finalInventory, setFinalInventory] = useState([])
     const [itemVisible, setItemVisible] = useState(false)
-    const [modalItem, setModalItem] = useState({})
+    const [modalItem, setModalItem] = useState({price: {found: false}})
     const scrollRef = useRef();
 
     function displayItem(item) {
@@ -879,24 +668,47 @@ export default function Inventory(props) {
         );
     };
 
-    const _renderInventoryItem = ({item}) => {
+    const rarityBackground = color => {
+        color = color.replace('#', '')
+        let colors = color.match(/.{1,2}/g);
+        colors[0] = Math.ceil((parseInt(colors[0], 16) + 222) / 2)
+        colors[1] = Math.ceil((parseInt(colors[1], 16) + 222) / 2)
+        colors[2] = Math.ceil((parseInt(colors[2], 16) + 222) / 2)
+        return `rgb(${colors[0]}, ${colors[1]}, ${colors[2]})`
+    }
+
+    const rarityText = color => {
+        color = color.replace('#', '')
+        let colors = color.match(/.{1,2}/g);
+        colors[0] = Math.ceil(parseInt(colors[0], 16) / 2)
+        colors[1] = Math.ceil(parseInt(colors[1], 16) / 2)
+        colors[2] = Math.ceil(parseInt(colors[2], 16) / 2)
+        return `rgb(${colors[0]}, ${colors[1]}, ${colors[2]})`
+    }
+
+    const _renderInventoryItem = ({item, index}) => {
         return (
             displayItem(item) ?
-                <Pressable style={styles.itemContainer} onPress={() => {
-                    setModalItem(item)
-                    setItemVisible(true)
-                    console.log(item)
-                }}>
-                    <View style={[styles.column, {width: '70%'}]}>
-                        <Text bold style={styles.itemName}>{ item.name }</Text>
-                        <Text style={[styles.itemType]}>{ item.type }</Text>
-                    </View>
+                <View>
+                    <Pressable style={styles.itemContainer} onPress={() => {
+                        setModalItem(item)
+                        setItemVisible(true)
+                    }}>
+                        <View style={[styles.column, {width: '70%'}]}>
+                            <Text bold style={styles.itemName}>{ item.name }</Text>
+                            <View style={styles.row}>
+                                <Text style={[styles.itemType]}>{ item.type }</Text>
+                                <Text style={[styles.itemType, {backgroundColor: rarityBackground(item.rarity_color), color: rarityText(item.rarity_color)}]}>{ item.rarity }</Text>
+                            </View>
+                        </View>
 
-                    <View style={[styles.column, {justifyContent: 'space-between', width: '30%'}]}>
-                        <Text style={styles.itemPriceSingular}><Text bold>{curr} { (rate * item.price.Price).toFixed(2) }</Text> x { item.amount }</Text>
-                        <Text bold style={styles.itemPriceTotal}>{curr} { (rate * item.price.Price * item.amount).toFixed(2) }</Text>
-                    </View>
-                </Pressable> : null
+                        <View style={[styles.column, {justifyContent: 'space-between', width: '30%'}]}>
+                            <Text style={styles.itemPriceSingular}><Text bold>{curr} { (rate * item.price.price).toFixed(2) }</Text> x { item.amount }</Text>
+                            <Text bold style={styles.itemPriceTotal}>{curr} { (Math.round(item.price.price * rate * 100) * item.amount / 100).toFixed(2) }</Text>
+                        </View>
+                    </Pressable>
+                    <Divider width={1} />
+                </View> : null
         )
     }
 
@@ -910,6 +722,12 @@ export default function Inventory(props) {
 
     const [fabVisible, setFabVisible] = useState(false)
     const [showSheet, setShowSheet] = useState(false);
+    const sheetRef = React.createRef();
+    const [isExpanded, setIsExpanded] = useState(true);
+    const onScroll = ({ nativeEvent }) => {
+        const currentScrollPosition = Math.floor(nativeEvent?.contentOffset?.y) ?? 0;
+        setIsExpanded(currentScrollPosition <= 0);
+    };
 
     const getAppliedValue = (applied) => {
         let tmpPrice = 0.0
@@ -920,13 +738,27 @@ export default function Inventory(props) {
     }
 
     return(
+        <GestureHandlerRootView>
         <View>
             <View style={{height: '100%'}}>
                 {
                     (isEmpty) ?
                     <View style={styles.column}>
-                        <Text style={{textAlign: 'center', marginTop: Dimensions.get('window').height / 2 - 36}}>No items found.</Text>
-                        <Text style={{textAlign: 'center'}}>Choose different games and try again</Text>
+                            {
+                                (loadStatus == 429) ? 
+                                <Text style={{textAlign: 'center', marginTop: Dimensions.get('window').height / 2 - 36}}>
+                                    Too many requests.{'\n'}Too many attempted requests to Steam in short period of time.{'\n'}Try again later. 
+                                </Text>
+                                :
+                                (loadStatus == 1) ? 
+                                <Text style={{textAlign: 'center', marginTop: Dimensions.get('window').height / 2 - 36}}>
+                                    Couldn't get price data.{'\n'}Check if there is down on{'\n'}https://status.linquint.dev
+                                </Text> 
+                                :
+                                <Text style={{textAlign: 'center', marginTop: Dimensions.get('window').height / 2 - 36}}>
+                                    No items found.{'\n'}Choose different games and try again
+                                </Text>
+                            }
                     </View> :
                     (loading || fetching) ?
                     <ActionList list={actionList} act={actionID} /> :
@@ -950,34 +782,6 @@ export default function Inventory(props) {
                                 }
                             />
                         </View>
-                        {/*<View style={styles.fsRow}>
-                            <View style={styles.fsCell}>
-                                <Dropdown
-                                    style={styles.dropdown}
-                                    containerStyle={styles.shadow}
-                                    data={sortOptionsData}
-                                    label="Sort order"
-                                    labelField="label"
-                                    valueField="value"
-                                    placeholder="Select sort order"
-                                    value={sort}
-                                    onChange={item => {
-                                        setSort(item.value)
-                                    }}
-                                    renderItem={item => _renderItem(item)}
-                                    maxHeight={resize(160)}
-                                    activeColor={'#dde'}
-                                />
-                            </View>
-
-                            <View style={styles.fsCell}>
-                                <Pressable style={styles.filterPressable} onPress={() => setFilterVisible(true)}>
-                                    <Icon name={'filter'} type={'feather'} size={resize(20)} color={'#229'} />
-                                    <Text style={styles.filterPressableText}>Filter options</Text>
-                                </Pressable>
-                            </View>
-                        </View>*/}
-
                     </View>
                 }
                 <SectionList
@@ -986,6 +790,7 @@ export default function Inventory(props) {
                     sections={finalInventory}
                     stickySectionHeadersEnabled={true}
                     ref={scrollRef}
+                    onScroll={onScroll}
                     nestedScrollEnabled={true}
                     ListEmptyComponent={() => (
                         (loaded) ?
@@ -1004,50 +809,37 @@ export default function Inventory(props) {
                 />
             </View>
 
-            { (loaded) ?
-                <Summary
-                    stats={stats}
-                    curr={rates[props.rate].abb}
-                    rate={rates[props.rate].exc}
-                    steam={props.steam}
-                    games={props.games}
-                    showSheet={showSheet}
-                    setShowSheet={setShowSheet}
-                /> : null}
+            <AnimatedFAB
+                icon={() => (<Icon name={'filter'} type={'feather'} size={resize(24)} color={'#1f4690'} />)}
+                label={'Filter'}
+                extended={isExpanded}
+                onPress={() => {
+                    if (loaded) setFilterVisible(true)
+                }}
+                uppercase={false}
+                visible={loaded}
+                animateFrom={'left'}
+                iconMode={'dynamic'}
+                style={{bottom: resize(80), left: 16, position: 'absolute', backgroundColor: '#91BCEC', borderRadius: 16}}
+                loading={true}
+                color={'#1f4690'}
+            />
 
-            <Provider>
-                <Portal>
-                    { (loaded) ? <FAB.Group
-                        open={fabVisible}
-                        icon={() => (<Icon name={fabVisible ? 'minus' : 'plus'} type={'feather'} color={'#2379D9'} size={resize(24)}/>)}
-                        fabStyle={{backgroundColor: '#322A81', borderRadius: 16}}
-                        actions={[
-                            {
-                                icon: () => (
-                                    <Icon name={'list'} type={'feather'} color={'#2379D9'} size={resize(24)}/>),
-                                onPress: () => setShowSheet(true),
-                                label: 'Summary',
-                                labelTextColor: '#322A81',
-                            },
-                            {
-                                icon: () => (
-                                    <Icon name={'bar-chart'} type={'feather'} color={'#2379D9'} size={resize(24)}/>),
-                                label: 'Sort order',
-                                labelTextColor: '#322A81',
-                                onPress: () => setOrderVisible(true)
-                            },
-                            {
-                                icon: () => (
-                                    <Icon name={'filter'} type={'feather'} color={'#2379D9'} size={resize(24)}/>),
-                                label: 'Filter options',
-                                labelTextColor: '#322A81',
-                                onPress: () => setFilterVisible(true),
-                            }
-                        ]}
-                        onStateChange={() => setFabVisible(!fabVisible)}
-                    /> : null}
-                </Portal>
-            </Provider>
+            <AnimatedFAB
+                icon={() => (<Icon name={'bar-chart'} type={'feather'} size={resize(24)} color={'#1f4690'} />)}
+                label={'Sort order'}
+                extended={isExpanded}
+                onPress={() => {
+                    setOrderVisible(true)
+                }}
+                uppercase={false}
+                visible={loaded}
+                animateFrom={'right'}
+                iconMode={'dynamic'}
+                style={{bottom: resize(80), right: 16, position: 'absolute', backgroundColor: '#91BCEC', borderRadius: 16}}
+                loading={true}
+                color={'#1f4690'}
+            />
 
             <Modal
                 isVisible={filterVisible}
@@ -1226,18 +1018,18 @@ export default function Inventory(props) {
                         <Divider style={{marginVertical: resize(8)}} />
 
                         {
-                            (modalItem.has_price) ?
+                            (modalItem.price.found) ?
                                 <View>
                                     <View style={[styles.row, {alignSelf: 'center'}]}>
                                         <Text style={styles.itemModalUpdated}>Last updated </Text>
-                                        <Text style={styles.itemModalUpdated} bold>{ Math.floor(modalItem.price.Updated / 60 / 60) }</Text>
+                                        <Text style={styles.itemModalUpdated} bold>{ Math.floor(modalItem.price.ago / 60 / 60) }</Text>
                                         <Text style={styles.itemModalUpdated}> hours </Text>
-                                        <Text style={styles.itemModalUpdated} bold>{ Math.floor(modalItem.price.Updated / 60 % 60) }</Text>
+                                        <Text style={styles.itemModalUpdated} bold>{ Math.floor(modalItem.price.ago / 60 % 60) }</Text>
                                         <Text style={styles.itemModalUpdated}> minutes ago</Text>
                                     </View>
 
                                     <View style={[styles.row, {alignSelf: 'center'}]}>
-                                        <Text bold style={[styles.itemModalListed]}>{ modalItem.price.Listed } </Text>
+                                        <Text bold style={[styles.itemModalListed]}>{ modalItem.price.listed } </Text>
                                         <Text style={styles.itemModalListed}>listings on Steam Market</Text>
                                     </View>
 
@@ -1253,9 +1045,23 @@ export default function Inventory(props) {
                                         <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.avg30 * rate).toFixed(3) }</Text>
                                     </View>
 
+                                    <Text style={styles.itemModalUpdated}>Min and max prices since 2022 December 13th.</Text>
+
+                                    <View style={[styles.row, {justifyContent: 'space-evenly', marginTop: resize(4),}]}>
+                                        <Text style={styles.itemModalAvgTitle}>Min price</Text>
+                                        <Text style={styles.itemModalAvgTitle}>Max price</Text>
+                                        <Text style={styles.itemModalAvgTitle}>30 days ago</Text>
+                                    </View>
+
+                                    <View style={[styles.row, {justifyContent: 'space-evenly', marginBottom: resize(12),}]}>
+                                        <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.min * rate).toFixed(2) }</Text>
+                                        <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.max * rate).toFixed(2) }</Text>
+                                        <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.p30ago * rate).toFixed(2) }</Text>
+                                    </View>
+
                                     <View style={[styles.row,]}>
-                                        <Text style={styles.itemModalPriceOwned}><Text bold>{ curr } { (modalItem.price.Price * rate).toFixed(2) }</Text> x { modalItem.amount }</Text>
-                                        <Text bold style={styles.itemModalPrice}>{ curr } { (Math.round(modalItem.price.Price * rate * 100) * modalItem.amount / 100).toFixed(2) }</Text>
+                                        <Text style={styles.itemModalPriceOwned}><Text bold>{ curr } { (modalItem.price.price * rate).toFixed(2) }</Text> x { modalItem.amount }</Text>
+                                        <Text bold style={styles.itemModalPrice}>{ curr } { (Math.round(modalItem.price.price * rate * 100) * modalItem.amount / 100).toFixed(2) }</Text>
                                     </View>
                                 </View> : (!modalItem.marketable && !modalItem.tradable) ?
                                 <Text bold style={{textAlign: 'center'}}>Item cannot be sold or traded</Text> :
@@ -1278,294 +1084,142 @@ export default function Inventory(props) {
                 }}>
                 <View><Text style={styles.snackbarText}>{snackError}</Text></View>
             </Snackbar>
+
+            { (loaded) ?
+                <Summary
+                    ref={sheetRef}
+                    stats={stats}
+                    curr={rates[props.rate].abb}
+                    rate={rates[props.rate].exc}
+                    steam={props.steam}
+                    games={props.games}
+                    scale={scale}
+                /> : null}
         </View>
+        </GestureHandlerRootView>
     )
 }
 
-function Item(props) {
-    const [open, setOpen] = useState(false)
-    const onPress = () => {
-        LayoutAnimation.easeInEaseOut();
-        setOpen(!open)
-    }
-    const inv = props.inv
-    const img = 'https://community.cloudflare.steamstatic.com/economy/image/' + inv.icon_url
-    const not_found = 'https://icon-library.com/images/development_not_found-512.png'
-    const winWidth = Dimensions.get('window').width;
+// function Item(props) {
+//     const [open, setOpen] = useState(false)
+//     const onPress = () => {
+//         LayoutAnimation.easeInEaseOut();
+//         setOpen(!open)
+//     }
+//     const inv = props.inv
+//     const img = 'https://community.cloudflare.steamstatic.com/economy/image/' + inv.icon_url
+//     const not_found = 'https://icon-library.com/images/development_not_found-512.png'
+//     const winWidth = Dimensions.get('window').width;
 
-    const [scale] = useState(Dimensions.get('window').width / 423);
-    const resize = (size) => {
-        return Math.ceil(size * scale)
-    }
+//     const [scale] = useState(Dimensions.get('window').width / 423);
+//     const resize = (size) => {
+//         return Math.ceil(size * scale)
+//     }
 
-    const getAppliedPrice = (name) => {
-        return props.stPrices[name]
-    }
+//     const getAppliedPrice = (name) => {
+//         return props.stPrices[name]
+//     }
 
-    const getTotalAppliedValue = (items) => {
-        let baseText = ((items.type === 'sticker') ? 'Applied stickers value ' : 'Applied patches value ')
-        let sum = 0.0
-        items.stickers.forEach(item => {
-            sum += parseFloat(Math.round(props.stPrices[item.long_name] * props.rate * 100) / 100)
-        })
-        return (
-            <Text style={styles.totalAppliedValueText}>{baseText}<Text bold style={styles.totalAppliedValue}>{props.curr} {Math.round(sum * 100) / 100}</Text></Text>
-        )
-    }
+//     const getTotalAppliedValue = (items) => {
+//         let baseText = ((items.type === 'sticker') ? 'Applied stickers value ' : 'Applied patches value ')
+//         let sum = 0.0
+//         items.stickers.forEach(item => {
+//             sum += parseFloat(Math.round(props.stPrices[item.long_name] * props.rate * 100) / 100)
+//         })
+//         return (
+//             <Text style={styles.totalAppliedValueText}>{baseText}<Text bold style={styles.totalAppliedValue}>{props.curr} {Math.round(sum * 100) / 100}</Text></Text>
+//         )
+//     }
 
-    const getStickerWidth = (count) => {
-        let tmpW = Math.floor(winWidth / count * 0.95)
-        return (tmpW > 72) ? 72 : tmpW
-    }
+//     const getStickerWidth = (count) => {
+//         let tmpW = Math.floor(winWidth / count * 0.95)
+//         return (tmpW > 72) ? 72 : tmpW
+//     }
 
-    const duration = inv.Updated
-    let minutes = Math.floor(duration / 60 % 60),
-        hours = Math.floor(duration / 60 / 60),
-        seconds = Math.floor(duration % 60);
+//     const duration = inv.Updated
+//     let minutes = Math.floor(duration / 60 % 60),
+//         hours = Math.floor(duration / 60 / 60),
+//         seconds = Math.floor(duration % 60);
 
-    return (
-        <Pressable onPress={() => onPress()}>
-            <View style={[styles.container]}>
-                <View style={{display: 'flex', flexDirection: 'row',}}>
-                    <View style={[styles.flowColumn, {width: '96%'}]}>
-                        <Text bold style={styles.itemName}>{inv.market_name}</Text>
-                        <Text style={styles.itemType}>{inv.type}</Text>
-                    </View>
-                </View>
-                <View style={[styles.flowRow]}>
-                    <Text style={styles.itemPriceTitle}>Owned</Text>
-                    <Text style={styles.itemPriceTitle}>Price per item</Text>
-                    <Text style={styles.itemPriceTitle}>Total Price</Text>
-                </View>
-                <View style={styles.flowRow}>
-                    <Text bold style={styles.itemPrice}>{inv.amount}</Text>
-                    <Text bold style={styles.itemPrice}>{props.curr} {Math.round(inv.Price * props.rate * 100) / 100}</Text>
-                    <Text bold style={styles.itemPrice}>{props.curr} {(inv.Price === 'NaN' ? 'NaN' : Math.round(inv.Price * props.rate * 100) / 100 * inv.amount)}</Text>
-                </View>
-            </View>
-            { open &&
-                <View style={styles.containerCollapsable}>
-                    <View style={styles.row}>
-                        <Image style={{width: '22%', aspectRatio: 1.3, marginRight: 4}} source={open ? {uri: img} : {uri: not_found}} />
-                        <View style={[styles.column, {width: '73%'}]}>
-                            <Text style={styles.detail}>Item is <Text style={styles.detailBold}>{inv.marketable === 1 ? 'marketable' : 'non-marketable'}</Text> and <Text style={styles.detailBold}>{inv.tradable ? 'tradable' : 'non-tradable'}</Text></Text>
-                            { (inv.Price === 'NaN' || (inv.Price === 0.03 && inv.Listed === 0)) ?
-                                <View>
-                                    <Text style={styles.detailBold}>Market details unavailable for this item</Text>
-                                </View> :
-                                <View>
-                                    <Text style={styles.detail}>Price updated <Text bold style={styles.detailBold}>{hours}</Text>h <Text bold style={styles.detailBold}>{minutes}</Text>min <Text bold style={styles.detailBold}>{seconds}</Text>s ago</Text>
-                                    <Text style={styles.detail}><Text bold style={styles.detailBold}>{inv.Listed}</Text> listings on Steam Market</Text>
-                                </View>
-                            }
-                            {inv.hasOwnProperty('fraudwarnings') ? <Text style={styles.detail}>Name Tag: <Text bold>{inv.fraudwarnings[0].substring(12, inv.fraudwarnings[0].length - 2)}</Text></Text> : null}
-                        </View>
-                    </View>
-                    {
-                        inv.hasOwnProperty('stickers') ?
-                            <View style={styles.column}>
-                                <Text bold style={styles.stpaType}>Applied { (inv.stickers.type) ? (inv.stickers.sticker_count > 1) ? 'stickers' : 'sticker' : (inv.stickers.sticker_count > 1) ? 'patches' : 'patch' }</Text>
-                                <View style={styles.stpaRow}>
-                                    {
-                                        inv.stickers.stickers.map(sticker => (
-                                            <Image style={{ aspectRatio: 1.3, width: resize(getStickerWidth(inv.stickers.sticker_count)) }} source={open ? { uri: sticker.img } : {uri: not_found}} />
-                                        ))
-                                    }
-                                </View>
-                                <View style={styles.stpaRow}>
-                                    {
-                                        inv.stickers.stickers.map(sticker => (
-                                            <Text bold style={{ width: resize(getStickerWidth(inv.stickers.sticker_count)), textAlign: 'center', color: '#555', fontSize: resize(14) }}>{Math.round(getAppliedPrice(sticker.long_name) * props.rate * 100) / 100}</Text>
-                                        ))
-                                    }
-                                </View>
-                                { getTotalAppliedValue(inv.stickers) }
-                            </View> : null
-                    }
-                    {(inv.Price === 'NaN' || (inv.Price === 0.03 && inv.Listed === 0)) ?
-                        null :
-                        <View style={{alignSelf: 'center'}}>
-                            <View style={styles.flowRow}>
-                                <Text style={styles.avgTitle}>24 hour average</Text>
-                                <Text style={styles.avgTitle}>7 day average</Text>
-                                <Text style={styles.avgTitle}>30 day average</Text>
-                            </View>
-                            <View style={styles.flowRow}>
-                                <Text bold style={styles.avgDetails}>{props.curr} {Math.round(inv.avg24 * props.rate * 1000) / 1000}</Text>
-                                <Text bold style={styles.avgDetails}>{props.curr} {Math.round(inv.avg7 * props.rate * 1000) / 1000}</Text>
-                                <Text bold style={styles.avgDetails}>{props.curr} {Math.round(inv.avg30 * props.rate * 1000) / 1000}</Text>
-                            </View>
-                        </View>
-                    }
-                </View>
-            }
-        </Pressable>
-    )
-}
-
-function Summary(props) {
-    const [scale] = useState(Dimensions.get('window').width / 423);
-    const resize = (size) => {
-        return Math.ceil(size * scale)
-    }
-
-    const stats = props.stats
-    const curr = props.curr
-    const rate = props.rate
-
-    return (
-        <Sheet
-            show={props.showSheet}
-            onClose={() => props.setShowSheet(false)}
-            contentContainerStyle={{height: resize(540)}}
-        >
-            <View style={{flex: 1, alignItems: 'center', backgroundColor: '#fff', height: '100%'}}>
-                <View style={{marginBottom: resize(8), alignItems: 'center', width: '100%',}}>
-                    <Text bold style={[styles.gameTitle, {fontSize: resize(24), color: '#555'}]}>Inventory Details</Text>
-                    <Text style={{color: '#777'}}>SteamID: <Text bold style={{ color: '#444'}}>{props.steam}</Text></Text>
-                    <Text style={{color: '#777'}}>Games loaded (appid): <Text bold style={{ color: '#444'}}>{JSON.stringify(props.games)}</Text></Text>
-                </View>
-
-                <ScrollView>
-                    <View style={{alignItems: 'center'}}>
-                        <View style={[styles.column, {width: '95%'}]}>
-
-                            <View style={[styles.summarySection]}>
-                                <View style={styles.row}>
-                                    <Text style={styles.statsTitle}>Total value</Text>
-                                    <Text bold style={styles.statsDetails}>{curr} {(Math.round(stats['price'] * rate * 100) / 100).toFixed(2)}</Text>
-                                </View>
-
-                                <View style={styles.row}>
-                                    <Text style={styles.statsTitle}>Items owned</Text>
-                                    <Text bold style={styles.statsDetails}>{ stats['owned'] }</Text>
-                                </View>
-
-                                <View style={styles.row}>
-                                    <Text style={styles.statsTitle}>Of which marketable</Text>
-                                    <Text bold style={styles.statsDetails}>{ stats['ownedTradeable'] }</Text>
-                                </View>
-
-                                <View style={styles.row}>
-                                    <Text style={styles.statsTitle}>Average item price</Text>
-                                    <Text bold style={styles.statsDetails}>{curr} {(Math.round(stats['price'] / stats['ownedTradeable'] * rate * 100) / 100).toFixed(2)} / item</Text>
-                                </View>
-
-                                <View style={styles.row}>
-                                    <Text style={styles.statsTitle}>Missing prices</Text>
-                                    <Text bold style={styles.statsDetails}>{ stats.missingPrices }</Text>
-                                </View>
-                            </View>
-
-                            <Divider width={resize(4)} color={'#0A5270'} style={{width: resize(64), alignSelf: 'center', borderRadius: 8,}} />
-
-                            <View style={styles.summarySection}>
-                                <View style={styles.row}>
-                                    <Text style={styles.statsTitle}>24 hour average value</Text>
-                                    <Text bold style={styles.statsDetails}>{curr} {(Math.round(stats['avg24'] * rate * 1000) / 1000).toFixed(2)}</Text>
-                                </View>
-
-                                <View style={styles.row}>
-                                    <Text style={styles.statsTitle}>7 day average value</Text>
-                                    <Text bold style={styles.statsDetails}>{curr} {(Math.round(stats['avg7'] * rate * 1000) / 1000).toFixed(2)}</Text>
-                                </View>
-
-                                <View style={styles.row}>
-                                    <Text style={styles.statsTitle}>30 day average value</Text>
-                                    <Text bold style={styles.statsDetails}>{curr} {(Math.round(stats['avg30'] * rate * 1000) / 1000).toFixed(2)}</Text>
-                                </View>
-                            </View>
-
-                            <Divider width={resize(4)} color={'#0A5270'} style={{width: resize(64), alignSelf: 'center', borderRadius: 8,}} />
-
-                            <View style={styles.summarySection}>
-                                <View style={styles.row}>
-                                    <Text style={styles.statsTitle}>Most expensive item</Text>
-                                    <View style={[styles.column, {width: '55%'}]}>
-                                        <Text style={[styles.statsDetailsS, {width: '100%'}]}>{stats['expensive'].name}</Text>
-                                        <Text bold style={[styles.statsDetails, {width: '100%'}]}>{curr} {(Math.round(stats['expensive'].price * rate * 100) / 100).toFixed(2)}</Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.row}>
-                                    <Text style={styles.statsTitle}>Cheapest item</Text>
-                                    <View style={[styles.column, {width: '55%'}]}>
-                                        <Text style={[styles.statsDetailsS, {width: '100%'}]}>{stats['cheapest'].name}</Text>
-                                        <Text bold style={[styles.statsDetails, {width: '100%'}]}>{curr} {(Math.round(stats['cheapest'].price * rate * 100) / 100).toFixed(2)}</Text>
-                                    </View>
-                                </View>
-                            </View>
-
-                            <Text bold style={[styles.gameName]}>Game stats</Text>
-
-                            {
-                                stats.games.map((data, index) => (
-                                    <View style={[styles.summarySection, {paddingVertical: 0}]}>
-                                        <Text bold style={styles.sumGame}>{ data.game }</Text>
-
-                                        <View style={styles.row}>
-                                            <Text style={styles.statsTitle}>Value</Text>
-                                            <Text bold style={styles.statsDetails}>{curr} {(Math.round(data.price * rate * 100) / 100).toFixed(2)}</Text>
-                                        </View>
-
-                                        <View style={styles.row}>
-                                            <Text style={styles.statsTitle}>Items owned</Text>
-                                            <Text bold style={styles.statsDetails}>{data.owned}</Text>
-                                        </View>
-
-                                        <View style={styles.row}>
-                                            <Text style={styles.statsTitle}>Of which marketable</Text>
-                                            <Text bold style={styles.statsDetails}>{data.ownedTradeable}</Text>
-                                        </View>
-
-                                        <View style={styles.row}>
-                                            <Text style={styles.statsTitle}>Average 24 hour</Text>
-                                            <Text bold style={styles.statsDetails}>{curr} {(Math.round(data.avg24 * rate * 1000) / 1000).toFixed(2)}</Text>
-                                        </View>
-
-                                        <View style={styles.row}>
-                                            <Text style={styles.statsTitle}>Average 7 day</Text>
-                                            <Text bold style={styles.statsDetails}>{curr} {(Math.round(data.avg7 * rate * 1000) / 1000).toFixed(2)}</Text>
-                                        </View>
-
-                                        <View style={styles.row}>
-                                            <Text style={styles.statsTitle}>Average 30 day</Text>
-                                            <Text bold style={styles.statsDetails}>{curr} {(Math.round(data.avg30 * rate * 1000) / 1000).toFixed(2)}</Text>
-                                        </View>
-
-                                        {
-                                            (data.appid === 730) ?
-                                                <View>
-                                                    <View style={styles.row}>
-                                                        <Text style={styles.statsTitle}>Applied stickers value</Text>
-                                                        <Text bold style={styles.statsDetails}>{curr} {(Math.round(data.stickerVal * rate * 100) / 100).toFixed(2)}</Text>
-                                                    </View>
-
-                                                    <View style={styles.row}>
-                                                        <Text style={styles.statsTitle}>Applied patches value</Text>
-                                                        <Text bold style={styles.statsDetails}>{curr} {(Math.round(data.patchVal * rate * 100) / 100).toFixed(2)}</Text>
-                                                    </View>
-                                                </View> : null
-                                        }
-
-                                        <Divider width={resize(4)} color={'#0A5270'} style={{width: resize(64), alignSelf: 'center', borderRadius: 8, marginVertical: resize(16),}} />
-
-                                        {
-                                            (stats.games.length - 1 === index) ?
-                                                <Text bold style={{textAlign: 'center', color: '#0A5270', fontSize: resize(16), paddingBottom: resize(96),}}>The end of summary</Text> : null
-                                        }
-                                    </View>
-                                ))
-                            }
-
-                        </View>
-                    </View>
-                </ScrollView>
-            </View>
-
-        </Sheet>
-    )
-}
+//     return (
+//         <Pressable onPress={() => onPress()}>
+//             <View style={[styles.container]}>
+//                 <View style={{display: 'flex', flexDirection: 'row',}}>
+//                     <View style={[styles.flowColumn, {width: '96%'}]}>
+//                         <Text bold style={styles.itemName}>{inv.market_name}</Text>
+//                         <Text style={styles.itemType}>{inv.type}</Text>
+//                     </View>
+//                 </View>
+//                 <View style={[styles.flowRow]}>
+//                     <Text style={styles.itemPriceTitle}>Owned</Text>
+//                     <Text style={styles.itemPriceTitle}>Price per item</Text>
+//                     <Text style={styles.itemPriceTitle}>Total Price</Text>
+//                 </View>
+//                 <View style={styles.flowRow}>
+//                     <Text bold style={styles.itemPrice}>{inv.amount}</Text>
+//                     <Text bold style={styles.itemPrice}>{props.curr} {Math.round(inv.Price * props.rate * 100) / 100}</Text>
+//                     <Text bold style={styles.itemPrice}>{props.curr} {(inv.Price === 'NaN' ? 'NaN' : Math.round(inv.Price * props.rate * 100) / 100 * inv.amount)}</Text>
+//                 </View>
+//             </View>
+//             { open &&
+//                 <View style={styles.containerCollapsable}>
+//                     <View style={styles.row}>
+//                         <Image style={{width: '22%', aspectRatio: 1.3, marginRight: 4}} source={open ? {uri: img} : {uri: not_found}} />
+//                         <View style={[styles.column, {width: '73%'}]}>
+//                             <Text style={styles.detail}>Item is <Text style={styles.detailBold}>{inv.marketable === 1 ? 'marketable' : 'non-marketable'}</Text> and <Text style={styles.detailBold}>{inv.tradable ? 'tradable' : 'non-tradable'}</Text></Text>
+//                             { (inv.Price === 'NaN' || (inv.Price === 0.03 && inv.Listed === 0)) ?
+//                                 <View>
+//                                     <Text style={styles.detailBold}>Market details unavailable for this item</Text>
+//                                 </View> :
+//                                 <View>
+//                                     <Text style={styles.detail}>Price updated <Text bold style={styles.detailBold}>{hours}</Text>h <Text bold style={styles.detailBold}>{minutes}</Text>min <Text bold style={styles.detailBold}>{seconds}</Text>s ago</Text>
+//                                     <Text style={styles.detail}><Text bold style={styles.detailBold}>{inv.Listed}</Text> listings on Steam Market</Text>
+//                                 </View>
+//                             }
+//                             {inv.hasOwnProperty('fraudwarnings') ? <Text style={styles.detail}>Name Tag: <Text bold>{inv.fraudwarnings[0].substring(12, inv.fraudwarnings[0].length - 2)}</Text></Text> : null}
+//                         </View>
+//                     </View>
+//                     {
+//                         inv.hasOwnProperty('stickers') ?
+//                             <View style={styles.column}>
+//                                 <Text bold style={styles.stpaType}>Applied { (inv.stickers.type) ? (inv.stickers.sticker_count > 1) ? 'stickers' : 'sticker' : (inv.stickers.sticker_count > 1) ? 'patches' : 'patch' }</Text>
+//                                 <View style={styles.stpaRow}>
+//                                     {
+//                                         inv.stickers.stickers.map(sticker => (
+//                                             <Image style={{ aspectRatio: 1.3, width: resize(getStickerWidth(inv.stickers.sticker_count)) }} source={open ? { uri: sticker.img } : {uri: not_found}} />
+//                                         ))
+//                                     }
+//                                 </View>
+//                                 <View style={styles.stpaRow}>
+//                                     {
+//                                         inv.stickers.stickers.map(sticker => (
+//                                             <Text bold style={{ width: resize(getStickerWidth(inv.stickers.sticker_count)), textAlign: 'center', color: '#555', fontSize: resize(14) }}>{Math.round(getAppliedPrice(sticker.long_name) * props.rate * 100) / 100}</Text>
+//                                         ))
+//                                     }
+//                                 </View>
+//                                 { getTotalAppliedValue(inv.stickers) }
+//                             </View> : null
+//                     }
+//                     {(inv.Price === 'NaN' || (inv.Price === 0.03 && inv.Listed === 0)) ?
+//                         null :
+//                         <View style={{alignSelf: 'center'}}>
+//                             <View style={styles.flowRow}>
+//                                 <Text style={styles.avgTitle}>24 hour average</Text>
+//                                 <Text style={styles.avgTitle}>7 day average</Text>
+//                                 <Text style={styles.avgTitle}>30 day average</Text>
+//                             </View>
+//                             <View style={styles.flowRow}>
+//                                 <Text bold style={styles.avgDetails}>{props.curr} {Math.round(inv.avg24 * props.rate * 1000) / 1000}</Text>
+//                                 <Text bold style={styles.avgDetails}>{props.curr} {Math.round(inv.avg7 * props.rate * 1000) / 1000}</Text>
+//                                 <Text bold style={styles.avgDetails}>{props.curr} {Math.round(inv.avg30 * props.rate * 1000) / 1000}</Text>
+//                             </View>
+//                         </View>
+//                     }
+//                 </View>
+//             }
+//         </Pressable>
+//     )
+// }
 
 const resize = (size) => {
     const scale = Dimensions.get('window').width / 423
@@ -1583,12 +1237,9 @@ const styles = StyleSheet.create ({
         color: '#0A5270',
     },
     itemContainer: {
-        backgroundColor: '#fff',
         borderRadius: 16,
-        padding: resize(8),
-        marginVertical: resize(8),
-        elevation: 2,
-        width: '92%',
+        paddingVertical: resize(8),
+        width: '94%',
         alignSelf: 'center',
         display: 'flex',
         flexDirection: 'row'
@@ -1683,7 +1334,12 @@ const styles = StyleSheet.create ({
     },
     itemType: {
         fontSize: resize(13),
-        color: '#5F7895',
+        color: '#2F3C4A',
+        backgroundColor: '#AFBBCA',
+        paddingHorizontal: resize(8),
+        paddingVertical: resize(4),
+        borderRadius: 30,
+        marginRight: resize(8),
     },
     itemPriceTitle: {
         width: '33%',
