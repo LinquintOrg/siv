@@ -89,8 +89,8 @@ export default function (props) {
                 <Text bold style={styles.copyText}>Copy Link</Text>
             </Pressable>
 
-            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can check API status @ <Text bold style={{color: '#3342A3'}}>status.inventory.linquint.dev</Text></Text>
-            <Pressable onPress={() => Clipboard.setStringAsync("https://status.inventory.linquint.dev/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
+            <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4,}}>You can check API status @ <Text bold style={{color: '#3342A3'}}>status.linquint.dev</Text></Text>
+            <Pressable onPress={() => Clipboard.setStringAsync("https://status.linquint.dev/")} style={({pressed}) => pressed ? [styles.copyButton, {backgroundColor: '#8f9eff'}] : styles.copyButton}>
                 <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
                 <Text bold style={styles.copyText}>Copy Link</Text>
             </Pressable>
