@@ -1,0 +1,45 @@
+{
+    "env": {
+        "node": true,
+        "es6": true
+    },
+    "extends": [
+        "eslint:recommended",
+        "plugin:react/recommended",
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:@typescript-eslint/recommended-requiring-type-checking"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaVersion": "latest",
+        "sourceType": "module",
+        "project": "./tsconfig.json"
+    },
+    "plugins": [
+        "@typescript-eslint",
+        "react"
+    ],
+    "rules": {
+        "indent": [ "error", 2 ],
+        "linebreak-style": 0,
+        "quotes": [ "error", "single" ],
+        "semi": [ "error", "always" ],
+        "no-trailing-spaces": "warn",
+        "comma-dangle": [ "error", "only-multiline" ],
+        "max-len": [ "error", { "code": 160, "ignoreComments": true } ],
+        "no-console": "warn",
+        "array-bracket-spacing": [ "error", "always" ],
+        "eol-last": [ "error", "always" ],
+        "no-empty-function": "off",
+        "@typescript-eslint/no-empty-function": "off",
+        "react/display-name": "off",
+        "react/prop-types": "off",
+        "no-multi-spaces": [ "error" ]
+    },
+    "settings": {
+        "react": {
+            "version": "detect"
+        }
+    }
+}
