@@ -83,3 +83,11 @@ export interface IMusicKitProps {
 export interface IMusicKitsProps {
   kits: IMusicKit[];
 }
+
+export interface ISteamProfile {
+  id: string;
+  name: string;
+  url: string;
+  public: boolean;
+  state: string;
+}

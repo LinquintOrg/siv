@@ -2,7 +2,7 @@ import { Dimensions, Image, ScrollView, StyleSheet, TouchableOpacity, View } fro
 import React, {useState} from 'react';
 import {Divider, Icon} from 'react-native-elements';
 import Text from '../Elements/text';
-import { IUserSavesProps } from '../types';
+import { IUserSavesProps } from '../utils/types';
 
 export default function (props: IUserSavesProps) {
   const { users, loadInv, nav, displayErr, toggleModal } = props;
@@ -27,10 +27,10 @@ export default function (props: IUserSavesProps) {
               <View style={[ styles.column ]}>
                 <View style={styles.row}>
                   {
-                    (item.state === 0) ? <Icon name={'circle'} type={'font-awesome'} color={'#f00'} size={resize(12)} tvParallaxProperties={undefined} />
-                      : (item.state === 1) ? <Icon name={'circle'} type={'font-awesome'} color={'#0a0'} size={resize(12)} tvParallaxProperties={undefined} />
-                        : (item.state === 2) ? <Icon name={'do-not-disturb'} color={'#fa0'} size={resize(12)} tvParallaxProperties={undefined} />
-                          : <Icon name={'sleep'} type={'material-community'} color={'#44f'} size={resize(12)} tvParallaxProperties={undefined} />
+                    (item.state === 0) ? <Icon name={'circle'} type={'font-awesome'} color={'#f00'} size={resize(12)} />
+                      : (item.state === 1) ? <Icon name={'circle'} type={'font-awesome'} color={'#0a0'} size={resize(12)} />
+                        : (item.state === 2) ? <Icon name={'do-not-disturb'} color={'#fa0'} size={resize(12)} />
+                          : <Icon name={'sleep'} type={'material-community'} color={'#44f'} size={resize(12)} />
                   }
                   <Text bold style={[ {fontSize: resize(14), marginLeft: resize(4), color: (item.public) ? '#337' : '#f00'} ]}>
                     {(!item.public) ? 'Profile is set to PRIVATE' :

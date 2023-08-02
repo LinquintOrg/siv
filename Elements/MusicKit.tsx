@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, TouchableOpacity, View } from 'react-native';
 import { global, styles } from '../styles/global';
-import { IMusicKitProps } from '../types';
+import { IMusicKitProps } from '../utils/types';
 import Text from './text';
 import MusicKitPrices from './MusicKitPrices';
 

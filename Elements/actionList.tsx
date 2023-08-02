@@ -3,7 +3,7 @@ import React, {useState} from 'react';
 import {Icon} from 'react-native-elements';
 import Text from './text';
 import { ActivityIndicator } from 'react-native-paper';
-import { IActionListProps } from '../types';
+import { IActionListProps } from '../utils/types';
 
 export default function (props: IActionListProps) {
   const { steamid, list, act } = props;
@@ -15,8 +15,8 @@ export default function (props: IActionListProps) {
   const _renderInventory = (game: string, id: number) => (
     <View style={[ styles.container, styles.inventory, id === act ? {backgroundColor: '#12428D'} : null ]}>
       {id === act ? <ActivityIndicator size={'small'} color={'#F2FAFD'} /> :
-        id < act ? <Icon name={'check'} type={'entypo'} size={resize(20)} color={'#12428D'} tvParallaxProperties={undefined} /> :
-          <Icon name={'query-builder'} size={resize(20)} color={'#12428D'} tvParallaxProperties={undefined} /> }
+        id < act ? <Icon name={'check'} type={'entypo'} size={resize(20)} color={'#12428D'} /> :
+          <Icon name={'query-builder'} size={resize(20)} color={'#12428D'} /> }
       <Text style={[ styles.text, id === act ? {color: '#F2FAFD'} : {color: '#12428D'} ]}>
         {((id === act) ? 'Loading ' : (id < act) ? 'Loaded ' : 'Load ') + game} inventory
       </Text>
@@ -33,8 +33,8 @@ export default function (props: IActionListProps) {
     <View style={[ styles.container, styles.prices, id === act ? {backgroundColor: '#CC705B'} : null ]}>
       {id === act ?
         <ActivityIndicator size={'small'} color={'#E8E0C5'} /> : id < act ?
-          <Icon name={'check'} type={'entypo'} size={resize(20)} color={'#CC705B'} tvParallaxProperties={undefined} /> :
-          <Icon name={'query-builder'} size={resize(20)} color={'#CC705B'} tvParallaxProperties={undefined} /> }
+          <Icon name={'check'} type={'entypo'} size={resize(20)} color={'#CC705B'} /> :
+          <Icon name={'query-builder'} size={resize(20)} color={'#CC705B'} /> }
       <Text style={[ styles.text, id === act ? {color: '#E8E0C5'} : {color: '#CC705B'} ]}>
         {((id === act) ? 'Loading ' : 'Load ')}{ (len === 1) ? '1 game ' : (len + ' games ')}prices
       </Text>
@@ -57,8 +57,8 @@ export default function (props: IActionListProps) {
                 : _renderPrices(action.extra as number, index)
           }
 
-          {action.action === 2 ? <Icon name={'check'} type={'entypo'} size={resize(24)} tvParallaxProperties={undefined} /> :
-            <Icon name={'chevron-down'} type={'entypo'} size={resize(24)} tvParallaxProperties={undefined} /> }
+          {action.action === 2 ? <Icon name={'check'} type={'entypo'} size={resize(24)} /> :
+            <Icon name={'chevron-down'} type={'entypo'} size={resize(24)} /> }
         </View>
       ))}
     </ScrollView>

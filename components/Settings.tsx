@@ -4,7 +4,7 @@ import {Dropdown} from 'react-native-element-dropdown';
 import {Divider, Icon} from 'react-native-elements';
 import Text from '../Elements/text';
 import * as Clipboard from 'expo-clipboard';
-import { ISettingsProps } from '../types';
+import { ISettingsProps } from '../utils/types';
 
 export default function (props: ISettingsProps) {
   const { rates, rate, saveSetting } = props;
@@ -62,7 +62,7 @@ export default function (props: ISettingsProps) {
             selectedTextStyle={styles.selectedTextStyle}
           /> :
           <View>
-            <Text style={{fontSize: resize(14), alignSelf: 'center', color: '#777', width: '90%', marginTop: 8}}>Couldn't fetch data...</Text>
+            <Text style={{fontSize: resize(14), alignSelf: 'center', color: '#777', width: '90%', marginTop: 8}}>Couldn&apos;t fetch data...</Text>
           </View>
       }
 
@@ -90,7 +90,7 @@ export default function (props: ISettingsProps) {
         onPress={() => Clipboard.setStringAsync('https://inventory.linquint.dev/') }
         style={({pressed}) => pressed ? [ styles.copyButton, {backgroundColor: '#8f9eff'} ] : styles.copyButton}
       >
-        <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' tvParallaxProperties={undefined} />
+        <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
         <Text bold style={styles.copyText}>Copy Link</Text>
       </Pressable>
 
@@ -101,7 +101,7 @@ export default function (props: ISettingsProps) {
         onPress={() => Clipboard.setStringAsync('https://status.linquint.dev/')}
         style={({pressed}) => pressed ? [ styles.copyButton, {backgroundColor: '#8f9eff'} ] : styles.copyButton}
       >
-        <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' tvParallaxProperties={undefined} />
+        <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
         <Text bold style={styles.copyText}>Copy Link</Text>
       </Pressable>
 
@@ -112,7 +112,7 @@ export default function (props: ISettingsProps) {
         onPress={() => Clipboard.setStringAsync('https://inventory.linquint.dev/credits/')}
         style={({pressed}) => pressed ? [ styles.copyButton, {backgroundColor: '#8f9eff'} ] : styles.copyButton}
       >
-        <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' tvParallaxProperties={undefined} />
+        <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
         <Text bold style={styles.copyText}>Copy Link</Text>
       </Pressable>
 
@@ -123,7 +123,7 @@ export default function (props: ISettingsProps) {
         onPress={() => Clipboard.setStringAsync('https://inventory.linquint.dev/changelogs/')}
         style={({pressed}) => pressed ? [ styles.copyButton, {backgroundColor: '#8f9eff'} ] : styles.copyButton}
       >
-        <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' tvParallaxProperties={undefined} />
+        <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
         <Text bold style={styles.copyText}>Copy Link</Text>
       </Pressable>
 
@@ -138,7 +138,7 @@ export default function (props: ISettingsProps) {
       <Text bold style={styles.settingTitle}>Steam Inventory timeout</Text>
       <Text style={{width: '85%', alignSelf: 'center', fontSize: resize(14), textAlign: 'justify'}}>
         Steam allows only <Text bold>5</Text> requests every <Text bold>minute</Text>. Because of this when you choose
-        <Text bold>5 or more games</Text> there's <Text bold> 12</Text> second timeout, otherwise there's <Text bold>6</Text> second timeout.
+        <Text bold>5 or more games</Text> there&apos;s <Text bold> 12</Text> second timeout, otherwise there&apos;s <Text bold>6</Text> second timeout.
       </Text>
 
       {/*<Text bold style={styles.settingTitle}>Latest updates</Text>

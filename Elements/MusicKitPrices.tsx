@@ -1,7 +1,7 @@
 import { View, StyleSheet } from 'react-native';
 import React from 'react';
 import Text from './text';
-import { IMusicKitPricesProps } from '../types';
+import { IMusicKitPricesProps } from '../utils/types';
 import { useRateState, useRatesState } from '../App';
 
 export default function(props: IMusicKitPricesProps) {

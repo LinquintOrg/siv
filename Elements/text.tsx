@@ -1,6 +1,6 @@
 import React from 'react';
 import {Text} from 'react-native';
-import { ITextProps } from '../types';
+import { ITextProps } from '../utils/types';
 
 export default function (props: ITextProps) {
   let font = { fontFamily: 'Nunito' };

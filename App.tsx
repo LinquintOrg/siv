@@ -14,9 +14,9 @@ import {useCallback, useEffect, useState} from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import InvGamesList from './components/InvGamesList.js';
 import Inventory from './components/Inventory.js';
-import MusicKits from './components/MusicKits.js';
-import UserSaves from './components/UserSaves.js';
-import Settings from './components/Settings.js';
+import MusicKits from './components/MusicKits.tsx';
+import UserSaves from './components/UserSaves.tsx';
+import Settings from './components/Settings.tsx';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SteamMarket from './components/SteamMarket.js';
 import {CleanTabBar} from 'react-navigation-tabbar-collection';
@@ -24,38 +24,17 @@ import * as Sentry from 'sentry-expo';
 import {Snackbar, TextInput} from 'react-native-paper';
 import * as SplashScreen from 'expo-splash-screen';
 import NetInfo from '@react-native-community/netinfo';
-import Text from './Elements/text.js';
+import Text from './Elements/text.tsx';
 import {useFonts} from 'expo-font';
 import Modal from 'react-native-modal';
 import * as Clipboard from 'expo-clipboard';
 import { enableScreens } from 'react-native-screens';
-import { State, hookstate, useHookstate } from '@hookstate/core';
-import { ICurrency } from './types.js';
+import { ICurrency, ISteamProfile } from './utils/types.ts';
+import { helpers } from './utils/helpers.ts';
+import { useRateState, useRatesState } from './utils/store.ts';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
-
-const rate = hookstate<number>(46);
-const rates = hookstate<ICurrency[]>([]);
-
-const wrapRate = (s: State<number>) => ({
-  get: () => s.value,
-  set: (newState: number) => s.set(() => newState),
-});
-
-const wrapRates = (s: State<ICurrency[]>) => ({
-  getAll: () => s.value,
-  getOne: (id: number): ICurrency => {
-    if (id < s.value.length) {
-      return s.value.at(id);
-    }
-    return s.value.at(-1)!;
-  },
-  set: (newRates: ICurrency[]) => s.set(s => [ ...s, ...newRates ]),
-});
-
-export const useRateState = () => wrapRate(useHookstate(rate));
-export const useRatesState = () => wrapRates(useHookstate(rates));
 
 function App() {
   Sentry.init({
@@ -66,7 +45,7 @@ function App() {
     tracesSampleRate: 1.0,
   });
 
-  useFonts({
+  const [ fontsLoaded ] = useFonts({
     Nunito: require('./assets/fonts/Nunito-Regular.ttf'),
     NunitoBold: require('./assets/fonts/Nunito-Bold.ttf'),
   });
@@ -78,9 +57,10 @@ function App() {
 
   const rateState = useRateState();
   const ratesState = useRatesState();
+
   const [ rate, setRate ] = useState(46); // selected currency
   const [ rates, setRates ] = useState(); // downloaded rates from database
-  const [ users, setUsers ] = useState([]); // Saved profiles
+  const [ users, setUsers ] = useState<ISteamProfile[]>([]); // Saved profiles
   const [ snackbarVisible, setSnackbarVisible ] = useState(false);
   const [ snackbarText, setSnackbarText ] = useState('');
   const [ snackError, setSnackError ] = useState(false);
@@ -94,7 +74,7 @@ function App() {
         const internetConnection = await NetInfo.fetch();
         if (internetConnection.isInternetReachable && internetConnection.isConnected) {
           let isPrepared = false;
-          await updateProfiles().then(async () => {
+          await helpers.updateProfiles().then(async () => {
             await getRates().then(() => isPrepared = true);
           });
           if (!isPrepared) {
@@ -105,26 +85,27 @@ function App() {
           setSnackError(true);
         }
       } catch (e) {
-        console.log('Caught an error:');
-        console.warn(e);
+        setSnackbarText('Error occurred while initializing app.');
+        setSnackError(true);
+        Sentry.React.captureException(e);
       } finally {
         setAppIsReady(true);
       }
     }
 
-    prepare().then(() => null);
+    void prepare();
   }, []);
 
   const onLayoutRootView = useCallback(async () => {
-    if (appIsReady) {
+    if (appIsReady && fontsLoaded) {
       await SplashScreen.hideAsync();
     }
-  }, [ appIsReady ]);
+  }, [ appIsReady, fontsLoaded ]);
 
   if (!appIsReady) return null;
 
-  function navigateToLoad(navigation, steamID) {
-    navigation.navigate('Choose games', { steamId: steamID });
+  function navigateToLoad(navigation, steamId: string) {
+    navigation.navigate('Choose games', { steamId });
   }
 
   async function getRates() {
@@ -135,6 +116,7 @@ function App() {
     } catch (err) {
       setSnackbarText((err as Error).message);
       setSnackError(true);
+      Sentry.React.captureException(err);
     }
   }
 
@@ -144,81 +126,11 @@ function App() {
     });
   }
 
-  async function saveProfile(id: string, name: string, url: string, isPublic: boolean, state: string) {
-    for (let i = 0; i < users.length; i++) {
-      if (users[i].id === id) {
-        setSnackError(true);
-        setSnackbarText('Profile is already saved');
-        await sleep(2500).then(() => setSnackError(false));
-        return;
-      }
-    }
-
-    const tmp = { id, name, url, public: isPublic, state };
-    await AsyncStorage.setItem(id, JSON.stringify(tmp));
-    setUsers(users.concat(tmp));
-  }
-
-  async function updateProfiles() {
-    const id = '7401764DA0F7B99794826E9E2512E311';
-
-    await AsyncStorage.getAllKeys(async (_err, keys) => {
-      await AsyncStorage.multiGet(keys, async () => {
-        const ids = [];
-        for (const key of keys) {
-          switch (key) {
-          case 'currency': {
-            setRate(JSON.parse(await AsyncStorage.getItem('currency')).val);
-            break;
-          }
-          default: {
-            if (!key.includes('prevGames')) {
-              ids.push(key);
-            }
-          }
-          }
-        }
-
-        await fetch('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=' + id + '&steamids=' + ids.join(','))
-          .then(response => response.json())
-          .then(async json => {
-            let values = [];
-            for (const user of json.response.players) {
-              const tmp = {
-                'id': user.steamid,
-                'name': user.personaname,
-                'url': user.avatarmedium,
-                'public': user.communityvisibilitystate === 3,
-                'state': user.personastate
-              };
-
-              await AsyncStorage.removeItem(user.steamid).then(async () => {
-                await AsyncStorage.setItem(user.steamid, JSON.stringify(tmp)).then(async () => {
-                  values = values.concat([ tmp ]);
-                });
-              });
-            }
-            setUsers(values);
-          });
-      });
-    });
-  }
-
-  async function saveSetting(name: string, value: number) {
-    if (name === 'currency') {
-      setRate(value);
-    }
-    const tmp = {
-      val: value
-    };
-    await AsyncStorage.setItem(name, JSON.stringify(tmp));
-  }
-
   function TabProfile(/*{ navigation }*/) {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name='ProfilesAndInv' component={StackProfilesMain} />
-        <Stack.Screen name='Choose games' component={StackGames} screenOptions={{ headerShown: false }} />
+        <Stack.Screen name='Choose games' component={StackGames} />
         <Stack.Screen name='Inventory' component={StackInventory} />
       </Stack.Navigator>
     );
@@ -353,7 +265,7 @@ function App() {
             activeOutlineColor={'#1f4690'}
             left={
               <TextInput.Icon
-                icon={() => (<Icon name={'at-sign'} type={'feather'} color={'#1f4690'} tvParallaxProperties={undefined} />)}
+                icon={() => (<Icon name={'at-sign'} type={'feather'} color={'#1f4690'} />)}
 
                 size={resize(24)}
                 style={{margin: 0, paddingTop: resize(8)}}
@@ -363,7 +275,7 @@ function App() {
             }
             right={
               <TextInput.Icon
-                icon={() => (<Icon name={'search'} type={'feather'} color={'#1F4690'} tvParallaxProperties={undefined} />)}
+                icon={() => (<Icon name={'search'} type={'feather'} color={'#1F4690'} />)}
                 name='arrow-right'
                 size={resize(36)}
                 style={{margin: 0, paddingTop: resize(8)}}
@@ -429,7 +341,7 @@ function App() {
           onDismiss={() => setSnackbarVisible(false)}
           style={{backgroundColor: '#9AD797'}}>
           <View style={{display: 'flex', flexDirection: 'row'}}>
-            <Icon name={'check'} type={'font-awesome'} color={'#193130'} size={resize(20)} tvParallaxProperties={undefined} />
+            <Icon name={'check'} type={'font-awesome'} color={'#193130'} size={resize(20)} />
             <Text style={[ styles.snackbarText, {fontSize: resize(18), marginLeft: resize(12), color: '#193130'} ]}>SteamID64 copied to clipboard</Text>
           </View>
         </Snackbar>
@@ -554,7 +466,7 @@ function App() {
             tabBarLabelStyle: {color: '#2379D9', fontSize: resize(14)},
             tabBarActiveTintColor: '#2379D9',
             icon: () => (
-              <Icon name="users" type='feather' color={'#322A81'} size={resize(28)} tvParallaxProperties={undefined} />
+              <Icon name="users" type='feather' color={'#322A81'} size={resize(28)} />
             ),
             headerShown: false,
           }}
@@ -564,7 +476,7 @@ function App() {
             tabBarLabelStyle: {color: '#2379D9', fontSize: resize(14)},
             tabBarActiveTintColor: '#2379D9',
             tabBarIcon: () => (
-              <Icon name="steam" type={'material-community'} color={'#322A81'} size={resize(28)} tvParallaxProperties={undefined} />
+              <Icon name="steam" type={'material-community'} color={'#322A81'} size={resize(28)} />
             ),
             headerShown: false
           }}
@@ -574,7 +486,7 @@ function App() {
             tabBarLabelStyle: {color: '#2379D9', fontSize: resize(14)},
             tabBarActiveTintColor: '#2379D9',
             tabBarIcon: () => (
-              <Icon name="music" type='feather' color={'#322A81'} size={resize(28)} tvParallaxProperties={undefined} />
+              <Icon name="music" type='feather' color={'#322A81'} size={resize(28)} />
             ),
             headerShown: false
           }}
@@ -584,7 +496,7 @@ function App() {
             tabBarLabelStyle: {color: '#2379D9', fontSize: resize(14)},
             tabBarActiveTintColor: '#2379D9',
             tabBarIcon: () => (
-              <Icon name="settings" type='feather' color={'#322A81'} size={resize(28)} tvParallaxProperties={undefined} />
+              <Icon name="settings" type='feather' color={'#322A81'} size={resize(28)} />
             ),
             headerShown: false
           }}

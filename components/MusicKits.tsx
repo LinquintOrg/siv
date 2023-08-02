@@ -11,7 +11,7 @@ import {Snackbar} from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import Text from '../Elements/text';
 import {TextInput} from 'react-native-paper';
-import { IMusicKit, IMusicKitPrice } from '../types';
+import { IMusicKit, IMusicKitPrice } from '../utils/types';
 import MusicKit from '../Elements/MusicKit';
 
 export default function MusicKits() {
@@ -136,7 +136,7 @@ export default function MusicKits() {
               activeOutlineColor={'#1f4690'}
               left={
                 <TextInput.Icon
-                  icon={() => (<Icon name={'filter'} type={'feather'} color={'#1f4690'} tvParallaxProperties={undefined} />)}
+                  icon={() => (<Icon name={'filter'} type={'feather'} color={'#1f4690'} />)}
                   size={resize(24)}
                   style={{margin: 0, paddingTop: resize(8)}}
                   forceTextInputFocus={false}
