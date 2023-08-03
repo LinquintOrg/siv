@@ -7,6 +7,9 @@ const rates = useRatesState();
 const profiles = useProfilesState();
 
 export const helpers = {
+  isSteamIDValid(steamID: string) {
+    return !(steamID == '' || steamID.match(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/? ]+/) || steamID.match(/[a-zA-Z]/) || steamID.length === 0);
+  },
   async saveProfile(profile: ISteamProfile) {
     const exists = profiles.getByID(profile.id);
     if (exists) {
@@ -15,6 +18,10 @@ export const helpers = {
 
     await AsyncStorage.setItem(profile.id, JSON.stringify(profile));
     profiles.add(profile);
+  },
+  async deleteProfile(id: string) {
+    await AsyncStorage.removeItem(id);
+    profiles.delete(id);
   },
   async saveSetting(name: string, value: number) {
     if (name === 'currency') {

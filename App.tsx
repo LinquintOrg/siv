@@ -32,6 +32,7 @@ import { enableScreens } from 'react-native-screens';
 import { ICurrency, ISteamProfile } from './utils/types.ts';
 import { helpers } from './utils/helpers.ts';
 import { useRateState, useRatesState } from './utils/store.ts';
+import Profiles from './Pages/Profiles.tsx';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -129,10 +130,18 @@ function App() {
   function TabProfile(/*{ navigation }*/) {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name='ProfilesAndInv' component={StackProfilesMain} />
+        <Stack.Screen name='ProfilesAndInv' component={renderProfiles} />
         <Stack.Screen name='Choose games' component={StackGames} />
         <Stack.Screen name='Inventory' component={StackInventory} />
       </Stack.Navigator>
+    );
+  }
+
+  function renderProfiles({ navigation }) {
+    return (
+      <View style={{height: '100%'}} onLayout={onLayoutRootView}>
+        <Profiles />
+      </View>
     );
   }
 
@@ -218,17 +227,6 @@ function App() {
         setLoading(false);
       }
     };
-
-    async function deleteProfile(id) {
-      await AsyncStorage.removeItem(id);
-      const newUsers = [];
-      for (let i = 0; i < users.length; i++) {
-        if (users[i].id !== id) {
-          newUsers.push(users[i]);
-        }
-      }
-      setUsers(newUsers);
-    }
 
     const [ isProfileModalVisible, setProfileModalVisible ] = useState(false);
     const [ profileModalData, setProfileModalData ] = useState({name: '', id: ''});

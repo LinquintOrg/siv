@@ -91,3 +91,7 @@ export interface ISteamProfile {
   public: boolean;
   state: string;
 }
+
+export interface IProfilesProps {
+  onLayoutRootView: () => Promise<void>;
+}

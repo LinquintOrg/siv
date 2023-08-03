@@ -13,6 +13,7 @@ import Text from '../Elements/text';
 import {TextInput} from 'react-native-paper';
 import { IMusicKit, IMusicKitPrice } from '../utils/types';
 import MusicKit from '../Elements/MusicKit';
+import * as Sentry from 'sentry-expo';
 
 export default function MusicKits() {
   const [ loading, setLoading ] = useState(true);
@@ -43,6 +44,7 @@ export default function MusicKits() {
       } catch(err) {
         setSnackbarVisible(true);
         setSnackError((err as Error).message);
+        Sentry.React.captureException(err);
       }
     }
   }, []);
