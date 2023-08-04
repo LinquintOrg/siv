@@ -4,6 +4,7 @@ import { ICurrency, ISteamProfile } from './types';
 const rate = hookstate<number>(46);
 const rates = hookstate<ICurrency[]>([]);
 const profiles = hookstate<ISteamProfile[]>([]);
+const preloaded = hookstate<boolean>(false);
 
 const wrapRate = (s: State<number>) => ({
   get: () => s.value,
@@ -31,6 +32,12 @@ const wrapProfiles = (s: State<ISteamProfile[]>) => ({
   delete: (id: string) => s.set(s => s.filter(p => !(p.id === id))),
 });
 
+const wrapPreloaded = (s: State<boolean>) => ({
+  get: () => s.value,
+  set: (newState: boolean) => s.set(() => newState),
+});
+
 export const useRateState = () => wrapRate(useHookstate(rate));
 export const useRatesState = () => wrapRates(useHookstate(rates));
 export const useProfilesState = () => wrapProfiles(useHookstate(profiles));
+export const usePreloadedState = () => wrapPreloaded(useHookstate(preloaded));

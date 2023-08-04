@@ -89,9 +89,45 @@ export interface ISteamProfile {
   name: string;
   url: string;
   public: boolean;
-  state: string;
+  state: number;
 }
 
 export interface IProfilesProps {
   onLayoutRootView: () => Promise<void>;
+}
+
+export interface IVanitySearchResponse {
+  response: {
+    steamid: string;
+    success: number;
+  }
+}
+
+export interface IPlayerSummariesResponse {
+  response: {
+    players: {
+      steamid: string;
+      communityvisibilitystate: number;
+      profilestate: number;
+      personaname: string;
+      commentpermission: number;
+      profileurl: string;
+      avatar: string;
+      avatarmedium: string;
+      avatarfull: string;
+      avatarhash: string;
+      lastlogoff: number;
+      personastate: number;
+      realname: string;
+      primaryclanid: string;
+      timecreated: number;
+      personastateflags: number;
+      loccountrycode: string;
+      locstatecode: string;
+    }[];
+  }
+}
+
+export interface ILoaderProps {
+  text?: string;
 }

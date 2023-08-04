@@ -35,7 +35,8 @@
         "@typescript-eslint/no-empty-function": "off",
         "react/display-name": "off",
         "react/prop-types": "off",
-        "no-multi-spaces": [ "error" ]
+        "no-multi-spaces": [ "error" ],
+        "object-curly-spacing": [ "error", "always" ]
     },
     "settings": {
         "react": {

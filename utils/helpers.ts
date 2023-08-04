@@ -8,7 +8,13 @@ const profiles = useProfilesState();
 
 export const helpers = {
   isSteamIDValid(steamID: string) {
-    return !(steamID == '' || steamID.match(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/? ]+/) || steamID.match(/[a-zA-Z]/) || steamID.length === 0);
+    return !(steamID == '' || /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/? ]+/.test(steamID) || /[a-zA-Z]/.test(steamID) || steamID.length === 0)
+      && steamID.length === 17 && /^[0-9]+$/.test(steamID);
+  },
+  sleep(milliseconds: number) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, milliseconds);
+    });
   },
   async saveProfile(profile: ISteamProfile) {
     const exists = profiles.getByID(profile.id);
@@ -75,15 +81,5 @@ export const helpers = {
     //   });
     // });
   },
-  async deleteProfile(id: string) {
-    await AsyncStorage.removeItem(id);
-    const newUsers = [];
-    for (let i = 0; i < users.length; i++) {
-      if (users[i].id !== id) {
-        newUsers.push(users[i]);
-      }
-    }
-    setUsers(newUsers);
-  }
 };
 

@@ -10,28 +10,27 @@ import {
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Icon } from 'react-native-elements';
-import {useCallback, useEffect, useState} from 'react';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import { useCallback, useEffect, useState } from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import InvGamesList from './components/InvGamesList.js';
 import Inventory from './components/Inventory.js';
 import MusicKits from './components/MusicKits.tsx';
 import UserSaves from './components/UserSaves.tsx';
 import Settings from './components/Settings.tsx';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import SteamMarket from './components/SteamMarket.js';
-import {CleanTabBar} from 'react-navigation-tabbar-collection';
+import { CleanTabBar } from 'react-navigation-tabbar-collection';
 import * as Sentry from 'sentry-expo';
-import {Snackbar, TextInput} from 'react-native-paper';
+import { Snackbar, TextInput } from 'react-native-paper';
 import * as SplashScreen from 'expo-splash-screen';
 import NetInfo from '@react-native-community/netinfo';
 import Text from './Elements/text.tsx';
-import {useFonts} from 'expo-font';
+import { useFonts } from 'expo-font';
 import Modal from 'react-native-modal';
 import * as Clipboard from 'expo-clipboard';
 import { enableScreens } from 'react-native-screens';
 import { ICurrency, ISteamProfile } from './utils/types.ts';
 import { helpers } from './utils/helpers.ts';
-import { useRateState, useRatesState } from './utils/store.ts';
+import { usePreloadedState, useRateState, useRatesState } from './utils/store.ts';
 import Profiles from './Pages/Profiles.tsx';
 
 const Tab = createBottomTabNavigator();
@@ -58,6 +57,7 @@ function App() {
 
   const rateState = useRateState();
   const ratesState = useRatesState();
+  const preloadState = usePreloadedState();
 
   const [ rate, setRate ] = useState(46); // selected currency
   const [ rates, setRates ] = useState(); // downloaded rates from database
@@ -100,6 +100,7 @@ function App() {
   const onLayoutRootView = useCallback(async () => {
     if (appIsReady && fontsLoaded) {
       await SplashScreen.hideAsync();
+      preloadState.set(true);
     }
   }, [ appIsReady, fontsLoaded ]);
 
@@ -139,7 +140,7 @@ function App() {
 
   function renderProfiles({ navigation }) {
     return (
-      <View style={{height: '100%'}} onLayout={onLayoutRootView}>
+      <View style={{ height: '100%' }} onLayout={onLayoutRootView}>
         <Profiles />
       </View>
     );
@@ -229,7 +230,7 @@ function App() {
     };
 
     const [ isProfileModalVisible, setProfileModalVisible ] = useState(false);
-    const [ profileModalData, setProfileModalData ] = useState({name: '', id: ''});
+    const [ profileModalData, setProfileModalData ] = useState({ name: '', id: '' });
     const [ profileSearchText, setProfileSearchText ] = useState('Getting Steam profile data...');
 
     const toggleModal = (profile) => {
@@ -251,10 +252,10 @@ function App() {
     }
 
     return (
-      <View style={{height: '100%'}} onLayout={onLayoutRootView}>
+      <View style={{ height: '100%' }} onLayout={onLayoutRootView}>
         <View style={styles.inputView} disabled={isLoading}>
           <TextInput
-            style={{marginHorizontal: resize(8), flex: 1, height: resize(40), fontSize: resize(16), padding: 0}}
+            style={{ marginHorizontal: resize(8), flex: 1, height: resize(40), fontSize: resize(16), padding: 0 }}
             placeholder='Enter SteamID64'
             mode={'outlined'}
             onChangeText={text => setSteamIDtyped(text)}
@@ -266,7 +267,7 @@ function App() {
                 icon={() => (<Icon name={'at-sign'} type={'feather'} color={'#1f4690'} />)}
 
                 size={resize(24)}
-                style={{margin: 0, paddingTop: resize(8)}}
+                style={{ margin: 0, paddingTop: resize(8) }}
                 name={'at'}
                 forceTextInputFocus={false}
               />
@@ -276,13 +277,13 @@ function App() {
                 icon={() => (<Icon name={'search'} type={'feather'} color={'#1F4690'} />)}
                 name='arrow-right'
                 size={resize(36)}
-                style={{margin: 0, paddingTop: resize(8)}}
+                style={{ margin: 0, paddingTop: resize(8) }}
                 onPress={() => { getProfileData(steamIDtyped).then(() => null); }}
                 forceTextInputFocus={false}
               />
             }
           />
-          <Text bold style={[ (steamIDtyped.length === 17 || steamIDtyped.match(/[a-zA-Z]+/)) ? {color: '#0f0'} : {color: '#f00'}, {
+          <Text bold style={[ (steamIDtyped.length === 17 || steamIDtyped.match(/[a-zA-Z]+/)) ? { color: '#0f0' } : { color: '#f00' }, {
             fontSize: resize(14),
             width: resize(56),
             textAlign: 'center',
@@ -296,12 +297,12 @@ function App() {
 
         {
           isLoading ?
-            <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-around', alignSelf: 'center', marginVertical: resize(16)}}>
+            <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', alignSelf: 'center', marginVertical: resize(16) }}>
               <ActivityIndicator size="small" color='#12428D' />
-              <Text bold style={{color: '#12428D', fontSize: resize(20), marginLeft: resize(8)}}>{profileSearchText}</Text>
+              <Text bold style={{ color: '#12428D', fontSize: resize(20), marginLeft: resize(8) }}>{profileSearchText}</Text>
             </View> :
-            <View style={[ styles.profileSection, (dataName === '' && steamID === '') && {display: 'none'} ]}>
-              <Image style={styles.profilePicture} source={{uri: dataPfp}}/>
+            <View style={[ styles.profileSection, (dataName === '' && steamID === '') && { display: 'none' } ]}>
+              <Image style={styles.profilePicture} source={{ uri: dataPfp }}/>
               <View style={styles.flowDown}>
                 <Text bold style={styles.profileID}>{steamID}</Text>
                 <Text bold style={styles.profileName} numberOfLines={1}>{dataName}</Text>
@@ -323,8 +324,8 @@ function App() {
         }
 
         <Text bold style={[ styles.title ]}>Saved profiles</Text>
-        <Text style={[ styles.title, {fontSize: resize(14)} ]}><Text bold>Tap</Text> to select profile</Text>
-        <Text style={[ styles.title, {fontSize: resize(14)} ]}><Text bold>Long press</Text> profile to see more options</Text>
+        <Text style={[ styles.title, { fontSize: resize(14) } ]}><Text bold>Tap</Text> to select profile</Text>
+        <Text style={[ styles.title, { fontSize: resize(14) } ]}><Text bold>Long press</Text> profile to see more options</Text>
         <UserSaves
           users={users}
           loadInv={navigateToLoad}
@@ -337,18 +338,18 @@ function App() {
         <Snackbar
           visible={snackbarVisible}
           onDismiss={() => setSnackbarVisible(false)}
-          style={{backgroundColor: '#9AD797'}}>
-          <View style={{display: 'flex', flexDirection: 'row'}}>
+          style={{ backgroundColor: '#9AD797' }}>
+          <View style={{ display: 'flex', flexDirection: 'row' }}>
             <Icon name={'check'} type={'font-awesome'} color={'#193130'} size={resize(20)} />
-            <Text style={[ styles.snackbarText, {fontSize: resize(18), marginLeft: resize(12), color: '#193130'} ]}>SteamID64 copied to clipboard</Text>
+            <Text style={[ styles.snackbarText, { fontSize: resize(18), marginLeft: resize(12), color: '#193130' } ]}>SteamID64 copied to clipboard</Text>
           </View>
         </Snackbar>
 
         <Snackbar
           visible={snackError}
           onDismiss={() => setSnackError(false)}
-          style={{backgroundColor: '#FF3732'}}>
-          <View><Text style={[ styles.snackbarText, {color: '#F4EDEC'} ]}>{ snackbarText }</Text></View>
+          style={{ backgroundColor: '#FF3732' }}>
+          <View><Text style={[ styles.snackbarText, { color: '#F4EDEC' } ]}>{ snackbarText }</Text></View>
         </Snackbar>
 
         <Modal
@@ -404,7 +405,7 @@ function App() {
     }
 
     return (
-      <View style={{height: '100%'}}>
+      <View style={{ height: '100%' }}>
         <InvGamesList
           removeState={removeState}
           hasState={hasState}
@@ -418,12 +419,12 @@ function App() {
     );
   }
 
-  function StackInventory({route}) {
+  function StackInventory({ route }) {
     const gamesList = route.params.games;
     const steamID = route.params.steamID;
 
     return (
-      <View style={{height: '100%'}}>
+      <View style={{ height: '100%' }}>
         <Inventory games={gamesList} steam={steamID} rates={rates} rate={rate} />
       </View>
     );
@@ -431,7 +432,7 @@ function App() {
 
   function TabSteamMarket() {
     return (
-      <View style={{height: '100%'}}>
+      <View style={{ height: '100%' }}>
         <SteamMarket exchange={rates[rate].exc} rate={rates[rate].abb} />
       </View>
     );
@@ -439,7 +440,7 @@ function App() {
 
   function TabMusicKit() {
     return (
-      <View style={{height: '100%'}}>
+      <View style={{ height: '100%' }}>
         <MusicKits rate={rates[rate].abb} exchange={rates[rate].exc} />
       </View>
     );
@@ -447,7 +448,7 @@ function App() {
 
   function TabSettings() {
     return (
-      <View style={{height: '100%'}}>
+      <View style={{ height: '100%' }}>
         <Settings rates={rates} rate={rate} setRate={setRate} saveSetting={saveSetting} />
       </View>
     );
@@ -461,7 +462,7 @@ function App() {
       <Tab.Navigator tabBar={(props) => <CleanTabBar maxWidth={0} height={0} darkMode={false} colorPalette={{}} {...props} />}>
         <Tab.Screen name="Profiles" component={TabProfile}
           options={{
-            tabBarLabelStyle: {color: '#2379D9', fontSize: resize(14)},
+            tabBarLabelStyle: { color: '#2379D9', fontSize: resize(14) },
             tabBarActiveTintColor: '#2379D9',
             icon: () => (
               <Icon name="users" type='feather' color={'#322A81'} size={resize(28)} />
@@ -471,7 +472,7 @@ function App() {
         />
         <Tab.Screen name="Steam Market" component={TabSteamMarket}
           options={{
-            tabBarLabelStyle: {color: '#2379D9', fontSize: resize(14)},
+            tabBarLabelStyle: { color: '#2379D9', fontSize: resize(14) },
             tabBarActiveTintColor: '#2379D9',
             tabBarIcon: () => (
               <Icon name="steam" type={'material-community'} color={'#322A81'} size={resize(28)} />
@@ -481,7 +482,7 @@ function App() {
         />
         <Tab.Screen name="Music Kits" component={TabMusicKit}
           options={{
-            tabBarLabelStyle: {color: '#2379D9', fontSize: resize(14)},
+            tabBarLabelStyle: { color: '#2379D9', fontSize: resize(14) },
             tabBarActiveTintColor: '#2379D9',
             tabBarIcon: () => (
               <Icon name="music" type='feather' color={'#322A81'} size={resize(28)} />
@@ -491,7 +492,7 @@ function App() {
         />
         <Tab.Screen name="Settings" component={TabSettings}
           options={{
-            tabBarLabelStyle: {color: '#2379D9', fontSize: resize(14)},
+            tabBarLabelStyle: { color: '#2379D9', fontSize: resize(14) },
             tabBarActiveTintColor: '#2379D9',
             tabBarIcon: () => (
               <Icon name="settings" type='feather' color={'#322A81'} size={resize(28)} />
@@ -516,49 +517,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  inputView: {
-    width: '95%',
-    height: resize(44),
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginBottom: resize(16),
-  },
-  title: {
-    textAlign: 'center',
-    fontSize: resize(20),
-  },
-  input: {
-    height: resize(40),
-    margin: resize(12),
-    borderWidth: 1,
-    padding: resize(10),
-    fontSize: resize(14),
-    borderRadius: 8,
-  },
   warning: {
     fontSize: resize(12),
     color: '#f00',
     fontWeight: 'bold',
     paddingLeft: 12
-  },
-  button: {
-    backgroundColor: '#122334',
-    width: resize(150),
-    height: resize(45),
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-  },
-  buttonSmall: {
-    backgroundColor: '#91bcec',
-    width: '35%',
-    height: resize(40),
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: resize(20),
-    marginTop: 4,
   },
   buttonText: {
     color: '#fff',
@@ -574,42 +537,6 @@ const styles = StyleSheet.create({
   },
   singleButtonSection: {
     alignItems: 'center'
-  },
-  profileSection: {
-    borderWidth: 0,
-    borderRadius: 8,
-    marginVertical: resize(8),
-    padding: resize(8),
-    display: 'flex',
-    flexDirection: 'row',
-    backgroundColor: '#0E273E',
-    width: '90%',
-    alignSelf: 'center',
-  },
-  profilePicture: {
-    width: resize(64),
-    borderRadius: 8,
-    marginEnd: 8,
-    aspectRatio: 1.0,
-  },
-  profileName: {
-    fontSize: resize(14),
-    fontWeight: 'bold',
-    color: '#aaa'
-  },
-  profileID: {
-    fontSize: resize(16),
-    color: '#ddd'
-  },
-  flowDown: {
-    display: 'flex',
-    flexDirection: 'column',
-    width: '84%',
-  },
-  flowRow: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
   },
   snackbarText: {
     fontSize: resize(13),
