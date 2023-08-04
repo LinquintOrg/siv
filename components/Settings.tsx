@@ -1,27 +1,29 @@
-import React, {useState} from 'react';
-import {View, StyleSheet, ScrollView, Dimensions, Pressable} from 'react-native';
-import {Dropdown} from 'react-native-element-dropdown';
-import {Divider, Icon} from 'react-native-elements';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, Dimensions, Pressable } from 'react-native';
+import { Dropdown } from 'react-native-element-dropdown';
+import { Divider, Icon } from 'react-native-elements';
 import Text from '../Elements/text';
 import * as Clipboard from 'expo-clipboard';
-import { ISettingsProps } from '../utils/types';
+import { useRateState, useRatesState } from '../utils/store';
+import { helpers } from '../utils/helpers';
 
-export default function (props: ISettingsProps) {
-  const { rates, rate, saveSetting } = props;
-
+export default function () {
   const [ scale ] = useState(Dimensions.get('window').width / 423);
   const resize = (size: number) => {
     return Math.ceil(size * scale);
   };
 
+  const rate = useRateState();
+  const rates = useRatesState();
+
   const [ valuesInitialized, setValuesInitialized ] = useState(false);
   const [ ratesData ] = useState<{ label: string; value: number }[]>([]);
 
   if (!valuesInitialized) {
-    if (rates.length > 0) {
+    if (rates.getAll().length > 0) {
       setValuesInitialized(true);
-      rates.forEach((item, index) => {
-        ratesData.push({label: item.abb + ' - ' + item.full, value: index});
+      rates.getAll().forEach((item, index) => {
+        ratesData.push({ label: `${item.abb} - ${item.full}`, value: index });
       });
     }
   }
@@ -37,7 +39,7 @@ export default function (props: ISettingsProps) {
   return (
     <ScrollView>
       <Text bold style={styles.title}>Settings</Text>
-      <Text style={{fontSize: resize(14), alignSelf: 'center', color: '#777', width: '90%', marginTop: 8}}>
+      <Text style={{ fontSize: resize(14), alignSelf: 'center', color: '#777', width: '90%', marginTop: 8 }}>
         After pressing on dropdown, please wait for it to load
       </Text>
 
@@ -53,16 +55,17 @@ export default function (props: ISettingsProps) {
             labelField="label"
             valueField="value"
             placeholder="Select item"
-            value={rate}
+            value={rate.get()}
             onChange={(item: { label: string; value: number }) => {
-              saveSetting('currency', item.value);
+              void helpers.saveSetting('currency', item.value);
+              rate.set(item.value);
             }}
             renderItem={(item: { label: string; value: number }) => _renderItem(item)}
             inputSearchStyle={styles.dropdownInput}
             selectedTextStyle={styles.selectedTextStyle}
           /> :
           <View>
-            <Text style={{fontSize: resize(14), alignSelf: 'center', color: '#777', width: '90%', marginTop: 8}}>Couldn&apos;t fetch data...</Text>
+            <Text style={{ fontSize: resize(14), alignSelf: 'center', color: '#777', width: '90%', marginTop: 8 }}>Couldn&apos;t fetch data...</Text>
           </View>
       }
 
@@ -83,60 +86,60 @@ export default function (props: ISettingsProps) {
       <Text bold style={styles.title}>Other</Text>
 
       <Text bold style={styles.settingTitle}>Links</Text>
-      <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4}}>
-        Website URL @ <Text bold style={{color: '#3342A3'}}>inventory.linquint.dev</Text>
+      <Text style={{ fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4 }}>
+        Website URL @ <Text bold style={{ color: '#3342A3' }}>inventory.linquint.dev</Text>
       </Text>
       <Pressable
         onPress={() => Clipboard.setStringAsync('https://inventory.linquint.dev/') }
-        style={({pressed}) => pressed ? [ styles.copyButton, {backgroundColor: '#8f9eff'} ] : styles.copyButton}
+        style={({ pressed }) => pressed ? [ styles.copyButton, { backgroundColor: '#8f9eff' } ] : styles.copyButton}
       >
         <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
         <Text bold style={styles.copyText}>Copy Link</Text>
       </Pressable>
 
-      <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4}}>
-        You can check API status @ <Text bold style={{color: '#3342A3'}}>status.linquint.dev</Text>
+      <Text style={{ fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4 }}>
+        You can check API status @ <Text bold style={{ color: '#3342A3' }}>status.linquint.dev</Text>
       </Text>
       <Pressable
         onPress={() => Clipboard.setStringAsync('https://status.linquint.dev/')}
-        style={({pressed}) => pressed ? [ styles.copyButton, {backgroundColor: '#8f9eff'} ] : styles.copyButton}
+        style={({ pressed }) => pressed ? [ styles.copyButton, { backgroundColor: '#8f9eff' } ] : styles.copyButton}
       >
         <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
         <Text bold style={styles.copyText}>Copy Link</Text>
       </Pressable>
 
-      <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4}}>
-        You can find credits @ <Text bold style={{color: '#3342A3'}}>inventory.linquint.dev/credits</Text>
+      <Text style={{ fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4 }}>
+        You can find credits @ <Text bold style={{ color: '#3342A3' }}>inventory.linquint.dev/credits</Text>
       </Text>
       <Pressable
         onPress={() => Clipboard.setStringAsync('https://inventory.linquint.dev/credits/')}
-        style={({pressed}) => pressed ? [ styles.copyButton, {backgroundColor: '#8f9eff'} ] : styles.copyButton}
+        style={({ pressed }) => pressed ? [ styles.copyButton, { backgroundColor: '#8f9eff' } ] : styles.copyButton}
       >
         <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
         <Text bold style={styles.copyText}>Copy Link</Text>
       </Pressable>
 
-      <Text style={{fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4}}>
-        You can find changelogs @ <Text bold style={{color: '#3342A3'}}>inventory.linquint.dev/changelogs</Text>
+      <Text style={{ fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4 }}>
+        You can find changelogs @ <Text bold style={{ color: '#3342A3' }}>inventory.linquint.dev/changelogs</Text>
       </Text>
       <Pressable
         onPress={() => Clipboard.setStringAsync('https://inventory.linquint.dev/changelogs/')}
-        style={({pressed}) => pressed ? [ styles.copyButton, {backgroundColor: '#8f9eff'} ] : styles.copyButton}
+        style={({ pressed }) => pressed ? [ styles.copyButton, { backgroundColor: '#8f9eff' } ] : styles.copyButton}
       >
         <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
         <Text bold style={styles.copyText}>Copy Link</Text>
       </Pressable>
 
-      <Divider width={4} style={{width: '20%', alignSelf: 'center', marginVertical: resize(16), borderRadius: 8}} color={'#0A5270'} />
+      <Divider width={4} style={{ width: '20%', alignSelf: 'center', marginVertical: resize(16), borderRadius: 8 }} color={'#0A5270'} />
 
       <Text bold style={styles.settingTitle}>Steam Market search timeout</Text>
-      <Text style={{width: '85%', alignSelf: 'center', fontSize: resize(14), textAlign: 'justify'}}>
+      <Text style={{ width: '85%', alignSelf: 'center', fontSize: resize(14), textAlign: 'justify' }}>
         Steam Market allows only <Text bold>20</Text> requests every <Text bold>5</Text> minutes.
         For this reason you can search across Steam Market once every <Text bold>15</Text> seconds.
       </Text>
 
       <Text bold style={styles.settingTitle}>Steam Inventory timeout</Text>
-      <Text style={{width: '85%', alignSelf: 'center', fontSize: resize(14), textAlign: 'justify'}}>
+      <Text style={{ width: '85%', alignSelf: 'center', fontSize: resize(14), textAlign: 'justify' }}>
         Steam allows only <Text bold>5</Text> requests every <Text bold>minute</Text>. Because of this when you choose
         <Text bold>5 or more games</Text> there&apos;s <Text bold> 12</Text> second timeout, otherwise there&apos;s <Text bold>6</Text> second timeout.
       </Text>
@@ -149,10 +152,10 @@ export default function (props: ISettingsProps) {
                 <Text style={styles.updatesDate}>Published on 2022-06-24</Text>
             </View>*/}
 
-      <Divider width={4} style={{width: '20%', alignSelf: 'center', marginVertical: resize(16), borderRadius: 8}} color={'#0A5270'} />
+      <Divider width={4} style={{ width: '20%', alignSelf: 'center', marginVertical: resize(16), borderRadius: 8 }} color={'#0A5270'} />
 
       <View style={styles.textColumn}>
-        <Text style={{fontSize: resize(18), textAlign: 'center', width: '90%', alignSelf: 'center'}}>
+        <Text style={{ fontSize: resize(18), textAlign: 'center', width: '90%', alignSelf: 'center' }}>
           <Text bold>Steam Inventory Value</Text> is not affiliated with
           <Text bold> Steam</Text> or <Text bold>Valve Corp</Text>.
         </Text>

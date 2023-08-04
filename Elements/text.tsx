@@ -1,17 +1,19 @@
 import React from 'react';
-import {Text} from 'react-native';
+import { Text } from 'react-native';
 import { ITextProps } from '../utils/types';
 
 export default function (props: ITextProps) {
-  let font = { fontFamily: 'Nunito' };
+  // ! until Nunito is imported, use the default font
+  // let font = { fontFamily: 'Nunito' };
   const { bold, style, children, ...newProps } = props;
 
-  if (bold) {
-    font = {fontFamily: 'NunitoBold'};
-  }
+  // ! until Nunito is imported, use the default font
+  // if (bold) {
+  //   font = { fontFamily: 'NunitoBold' };
+  // }
 
   return (
-    <Text {...newProps} style={[ style, font ]}>
+    <Text {...newProps} style={[ style/*, font*/ ]}>
       {children}
     </Text>
   );

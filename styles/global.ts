@@ -54,7 +54,7 @@ export const global = StyleSheet.create({
     flexDirection: 'row',
   },
   inputView: {
-    width: '96%',
+    width: '100%',
     height: resize(44),
     display: 'flex',
     flexDirection: 'row',
@@ -63,11 +63,9 @@ export const global = StyleSheet.create({
     marginBottom: resize(16),
   },
   input: {
+    width: resize(400),
     height: resize(40),
     margin: resize(12),
-    borderWidth: resize(3),
-    borderColor: colors.primary,
-    padding: resize(10),
     fontSize: resize(14),
     borderRadius: resize(12),
   },
@@ -94,7 +92,7 @@ export const global = StyleSheet.create({
     alignSelf: 'center',
   },
   buttonText: {
-    color: colors.text,
+    color: colors.white,
     fontSize: resize(20),
     fontWeight: 'bold',
   },
@@ -173,6 +171,8 @@ export const styles = {
     modalUser: {
       fontSize: resize(16),
       color: colors.textAccent,
+      fontWeight: 'bold',
+      marginBottom: resize(8),
     },
   }),
   loader: StyleSheet.create({

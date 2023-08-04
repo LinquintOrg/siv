@@ -1,4 +1,4 @@
-import { NavigationAction } from '@react-navigation/routers';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ReactNode } from 'react';
 
 export interface ITextStyle {
@@ -31,20 +31,18 @@ export interface IActionListProps {
   steamid: string;
 }
 
-export interface IUserSave {
-  id: number;
+export interface ISteamProfile {
+  id: string;
+  name: string;
+  url: string;
   public: boolean;
   state: number;
-  url: string;
-  name: string;
 }
 
 export interface IUserSavesProps {
-  users: IUserSave[];
-  nav: NavigationAction;
-  loadInv: (nav: NavigationAction, id: number) => void;
+  nav: NativeStackScreenProps<TStackNavigationList>;
   displayErr: () => void;
-  toggleModal: (user: IUserSave) => void;
+  toggleModal: (user: ISteamProfile) => void;
 }
 
 export interface ICurrency {
@@ -53,12 +51,6 @@ export interface ICurrency {
   exc: number;
   flag: string;
   sym?: string;
-}
-
-export interface ISettingsProps {
-  saveSetting: (title: string, value: number | string) => void;
-  rates: ICurrency[];
-  rate: number;
 }
 
 export interface IMusicKit {
@@ -84,16 +76,8 @@ export interface IMusicKitsProps {
   kits: IMusicKit[];
 }
 
-export interface ISteamProfile {
-  id: string;
-  name: string;
-  url: string;
-  public: boolean;
-  state: number;
-}
-
 export interface IProfilesProps {
-  onLayoutRootView: () => Promise<void>;
+  navigation: NativeStackScreenProps<TStackNavigationList>;
 }
 
 export interface IVanitySearchResponse {
@@ -131,3 +115,16 @@ export interface IPlayerSummariesResponse {
 export interface ILoaderProps {
   text?: string;
 }
+
+export const VPages: string[] = [ 'Profiles', 'Games', 'Inventory' ];
+export type TPagesType = typeof VPages[number];
+
+export interface INavigateToProps {
+  steamid: string;
+}
+
+export type TStackNavigationList = {
+  Home: undefined;
+  Games: undefined;
+  Inventory: undefined;
+};

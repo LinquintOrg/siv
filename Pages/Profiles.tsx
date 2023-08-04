@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { usePreloadedState, useProfilesState } from '../utils/store';
 import { Clipboard, View, Image, TouchableOpacity } from 'react-native';
 import { Icon } from 'react-native-elements';
 import { Snackbar, TextInput } from 'react-native-paper';
@@ -10,13 +9,10 @@ import Text from '../Elements/text';
 import Modal from 'react-native-modal';
 import NetInfo from '@react-native-community/netinfo';
 import * as Sentry from 'sentry-expo';
-import { IPlayerSummariesResponse, ISteamProfile, IVanitySearchResponse } from '../utils/types';
+import { IPlayerSummariesResponse, IProfilesProps, ISteamProfile, IVanitySearchResponse } from '../utils/types';
 import Loader from '../components/Loader';
 
-export default function StackProfilesMain({ navigation }) {
-  const profiles = useProfilesState();
-  const preloadState = usePreloadedState();
-
+export default function StackProfilesMain(props: IProfilesProps) {
   const [ steamIDtyped, setSteamIDtyped ] = React.useState<string>(''); // SteamID value (updates while being typed)
   const [ isLoading, setLoading ] = React.useState(false); // Are search results still loading
   const [ snackError, setSnackError ] = React.useState(false);
@@ -26,6 +22,7 @@ export default function StackProfilesMain({ navigation }) {
   const [ profile, setProfile ] = React.useState<ISteamProfile>({
     id: '', name: '', public: false, state: 3, url: 'https://inventory.linquint.dev/api/Files/img/profile.png',
   });
+  const [ selectedProfile, setSelectedProfile ] = React.useState<ISteamProfile | undefined>(undefined);
 
   const getProfileData = async (sid: string) => {
     // TODO: use from .env file
@@ -93,12 +90,11 @@ export default function StackProfilesMain({ navigation }) {
   };
 
   const [ isProfileModalVisible, setProfileModalVisible ] = React.useState(false);
-  const [ profileModalData, setProfileModalData ] = React.useState({ name: '', id: '' });
   const [ profileSearchText, setProfileSearchText ] = React.useState('Getting Steam profile data...');
 
-  const toggleModal = (profile) => {
+  const toggleModal = (profile: ISteamProfile) => {
     if (!isProfileModalVisible){
-      setProfileModalData(profile);
+      setSelectedProfile(profile);
     }
     setProfileModalVisible(!isProfileModalVisible);
   };
@@ -112,16 +108,14 @@ export default function StackProfilesMain({ navigation }) {
     setSnackSuccess(false);
   };
 
-  async function displayPrivateProfileErr() {
+  function displayPrivateProfileErr() {
     setSnackError(true);
     setErrorText('Selected profile privacy is set to PRIVATE');
-    await helpers.sleep(3000);
-    setSnackError(false);
   }
 
   return (
-    <>
-      <View style={global.inputView} disabled={ !preloadState.get() }>
+    <View style={{ height: '100%' }}>
+      <View style={global.inputView}>
         <TextInput
           style={ global.input }
           placeholder='Enter SteamID64'
@@ -162,10 +156,10 @@ export default function StackProfilesMain({ navigation }) {
             <Image style={styles.profileSearch.image} source={{ uri: profile.url }}/>
             <View style={styles.profileSearch.flowDown}>
               <Text bold style={styles.profileSearch.profileID}>{ profile.id }</Text>
-              <Text bold style={styles.profileSearch.profileName} numberOfLines={1}>{ profile.name }</Text>
+              <Text bold style={styles.profileSearch.profileName}>{ profile.name }</Text>
 
               <View style={styles.profileSearch.flowRow}>
-                <TouchableOpacity style={global.buttonSmall} onPress={() => navigateToLoad(navigation, profile.id)}
+                <TouchableOpacity style={global.buttonSmall} onPress={() => helpers.navigateToLoad(props.navigation, 'Games')}
                   disabled={!helpers.isSteamIDValid(profile.id)}>
                   <Text bold style={global.buttonText}>Load</Text>
                 </TouchableOpacity>
@@ -189,10 +183,7 @@ export default function StackProfilesMain({ navigation }) {
       </Text>
 
       <UserSaves
-        users={profiles.getAll()}
-        loadInv={navigateToLoad}
-        nav={navigation}
-        deleteUser={deleteProfile}
+        nav={props.navigation}
         toggleModal={toggleModal}
         displayErr={displayPrivateProfileErr}
       />
@@ -217,25 +208,34 @@ export default function StackProfilesMain({ navigation }) {
       </Snackbar>
 
       <Modal
-        isVisible={isProfileModalVisible}
+        isVisible={isProfileModalVisible && !!selectedProfile}
         onBackdropPress={() => setProfileModalVisible(false)}
         animationIn={'swing'}
         animationOut={'fadeOut'}
         animationInTiming={500}
       >
-        <View style={ styles.profiles.modal }>
-          <Text bold style={ global.title }>Choose an action</Text>
-          <Text style={ styles.profiles.modalUser }>{ profileModalData.name }</Text>
+        {
+          selectedProfile ? <View style={ styles.profiles.modal }>
+            <Text bold style={ global.title }>Choose an action</Text>
+            <Text style={ styles.profiles.modalUser }>{ selectedProfile.name }</Text>
 
-          <TouchableOpacity onPress={() => deleteProfile(profileModalData.id)} style={ global.buttonSmall }>
-            <Text bold style={ global.buttonText }>Delete user</Text>
-          </TouchableOpacity>
+            <View style={[ global.row, { justifyContent: 'space-between' } ]}>
+              <TouchableOpacity onPress={() => void helpers.deleteProfile(selectedProfile.id)} style={ global.buttonSmall }>
+                <Text bold style={ global.buttonText }>Delete user</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => void copyToClipboard(profileModalData.id)} style={ global.buttonSmall }>
-            <Text bold style={ global.buttonText }>Copy SteamID64</Text>
-          </TouchableOpacity>
-        </View>
+              <TouchableOpacity onPress={() => void copyToClipboard(selectedProfile.id)} style={ global.buttonSmall }>
+                <Text bold style={ global.buttonText }>Copy SteamID64</Text>
+              </TouchableOpacity>
+            </View>
+          </View> : <View>
+            <Text bold style={ global.title }>No profile selected</Text>
+            <Text style={ global.subtitle }>
+              <Text bold>Tap</Text> on a profile to select it.
+            </Text>
+          </View>
+        }
       </Modal>
-    </>
+    </View>
   );
 }

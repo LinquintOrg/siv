@@ -2,7 +2,7 @@ import { View, StyleSheet } from 'react-native';
 import React from 'react';
 import Text from './text';
 import { IMusicKitPricesProps } from '../utils/types';
-import { useRateState, useRatesState } from '../App';
+import { useRateState, useRatesState } from '../utils/store';
 
 export default function(props: IMusicKitPricesProps) {
   const { kit, prices } = props;
@@ -61,7 +61,7 @@ export default function(props: IMusicKitPricesProps) {
     return (
       <View style={styles.containerCol}>
         <Text style={styles.price}>NaN</Text>
-        <Text style={[ styles.price, {color: '#CF6A32'} ]}>{rate.abb} {pStat.toFixed(2)}</Text>
+        <Text style={[ styles.price, { color: '#CF6A32' } ]}>{rate.abb} {pStat.toFixed(2)}</Text>
       </View>
     );
   }
@@ -69,7 +69,7 @@ export default function(props: IMusicKitPricesProps) {
     return (
       <View style={styles.containerCol}>
         <Text style={styles.price}>{rate.abb} {pNormal.toFixed(2)}</Text>
-        <Text style={[ styles.price, {color: '#CF6A32'} ]}>NaN</Text>
+        <Text style={[ styles.price, { color: '#CF6A32' } ]}>NaN</Text>
       </View>
     );
   }
@@ -77,7 +77,7 @@ export default function(props: IMusicKitPricesProps) {
     return (
       <View style={styles.containerCol}>
         <Text style={styles.price}>{rate.abb} {pNormal.toFixed(2)}</Text>
-        <Text style={[ styles.price, {color: '#CF6A32'} ]}>{rate.abb} {pStat.toFixed(2)}</Text>
+        <Text style={[ styles.price, { color: '#CF6A32' } ]}>{rate.abb} {pStat.toFixed(2)}</Text>
       </View>
     );
   }

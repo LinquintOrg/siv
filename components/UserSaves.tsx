@@ -1,24 +1,29 @@
 import { Dimensions, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import React, {useState} from 'react';
-import {Divider, Icon} from 'react-native-elements';
+import React, { useEffect, useState } from 'react';
+import { Divider, Icon } from 'react-native-elements';
 import Text from '../Elements/text';
 import { IUserSavesProps } from '../utils/types';
+import { usePreloadedState, useProfilesState } from '../utils/store';
+import Loader from './Loader';
 
 export default function (props: IUserSavesProps) {
-  const { users, loadInv, nav, displayErr, toggleModal } = props;
+  const { nav, displayErr, toggleModal } = props;
+  const profiles = useProfilesState();
+  const preload = usePreloadedState();
   const [ scale ] = useState(Dimensions.get('window').width / 423);
   const resize = (size: number) => {
     return Math.ceil(size * scale);
   };
 
   return (
-    <ScrollView>
+    <ScrollView style={{ height: '100%' }}>
       <View>
-        {users.map((item, index) => (
+        {preload.get() ? profiles.getAll().map((item, index) => (
           <View key={`usersave-${index}`}>
             <TouchableOpacity style={styles.profileSection} onPress={() => {
               if (item.public) {
-                loadInv(nav, item.id);
+                // TODO: navigate to Inventory.tsx (currently *.js), using 'nav' from props
+                // loadInv(nav, item.id);
               } else {
                 displayErr();
               }
@@ -32,7 +37,7 @@ export default function (props: IUserSavesProps) {
                         : (item.state === 2) ? <Icon name={'do-not-disturb'} color={'#fa0'} size={resize(12)} />
                           : <Icon name={'sleep'} type={'material-community'} color={'#44f'} size={resize(12)} />
                   }
-                  <Text bold style={[ {fontSize: resize(14), marginLeft: resize(4), color: (item.public) ? '#337' : '#f00'} ]}>
+                  <Text bold style={[ { fontSize: resize(14), marginLeft: resize(4), color: (item.public) ? '#337' : '#f00' } ]}>
                     {(!item.public) ? 'Profile is set to PRIVATE' :
                       (item.state === 0) ? 'Offline'
                         : (item.state === 1) ? 'Online'
@@ -44,9 +49,9 @@ export default function (props: IUserSavesProps) {
                 <Text style={styles.profileID}>{item.id}</Text>
               </View>
             </TouchableOpacity>
-            { (users.length - 1 !== index) ? <Divider width={1} style={{width: '95%', alignSelf: 'center'}} /> : null }
+            { (profiles.getAll().length - 1 !== index) ? <Divider width={1} style={{ width: '95%', alignSelf: 'center' }} /> : null }
           </View>
-        ))}
+        )) : <Loader />}
       </View>
     </ScrollView>
   );
