@@ -1,2 +1,0 @@
-- name: Jira Login
-  uses: atlassian/gajira-login@v3
