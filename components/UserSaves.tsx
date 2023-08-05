@@ -57,6 +57,7 @@ export default function (props: IUserSavesProps) {
   );
 }
 
+// TODO: Move user saves component styles to global.ts
 const resize = (size: number) => {
   const scale = Dimensions.get('window').width / 423;
   return Math.ceil(size * scale);
@@ -66,7 +67,7 @@ const styles = StyleSheet.create({
   column: {
     display: 'flex',
     flexDirection: 'column',
-    width: '65%'
+    width: '65%',
   },
   profileSection: {
     borderRadius: 8,
@@ -80,19 +81,19 @@ const styles = StyleSheet.create({
     width:  resize(52),
     height: resize(52),
     borderRadius: 8,
-    marginEnd: resize(8)
+    marginEnd: resize(8),
   },
   profileName: {
     fontSize: resize(16),
-    color: '#666'
+    color: '#666',
   },
   profileID: {
     fontSize: resize(13),
-    color: '#444'
+    color: '#444',
   },
   row: {
     display: 'flex',
     flexDirection: 'row',
-    width: '100%'
-  }
+    width: '100%',
+  },
 });

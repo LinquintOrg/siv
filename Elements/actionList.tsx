@@ -112,5 +112,5 @@ const styles = StyleSheet.create({
     fontSize: resize(24),
     color: '#333',
     textAlign: 'center',
-  }
+  },
 });

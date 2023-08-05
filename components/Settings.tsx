@@ -164,6 +164,7 @@ export default function () {
   );
 }
 
+// TODO: Move settings page styles to global.ts
 const resize = (size: number) => {
   const scale = Dimensions.get('window').width / 423;
   return Math.ceil(size * scale);
@@ -311,5 +312,5 @@ const styles = StyleSheet.create({
     color: '#3342A3',
     fontSize: resize(14),
     marginLeft: resize(8),
-  }
+  },
 });

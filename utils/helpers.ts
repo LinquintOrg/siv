@@ -1,8 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useScaleState } from './store.ts';
-import { IInventoryGame, ISteamProfile } from './types.ts';
+import { IInventoryGame, IInventoryResAsset, IInventoryResDescriptionDescription, ISteamProfile } from './types.ts';
 
-// TODO: inside helper function, do not initialize store (except for resize function)
+/**
+ * ! Helper functions should not be used with states store
+ */
 
 export const helpers = {
   async waitUntil(condition: () => boolean, checkInterval = 100): Promise<void> {
@@ -27,23 +29,16 @@ export const helpers = {
     });
   },
   async saveProfile(profile: ISteamProfile) {
-    const profiles = useProfilesState();
-    if (profiles.exists(profile.id)) {
+    const exists = await AsyncStorage.getItem(profile.id);
+    if (exists) {
       throw new Error('Profile is already saved');
     }
     await AsyncStorage.setItem(profile.id, JSON.stringify(profile));
-    profiles.add(profile);
   },
   async deleteProfile(id: string) {
-    const profiles = useProfilesState();
     await AsyncStorage.removeItem(id);
-    profiles.delete(id);
   },
   async saveSetting(name: string, value: number) {
-    const rate = useRateState();
-    if (name === 'currency') {
-      rate.set(value);
-    }
     await AsyncStorage.setItem(name, JSON.stringify({ value }));
   },
   resize(size: number) {
@@ -59,5 +54,44 @@ export const helpers = {
       }
     }
     return [];
-  }
+  },
+  countItems(classid: string, instanceid: string, assetData: IInventoryResAsset[]) {
+    const items = assetData.filter(asset => asset.classid === classid && asset.instanceid === instanceid);
+    return items.length;
+  },
+  findStickers(descriptions: IInventoryResDescriptionDescription[]) {
+    const htmlStickers = descriptions.find(d => d.value.includes('sticker_info'));
+    if (!htmlStickers) {
+      return undefined;
+    }
+
+    let html = htmlStickers.value;
+    const count = (html.match(/img/g) || []).length;
+    const type = (html.match('Sticker')) ? 'sticker' : 'patch';
+
+    // eslint-disable-next-line max-len
+    html = html.replaceAll(`<br><div id="sticker_info" name="sticker_info" title="${type.toUpperCase()}" style="border: 2px solid rgb(102, 102, 102); border-radius: 6px; width=100; margin:4px; padding:8px;"><center>`, '');
+    html = html.replaceAll('</center></div>', '');
+    html = html.replaceAll('<img width=64 height=48 src="', '');
+    html = html.replaceAll(`<br>${type.toUpperCase()}: `, '');
+    html = html.replaceAll('">', ';');
+
+    let tmpArr = html.split(';');
+    // eslint-disable-next-line max-len
+    const tmpNames = tmpArr[count].replaceAll(', Champion', '; Champion').split(', ');
+    tmpArr = tmpArr.splice(0, count);
+
+    const tmpStickers = [];
+    for (let j = 0; j < count; j++) {
+      const abb = (type === 'sticker') ? 'Sticker | ' : 'Patch | ';
+      const sticker = {
+        name: (tmpNames[j]).replace('; Champion', ', Champion'),
+        img: tmpArr[j],
+        long_name: (abb + tmpNames[j]).replace('; Champion', ', Champion'),
+      };
+      tmpStickers.push(sticker);
+    }
+
+    return { type, sticker_count: count, stickers: tmpStickers };
+  },
 };

@@ -1,19 +1,20 @@
 import {
   ActivityIndicator,
   Dimensions, FlatList,
-  StyleSheet,
-  View
+  View,
 } from 'react-native';
-import React, {useCallback, useState} from 'react';
-import {AVPlaybackStatusSuccess, Audio} from 'expo-av';
-import {Icon} from 'react-native-elements';
-import {Snackbar} from 'react-native-paper';
+import React, { useCallback, useState } from 'react';
+import { AVPlaybackStatusSuccess, Audio } from 'expo-av';
+import { Icon } from 'react-native-elements';
+import { Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import Text from '../Elements/text';
-import {TextInput} from 'react-native-paper';
+import { TextInput } from 'react-native-paper';
 import { IMusicKit, IMusicKitPrice } from '../utils/types';
 import MusicKit from '../Elements/MusicKit';
 import * as Sentry from 'sentry-expo';
+import { global, variables } from '../styles/global';
+import { helpers } from '../utils/helpers';
 
 export default function MusicKits() {
   const [ loading, setLoading ] = useState(true);
@@ -26,11 +27,6 @@ export default function MusicKits() {
   const [ snackbarWhatsPlaying, setSnackbarWhatsPlaying ] = useState(false);
   const [ snackError, setSnackError ] = useState('');
   const [ playing, setPlaying ] = useState<{ kit: IMusicKit, length: number }>({ kit: { artist: '', song: '', dir: '' }, length: 0 });
-
-  const [ scale ] = useState(Dimensions.get('window').width / 423);
-  const resize = (size: number) => {
-    return Math.ceil(size * scale);
-  };
 
   const getMusicKits = useCallback(async () => {
     const internetConnection = await NetInfo.fetch();
@@ -81,9 +77,9 @@ export default function MusicKits() {
       setPlaybackTimeout(true);
 
       try {
-        const {sound: playbackObject} = await Audio.Sound.createAsync(
-          {uri: 'https://inventory.linquint.dev/api/Files/csgo/musickits/' + item.dir + '/roundmvpanthem_01.mp3'},
-          {shouldPlay: false}
+        const { sound: playbackObject } = await Audio.Sound.createAsync(
+          { uri: 'https://inventory.linquint.dev/api/Files/csgo/musickits/' + item.dir + '/roundmvpanthem_01.mp3' },
+          { shouldPlay: false },
         );
 
         let soundLen = 15000;
@@ -110,27 +106,28 @@ export default function MusicKits() {
     });
   }
 
+  // TODO: Replace ActivityIndicator elements with Loader component
   return (
     (loading) ?
-      <View style={[ styles.containerCol, {alignSelf: 'center'} ]}>
-        <ActivityIndicator style={{marginTop: Dimensions.get('window').height / 2 - 36}} size="large"
+      <View style={[ global.column, { alignSelf: 'center', width: helpers.resize(300) } ]}>
+        <ActivityIndicator style={{ marginTop: Dimensions.get('window').height / 2 - 36 }} size="large"
           color='#000'/>
-        <Text style={{textAlign: 'center'}}>Downloading list of music kits...</Text>
+        <Text style={{ textAlign: 'center' }}>Downloading list of music kits...</Text>
       </View> :
       (loadingPrices) ?
         <View>
-          <ActivityIndicator style={{marginTop: Dimensions.get('window').height / 2 - 36}} size="large"
+          <ActivityIndicator style={{ marginTop: Dimensions.get('window').height / 2 - 36 }} size="large"
             color='#000'/>
-          <Text style={{textAlign: 'center'}}>Downloading music kit prices...</Text>
+          <Text style={{ textAlign: 'center' }}>Downloading music kit prices...</Text>
         </View> :
-        <View style={{height: '100%'}}>
-          <View style={{marginVertical: resize(8)}}>
-            <Text style={styles.title}>Tap to play <Text bold>MVP anthem</Text></Text>
+        <View style={{ height: '100%' }}>
+          <View style={{ marginVertical: helpers.resize(8) }}>
+            <Text style={global.title}>Tap to play <Text bold>MVP anthem</Text></Text>
           </View>
 
-          <View style={styles.inputView}>
+          <View style={ global.inputView }>
             <TextInput
-              style={{marginHorizontal: resize(8), flex: 1, height: resize(40), fontSize: resize(16), padding: 0, marginBottom: resize(8)}}
+              style={ global.input }
               placeholder='Start typing artist or song name'
               mode={'outlined'}
               onChangeText={text => setSearch(text)}
@@ -139,8 +136,8 @@ export default function MusicKits() {
               left={
                 <TextInput.Icon
                   icon={() => (<Icon name={'filter'} type={'feather'} color={'#1f4690'} />)}
-                  size={resize(24)}
-                  style={{margin: 0, paddingTop: resize(8)}}
+                  size={variables.iconSize}
+                  style={{ margin: 0, paddingTop: helpers.resize(8) }}
                   forceTextInputFocus={false}
                 />
               }
@@ -149,16 +146,16 @@ export default function MusicKits() {
 
           <FlatList
             data={kits}
-            renderItem={({item}) => <MusicKit item={item} play={playSound} search={search} prices={prices} />}
+            renderItem={({ item }) => <MusicKit item={item} play={playSound} search={search} prices={prices} />}
             keyExtractor={item => item.dir}
           />
 
           <Snackbar
             visible={snackbarVisible}
-            style={{backgroundColor: '#193C6E'}}
+            style={{ backgroundColor: '#193C6E' }}
             onDismiss={() => setSnackbarVisible(false)}
           >
-            <View><Text style={styles.snackbarText}>{snackError}</Text></View>
+            <View><Text style={ global.snackbarText }>{ snackError }</Text></View>
           </Snackbar>
 
           <Snackbar
@@ -166,59 +163,14 @@ export default function MusicKits() {
             style={{ backgroundColor: '#193C6E' }}
             onDismiss={() => setSnackbarWhatsPlaying(false)}
           >
-            <Text style={{fontSize: resize(14)}}>
-              Now playing <Text bold style={{color: '#6FC8F7'}}>{ playing.kit.song }</Text> by <Text style={{color: '#6FC8F7'}}>{ playing.kit.artist }</Text>
+            <Text style={{ fontSize: helpers.resize(14) }}>
+              Now playing <Text bold style={{ color: '#6FC8F7' }}>
+                { playing.kit.song }
+              </Text> by <Text style={{ color: '#6FC8F7' }}>{ playing.kit.artist }</Text>
               {'\n'}
-              Length: <Text bold style={{color: '#6FC8F7'}}>{Math.ceil(playing.length / 1000)}</Text> seconds
+              Length: <Text bold style={{ color: '#6FC8F7' }}>{Math.ceil(playing.length / 1000)}</Text> seconds
             </Text>
           </Snackbar>
         </View>
   );
 }
-
-// TODO: Move styles to global.ts file
-const resize = (size: number) => {
-  const scale = Dimensions.get('window').width / 423;
-  return Math.ceil(size * scale);
-};
-
-const styles = StyleSheet.create({
-  container: {
-    marginTop: 6,
-    marginBottom: 6,
-    width: '95%',
-    alignItems: 'center',
-    display: 'flex',
-    flexDirection: 'row',
-    borderRadius: 8,
-    alignSelf: 'center',
-    padding: 8,
-  },
-  containerCol: {
-    display: 'flex',
-    flexDirection: 'column',
-    width: '63%',
-  },
-  title: {
-    textAlign: 'center',
-    fontSize: resize(20),
-  },
-  subTitle: {
-    textAlign: 'center',
-    fontSize: resize(14),
-  },
-  inputView: {
-    width: '90%',
-    height: resize(44),
-    borderRadius: 8,
-    paddingHorizontal: resize(10),
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-  },
-  snackbarText: {
-    fontSize: resize(13),
-    color: '#fff'
-  },
-});

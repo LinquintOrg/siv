@@ -1,12 +1,12 @@
 import * as React from 'react';
 import { usePreloadedState, useProfilesState, useRatesState, useStore } from './utils/store.ts';
-import { StyleSheet, View, Dimensions } from 'react-native';
+import { View, Dimensions } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Icon } from 'react-native-elements';
 import { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Inventory from './components/Inventory.js';
+import Inventory from './Pages/Inventory.tsx';
 import MusicKits from './components/MusicKits.tsx';
 import Settings from './components/Settings.tsx';
 import SteamMarket from './components/SteamMarket.js';
@@ -20,6 +20,9 @@ import Profiles from './Pages/Profiles.tsx';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Store from './components/Store.tsx';
 import ChooseGames from './Pages/ChooseGames.tsx';
+import { helpers } from './utils/helpers.ts';
+import { colors } from './styles/global.ts';
+import { BottomTabDescriptorMap } from 'react-navigation-tabbar-collection/lib/typescript/types';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<TStackNavigationList>();
@@ -33,7 +36,6 @@ function App() {
     tracesSampleRate: 1.0,
   });
 
-  console.log('HUUUUH');
   useStore();
   const profiles = useProfilesState();
   const rates = useRatesState();
@@ -79,7 +81,6 @@ function App() {
 
   useEffect(() => {
     async function prepare() {
-      console.log('USE effect');
       try {
         const internetConnection = await NetInfo.fetch();
         if (internetConnection.isInternetReachable && internetConnection.isConnected) {
@@ -104,19 +105,8 @@ function App() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name='Home' component={Profiles} />
         <Stack.Screen name='Games' component={ChooseGames} />
-        <Stack.Screen name='Inventory' component={StackInventory} />
+        <Stack.Screen name='Inventory' component={Inventory} />
       </Stack.Navigator>
-    );
-  }
-
-  function StackInventory({ route }) {
-    const gamesList = route.params.games;
-    const steamID = route.params.steamID;
-
-    return (
-      <View style={{ height: '100%' }}>
-        <Inventory games={gamesList} steam={steamID} />
-      </View>
     );
   }
 
@@ -150,7 +140,17 @@ function App() {
   return (
     <NavigationContainer>
       <Store />
-      <Tab.Navigator tabBar={(props) => <CleanTabBar {...props} />}>
+      <Tab.Navigator tabBar={props =>
+        <CleanTabBar
+          descriptors={props.descriptors as unknown as BottomTabDescriptorMap}
+          state={props.state}
+          navigation={props.navigation}
+          maxWidth={helpers.resize(420)}
+          height={helpers.resize(64)}
+          darkMode={true}
+          colorPalette={{ light: colors.primary, dark: colors.secondary }}
+        />
+      }>
         <Tab.Screen name="Profiles" component={TabProfile}
           options={{
             tabBarLabelStyle: { color: '#2379D9', fontSize: resize(14) },
@@ -168,7 +168,7 @@ function App() {
             tabBarIcon: () => (
               <Icon name="steam" type={'material-community'} color={'#322A81'} size={resize(28)} />
             ),
-            headerShown: false
+            headerShown: false,
           }}
         />
         <Tab.Screen name="Music Kits" component={TabMusicKit}
@@ -178,7 +178,7 @@ function App() {
             tabBarIcon: () => (
               <Icon name="music" type='feather' color={'#322A81'} size={resize(28)} />
             ),
-            headerShown: false
+            headerShown: false,
           }}
         />
         <Tab.Screen name="Settings" component={TabSettings}
@@ -188,7 +188,7 @@ function App() {
             tabBarIcon: () => (
               <Icon name="settings" type='feather' color={'#322A81'} size={resize(28)} />
             ),
-            headerShown: false
+            headerShown: false,
           }}
         />
       </Tab.Navigator>
@@ -200,41 +200,5 @@ const resize = (size: number) => {
   const scale = Dimensions.get('window').width / 423;
   return Math.ceil(size * scale);
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  warning: {
-    fontSize: resize(12),
-    color: '#f00',
-    fontWeight: 'bold',
-    paddingLeft: 12
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: resize(20)
-  },
-  buttonSmallText: {
-    fontSize: resize(18),
-    color: '#12428D',
-  },
-  buttonMediumText: {
-    fontSize: resize(24),
-    color: '#fff',
-  },
-  singleButtonSection: {
-    alignItems: 'center'
-  },
-  snackbarText: {
-    fontSize: resize(13),
-    color: '#ddd',
-    width: '100%',
-    textAlign: 'left',
-  },
-});
 
 export default Sentry.Native.wrap(App);

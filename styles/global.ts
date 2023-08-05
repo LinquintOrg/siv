@@ -119,7 +119,7 @@ export const global = StyleSheet.create({
   smallButtonRow: {
     ...templates.row,
     justifyContent: 'space-evenly',
-  }
+  },
 });
 
 export const styles = {
@@ -198,7 +198,7 @@ export const styles = {
       fontSize: resize(15),
       fontWeight: 'bold',
       color: colors.textAccent,
-    }
+    },
   }),
   loader: StyleSheet.create({
     container: {

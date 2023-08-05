@@ -13,7 +13,6 @@ import { IPlayerSummariesResponse, IProfilesProps, ISteamProfile, IVanitySearchR
 import Loader from '../components/Loader';
 import Clipboard from '@react-native-community/clipboard';
 import { useProfilesState } from '../utils/store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function StackProfilesMain(props: IProfilesProps) {
   const profiles = useProfilesState();
@@ -134,11 +133,25 @@ export default function StackProfilesMain(props: IProfilesProps) {
   // }
 
   async function saveProfile() {
-    if (profiles.exists(profile.id)) {
-      throw new Error('Profile is already saved');
+    try {
+      await helpers.saveProfile(profile);
+      profiles.add(profile);
+    } catch (err) {
+      setSnackError(true);
+      setErrorText((err as Error).message);
+      Sentry.React.captureException(err);
     }
-    await AsyncStorage.setItem(profile.id, JSON.stringify(profile));
-    profiles.add(profile);
+  }
+
+  async function deleteProfile() {
+    try {
+      await helpers.deleteProfile(profile.id);
+      profiles.delete(profile.id);
+    } catch (err) {
+      setSnackError(true);
+      setErrorText((err as Error).message);
+      Sentry.React.captureException(err);
+    }
   }
 
   return (
@@ -252,7 +265,7 @@ export default function StackProfilesMain(props: IProfilesProps) {
             <Text style={ styles.profiles.modalUser }>{ selectedProfile.name }</Text>
 
             <View style={[ global.row, { justifyContent: 'space-between' } ]}>
-              <TouchableOpacity onPress={() => void helpers.deleteProfile(selectedProfile.id)} style={ global.buttonSmall }>
+              <TouchableOpacity onPress={() => void deleteProfile()} style={ global.buttonSmall }>
                 <Text bold style={ global.buttonText }>Delete user</Text>
               </TouchableOpacity>
 

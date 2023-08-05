@@ -41,7 +41,7 @@ export default function(props: IMusicKitPricesProps) {
       textAlignVertical: 'center',
       width: '30%',
       textAlign: 'right',
-      alignContent: 'space-between'
+      alignContent: 'space-between',
     },
     containerCol: {
       display: 'flex',

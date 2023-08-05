@@ -141,3 +141,93 @@ export interface IChooseGamesProps {
   navigation: NativeStackNavigationProp<TStackNavigationList, 'Games', string>;
   route: RouteProp<TStackNavigationList, 'Games'>;
 }
+
+export interface IInventoryPageProps {
+  route: RouteProp<TStackNavigationList, 'Inventory'>;
+}
+
+export interface IInventoryResAsset {
+  appid: number;
+  contextid: string;
+  assetid: string;
+  classid: string;
+  instanceid: string;
+  amount: string;
+}
+
+export interface IInventoryResDescriptionDescription {
+  type: string;
+  value: string;
+  color?: string;
+}
+
+export interface IInventoryResDescriptionTag {
+  category: string;
+  internal_name: string;
+  localized_category_name: string;
+  localized_tag_name: string;
+  color?: string;
+}
+
+export interface IInventoryResDescription {
+  appid: number;
+  classid: string;
+  instanceid: string;
+  currency: number;
+  background_color: string;
+  icon_url: string;
+  icon_url_large: string;
+  tradable: number;
+  name: string;
+  name_color: string;
+  type: string;
+  market_name: string;
+  market_hash_name: string;
+  commodity: number;
+  marketable: number;
+  market_tradable_restriction: number;
+  descriptions: IInventoryResDescriptionDescription[];
+  actions: { link: string; name: string }[];
+  owner_descriptions: { type: string; value: string; color?: string }[];
+  market_actions: { link: string; name: string }[];
+  tags: IInventoryResDescriptionTag[];
+}
+
+export interface IInventoryResponse {
+  success: number;
+  rwgrsn: number;
+  total_inventory_count: number;
+  assets: IInventoryResAsset[];
+  descriptions: IInventoryResDescription[];
+}
+
+export interface IInventoryOmittedItem {
+  classid: string;
+  instanceid: string;
+  icon_urL: string;
+  tradable: number;
+  name: string;
+  name_color: string;
+  type: string;
+  market_name: string;
+  commodity: number;
+  marketable: number;
+  descriptions: IInventoryResDescriptionDescription[];
+  owner_descriptions: { type: string; value: string; color?: string }[];
+  tags: IInventoryResDescriptionTag[];
+}
+
+export interface IInventoryOmittedItemAmount extends IInventoryOmittedItem {
+  amount: number;
+}
+
+export interface IInventoryItem extends IInventoryOmittedItem {
+
+}
+
+export interface IInventoryBase {
+  [appid: number]: {
+    count: number;
+    items: IInventoryOmittedItemAmount[];
+  }
+}

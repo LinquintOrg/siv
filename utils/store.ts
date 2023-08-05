@@ -2,8 +2,6 @@ import { ImmutableObject, State, hookstate, useHookstate } from '@hookstate/core
 import { ICurrency, ISteamProfile } from './types';
 import { Dimensions } from 'react-native';
 
-console.log('store and shit');
-
 const rate = hookstate<number>(46);
 const rates = hookstate<ICurrency[]>([]);
 const profiles = hookstate<ISteamProfile[]>([]);
