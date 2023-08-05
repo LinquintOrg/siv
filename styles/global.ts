@@ -44,6 +44,7 @@ export const global = StyleSheet.create({
     borderRadius: resize(12),
     alignSelf: 'center',
     padding: resize(8),
+    backgroundColor: colors.secondary,
   },
   column: {
     display: 'flex',
@@ -60,7 +61,7 @@ export const global = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'center',
-    marginBottom: resize(16),
+    marginBottom: resize(8),
   },
   input: {
     width: resize(400),
@@ -76,7 +77,7 @@ export const global = StyleSheet.create({
   title: {
     textAlign: 'center',
     fontSize: resize(24),
-    fontWeight: 'bold',
+    marginVertical: resize(8),
   },
   subtitle: {
     textAlign: 'center',
@@ -90,6 +91,7 @@ export const global = StyleSheet.create({
     ...templates.button,
     width: resize(360),
     alignSelf: 'center',
+    marginVertical: resize(8),
   },
   buttonText: {
     color: colors.white,
@@ -102,15 +104,16 @@ export const global = StyleSheet.create({
     width: resize(400),
     textAlign: 'left',
   },
+  rowImage: {
+    width: resize(48),
+    aspectRatio: 1,
+    marginRight: resize(12),
+    borderRadius: resize(8),
+  },
 });
 
 export const styles = {
   musicKits: StyleSheet.create({
-    image: {
-      width: resize(48),
-      aspectRatio: 1,
-      marginRight: resize(12),
-    },
     artist: {
       fontSize: resize(14),
       color: colors.textAccent,
@@ -123,9 +126,9 @@ export const styles = {
   profileSearch: StyleSheet.create({
     type: {
       fontSize: resize(14),
-      width: resize(60),
-      textAlign: 'center',
-      paddingTop: resize(8),
+      width: resize(400),
+      textAlign: 'left',
+      alignSelf: 'center',
     },
     section: {
       ...global.row,
@@ -174,6 +177,17 @@ export const styles = {
       fontWeight: 'bold',
       marginBottom: resize(8),
     },
+  }),
+  games: StyleSheet.create({
+    title: {
+      fontSize: resize(18),
+      color: colors.text,
+    },
+    appid: {
+      fontSize: resize(15),
+      fontWeight: 'bold',
+      color: colors.textAccent,
+    }
   }),
   loader: StyleSheet.create({
     container: {

@@ -1,4 +1,5 @@
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ReactNode } from 'react';
 
 export interface ITextStyle {
@@ -40,7 +41,7 @@ export interface ISteamProfile {
 }
 
 export interface IUserSavesProps {
-  nav: NativeStackScreenProps<TStackNavigationList>;
+  navigation: NativeStackNavigationProp<TStackNavigationList, 'Home', undefined>;
   displayErr: () => void;
   toggleModal: (user: ISteamProfile) => void;
 }
@@ -77,7 +78,7 @@ export interface IMusicKitsProps {
 }
 
 export interface IProfilesProps {
-  navigation: NativeStackScreenProps<TStackNavigationList>;
+  navigation: NativeStackNavigationProp<TStackNavigationList, 'Home', undefined>;
 }
 
 export interface IVanitySearchResponse {
@@ -125,6 +126,18 @@ export interface INavigateToProps {
 
 export type TStackNavigationList = {
   Home: undefined;
-  Games: undefined;
-  Inventory: undefined;
+  Games: { steamId: string };
+  Inventory: { games: IInventoryGame[], steamId: string };
 };
+
+export interface IInventoryGame {
+  name: string;
+  appid: number;
+  classid: number;
+  url: string;
+}
+
+export interface IChooseGamesProps {
+  navigation: NativeStackNavigationProp<TStackNavigationList, 'Games', string>;
+  route: RouteProp<TStackNavigationList, 'Games'>;
+}

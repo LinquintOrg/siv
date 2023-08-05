@@ -142,10 +142,13 @@ export default function StackProfilesMain(props: IProfilesProps) {
             />
           }
         />
-        <Text bold style={[ (steamIDtyped.length === 17 || /[a-zA-Z]+/.test(steamIDtyped)) ? { color: colors.success }
-          : { color: colors.error }, styles.profileSearch.type ]}
+      </View>
+      <View style={[ global.row, styles.profileSearch.type, { justifyContent: 'space-between' } ]}>
+        <Text bold>Search by: { /[a-zA-Z]+/.test(steamIDtyped) ? 'CustomURL' : 'SteamID64' }</Text>
+        <Text style={[ steamIDtyped.length === 17 ? { color: colors.success }
+          : { color: colors.error } ]}
         >
-          { (steamIDtyped.match(/[a-zA-Z]+/)) ? 'Custom URL' : (steamIDtyped.length + ' / 17') }
+          { /[a-zA-Z]+/.test(steamIDtyped) ? '' : (steamIDtyped.length + ' / 17') }
         </Text>
       </View>
 
@@ -159,7 +162,7 @@ export default function StackProfilesMain(props: IProfilesProps) {
               <Text bold style={styles.profileSearch.profileName}>{ profile.name }</Text>
 
               <View style={styles.profileSearch.flowRow}>
-                <TouchableOpacity style={global.buttonSmall} onPress={() => helpers.navigateToLoad(props.navigation, 'Games')}
+                <TouchableOpacity style={global.buttonSmall} onPress={() => props.navigation.navigate('Games', { steamId: profile.id })}
                   disabled={!helpers.isSteamIDValid(profile.id)}>
                   <Text bold style={global.buttonText}>Load</Text>
                 </TouchableOpacity>
@@ -183,7 +186,7 @@ export default function StackProfilesMain(props: IProfilesProps) {
       </Text>
 
       <UserSaves
-        nav={props.navigation}
+        navigation={props.navigation}
         toggleModal={toggleModal}
         displayErr={displayPrivateProfileErr}
       />

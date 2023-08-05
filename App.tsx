@@ -6,7 +6,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Icon } from 'react-native-elements';
 import { useEffect, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import InvGamesList from './components/InvGamesList.js';
 import Inventory from './components/Inventory.js';
 import MusicKits from './components/MusicKits.tsx';
 import Settings from './components/Settings.tsx';
@@ -20,6 +19,7 @@ import { ICurrency, IPlayerSummariesResponse, ISteamProfile, TStackNavigationLis
 import Profiles from './Pages/Profiles.tsx';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Store from './components/Store.tsx';
+import ChooseGames from './Pages/ChooseGames.tsx';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<TStackNavigationList>();
@@ -99,52 +99,9 @@ function App() {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name='Home' component={Profiles} />
-        <Stack.Screen name='Games' component={StackGames} />
+        <Stack.Screen name='Games' component={ChooseGames} />
         <Stack.Screen name='Inventory' component={StackInventory} />
       </Stack.Navigator>
-    );
-  }
-
-  // TODO: Move to it's own component
-  function StackGames({ route, navigation }) {
-    const [ selState, setSelState ] = useState([]);
-
-    function hasState(state) {
-      return selState.includes(state);
-    }
-
-    function setState(state) {
-      setSelState(selState.concat(state));
-    }
-
-    function removeState(state) {
-      const newState = [];
-      for (let i = 0; i < selState.length; i++) {
-        if (selState[i] !== state) newState.push(selState[i]);
-      }
-      setSelState(newState);
-    }
-
-    function setPrevGamesState(state) {
-      setSelState(state);
-    }
-
-    function proceedLoading(selection = selState) {
-      navigation.navigate('Inventory', { games: selection, steamID: route.params.steamId, rates: rates, rate: rate });
-    }
-
-    return (
-      <View style={{ height: '100%' }}>
-        <InvGamesList
-          removeState={removeState}
-          hasState={hasState}
-          setState={setState}
-          steamID={route.params.steamId}
-          proceed={proceedLoading}
-          state={selState}
-          setPrevState={setPrevGamesState}
-        />
-      </View>
     );
   }
 

@@ -1,5 +1,5 @@
 import { Dimensions, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Divider, Icon } from 'react-native-elements';
 import Text from '../Elements/text';
 import { IUserSavesProps } from '../utils/types';
@@ -7,7 +7,7 @@ import { usePreloadedState, useProfilesState } from '../utils/store';
 import Loader from './Loader';
 
 export default function (props: IUserSavesProps) {
-  const { nav, displayErr, toggleModal } = props;
+  const { navigation, displayErr, toggleModal } = props;
   const profiles = useProfilesState();
   const preload = usePreloadedState();
   const [ scale ] = useState(Dimensions.get('window').width / 423);
@@ -22,8 +22,7 @@ export default function (props: IUserSavesProps) {
           <View key={`usersave-${index}`}>
             <TouchableOpacity style={styles.profileSection} onPress={() => {
               if (item.public) {
-                // TODO: navigate to Inventory.tsx (currently *.js), using 'nav' from props
-                // loadInv(nav, item.id);
+                navigation.navigate('Games', { steamId: item.id });
               } else {
                 displayErr();
               }

@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRateState, useProfilesState, useScaleState } from './store.ts';
-import { ISteamProfile, TPagesType, TStackNavigationList } from './types.ts';
+import { IInventoryGame, ISteamProfile, TPagesType, TStackNavigationList } from './types.ts';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 export const helpers = {
@@ -54,4 +54,15 @@ export const helpers = {
     const scale = useScaleState();
     return Math.ceil(size * scale.get());
   },
+  async loadPreviousGames(id: string): Promise<IInventoryGame[]> {
+    const savedKeys = await AsyncStorage.getAllKeys();
+    const savedGamesKey = savedKeys.find(key => key === `prevGames${id}`);
+    if (savedGamesKey) {
+      const games = await AsyncStorage.getItem(savedGamesKey);
+      if (games) {
+        return (JSON.parse(games) as { val: IInventoryGame[] }).val;
+      }
+    }
+    return [];
+  }
 };
