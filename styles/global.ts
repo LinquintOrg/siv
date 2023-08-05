@@ -28,8 +28,16 @@ export const templates = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: resize(12),
+    borderRadius: resize(16),
     height: resize(48),
+  },
+  column: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  row: {
+    display: 'flex',
+    flexDirection: 'row',
   },
 });
 
@@ -47,12 +55,10 @@ export const global = StyleSheet.create({
     backgroundColor: colors.secondary,
   },
   column: {
-    display: 'flex',
-    flexDirection: 'column',
+    ...templates.column,
   },
   row: {
-    display: 'flex',
-    flexDirection: 'row',
+    ...templates.row,
   },
   inputView: {
     width: '100%',
@@ -85,7 +91,7 @@ export const global = StyleSheet.create({
   },
   buttonSmall: {
     ...templates.button,
-    width: resize(144),
+    minWidth: resize(144),
   },
   buttonLarge: {
     ...templates.button,
@@ -110,6 +116,10 @@ export const global = StyleSheet.create({
     marginRight: resize(12),
     borderRadius: resize(8),
   },
+  smallButtonRow: {
+    ...templates.row,
+    justifyContent: 'space-evenly',
+  }
 });
 
 export const styles = {
@@ -131,9 +141,9 @@ export const styles = {
       alignSelf: 'center',
     },
     section: {
-      ...global.row,
+      ...templates.column,
       borderWidth: 0,
-      borderRadius: resize(12),
+      borderRadius: resize(16),
       marginVertical: resize(8),
       padding: resize(8),
       backgroundColor: colors.secondary,
@@ -142,33 +152,34 @@ export const styles = {
     },
     image: {
       width: resize(64),
-      borderRadius: resize(8),
+      borderRadius: resize(12),
       marginEnd: resize(8),
       aspectRatio: 1.0,
     },
     profileName: {
-      fontSize: resize(14),
+      fontSize: resize(18),
       color: colors.text,
     },
     profileID: {
-      fontSize: resize(14),
+      fontSize: resize(16),
       color: colors.textAccent,
       fontWeight: 'bold',
     },
     flowDown: {
-      ...global.column,
+      ...templates.column,
       width: resize(300),
+      justifyContent: 'center',
     },
     flowRow: {
-      ...global.row,
+      ...templates.row,
       justifyContent: 'space-evenly',
     },
   }),
   profiles: StyleSheet.create({
     modal: {
-      ...global.column,
+      ...templates.column,
       backgroundColor: colors.background,
-      borderRadius: resize(12),
+      borderRadius: resize(20),
       padding: resize(8),
     },
     modalUser: {
@@ -191,7 +202,7 @@ export const styles = {
   }),
   loader: StyleSheet.create({
     container: {
-      ...global.row,
+      ...templates.row,
       justifyContent: 'space-around',
       alignSelf: 'center',
       marginVertical: resize(16),

@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { usePreloadedState, useProfilesState, useRatesState } from './utils/store.ts';
+import { usePreloadedState, useProfilesState, useRatesState, useStore } from './utils/store.ts';
 import { StyleSheet, View, Dimensions } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Icon } from 'react-native-elements';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Inventory from './components/Inventory.js';
 import MusicKits from './components/MusicKits.tsx';
@@ -33,15 +33,18 @@ function App() {
     tracesSampleRate: 1.0,
   });
 
+  console.log('HUUUUH');
+  useStore();
+  const profiles = useProfilesState();
+  const rates = useRatesState();
+  const preload = usePreloadedState();
+
   // ! For some reason it is not loaded
   // const [ fontsLoaded ] = useFonts({
   //   Nunito: require('./assets/fonts/Nunito-Regular.ttf'),
   //   NunitoBold: require('./assets/fonts/Nunito-Bold.ttf'),
   // });
 
-  const preload = usePreloadedState();
-  const rates = useRatesState();
-  const profiles = useProfilesState();
 
   async function updateProfiles() {
     // TODO: Use Steam API key from .env
@@ -76,6 +79,7 @@ function App() {
 
   useEffect(() => {
     async function prepare() {
+      console.log('USE effect');
       try {
         const internetConnection = await NetInfo.fetch();
         if (internetConnection.isInternetReachable && internetConnection.isConnected) {

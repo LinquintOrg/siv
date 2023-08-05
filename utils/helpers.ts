@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRateState, useProfilesState, useScaleState } from './store.ts';
-import { IInventoryGame, ISteamProfile, TPagesType, TStackNavigationList } from './types.ts';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useScaleState } from './store.ts';
+import { IInventoryGame, ISteamProfile } from './types.ts';
+
+// TODO: inside helper function, do not initialize store (except for resize function)
 
 export const helpers = {
   async waitUntil(condition: () => boolean, checkInterval = 100): Promise<void> {
@@ -17,7 +18,7 @@ export const helpers = {
     });
   },
   isSteamIDValid(steamID: string) {
-    return !(steamID == '' || /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/? ]+/.test(steamID) || /[a-zA-Z]/.test(steamID) || steamID.length === 0)
+    return !(steamID == '' || /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/? ]+/.test(steamID) || /[a-zA-Z]/.test(steamID) || steamID.length === 0)
       && steamID.length === 17 && /^[0-9]+$/.test(steamID);
   },
   sleep(milliseconds: number) {
@@ -25,16 +26,11 @@ export const helpers = {
       setTimeout(resolve, milliseconds);
     });
   },
-  navigateToLoad(navigation: NativeStackScreenProps<TStackNavigationList>, screen: TPagesType) {
-    navigation.navigation.navigate({ key: screen });
-  },
   async saveProfile(profile: ISteamProfile) {
     const profiles = useProfilesState();
-    const exists = profiles.getByID(profile.id);
-    if (exists) {
+    if (profiles.exists(profile.id)) {
       throw new Error('Profile is already saved');
     }
-
     await AsyncStorage.setItem(profile.id, JSON.stringify(profile));
     profiles.add(profile);
   },
@@ -44,15 +40,14 @@ export const helpers = {
     profiles.delete(id);
   },
   async saveSetting(name: string, value: number) {
+    const rate = useRateState();
     if (name === 'currency') {
-      const rate = useRateState();
       rate.set(value);
     }
     await AsyncStorage.setItem(name, JSON.stringify({ value }));
   },
   resize(size: number) {
-    const scale = useScaleState();
-    return Math.ceil(size * scale.get());
+    return Math.ceil(size * useScaleState().get());
   },
   async loadPreviousGames(id: string): Promise<IInventoryGame[]> {
     const savedKeys = await AsyncStorage.getAllKeys();

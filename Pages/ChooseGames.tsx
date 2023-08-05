@@ -18,7 +18,6 @@ export default function ChooseGames(props: IChooseGamesProps) {
   React.useEffect(() => {
     async function prepare() {
       const previous = await helpers.loadPreviousGames(route.params.steamId);
-      console.log(previous);
       setPreviousGames(previousGames.concat(...previous));
     }
     void prepare();

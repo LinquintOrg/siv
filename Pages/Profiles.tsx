@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Clipboard, View, Image, TouchableOpacity } from 'react-native';
+import { View, Image, TouchableOpacity } from 'react-native';
 import { Icon } from 'react-native-elements';
 import { Snackbar, TextInput } from 'react-native-paper';
 import UserSaves from '../components/UserSaves';
@@ -11,8 +11,12 @@ import NetInfo from '@react-native-community/netinfo';
 import * as Sentry from 'sentry-expo';
 import { IPlayerSummariesResponse, IProfilesProps, ISteamProfile, IVanitySearchResponse } from '../utils/types';
 import Loader from '../components/Loader';
+import Clipboard from '@react-native-community/clipboard';
+import { useProfilesState } from '../utils/store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function StackProfilesMain(props: IProfilesProps) {
+  const profiles = useProfilesState();
   const [ steamIDtyped, setSteamIDtyped ] = React.useState<string>(''); // SteamID value (updates while being typed)
   const [ isLoading, setLoading ] = React.useState(false); // Are search results still loading
   const [ snackError, setSnackError ] = React.useState(false);
@@ -24,11 +28,13 @@ export default function StackProfilesMain(props: IProfilesProps) {
   });
   const [ selectedProfile, setSelectedProfile ] = React.useState<ISteamProfile | undefined>(undefined);
 
-  const getProfileData = async (sid: string) => {
+  const getProfileData = async () => {
     // TODO: use from .env file
     const id = '7401764DA0F7B99794826E9E2512E311';
     setLoading(true);
-    let validValue = helpers.isSteamIDValid(sid);
+    const steamid = steamIDtyped;
+    let validValue = helpers.isSteamIDValid(steamid);
+    let p = { id: '', name: '', public: false, state: 3, url: 'https://inventory.linquint.dev/api/Files/img/profile.png' };
 
     const internetConnection = await NetInfo.fetch();
     if (!(internetConnection.isInternetReachable && internetConnection.isConnected)) {
@@ -37,43 +43,47 @@ export default function StackProfilesMain(props: IProfilesProps) {
       return;
     }
 
-    if (!helpers.isSteamIDValid(sid)) {
+    if (!helpers.isSteamIDValid(steamid)) {
       setProfileSearchText('Finding Steam profile...');
       try {
-        const profileRes = await fetch(`https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${id}&vanityurl=${sid}`);
+        const profileRes = await fetch(`https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${id}&vanityurl=${steamid}`);
         const profileObj = await profileRes.json() as IVanitySearchResponse;
-        if (profileObj.response.success === 0) {
+
+        if (profileObj.response.success == 0) {
           throw new Error('Profile not found');
         }
-        validValue = profileObj.response.success === 1;
-        setProfile({ ...profile, id: profileObj.response.steamid });
+        validValue = true;
+        p = { ...p, id: profileObj.response.steamid };
       } catch (err) {
         setSnackError(true);
         setErrorText((err as Error).message);
         Sentry.React.captureException(err);
         return;
       }
+    } else {
+      p = { ...p, id: steamid };
     }
 
     if (!validValue) {
+      setLoading(false);
       return;
     }
 
-    if (helpers.isSteamIDValid(sid)) {
+    if (helpers.isSteamIDValid(p.id)) {
       setProfileSearchText('Getting Steam profile data...');
       try {
-        const profilesRes = await fetch(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${id}&steamids=${sid}`);
+        const profilesRes = await fetch(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${id}&steamids=${p.id}`);
         const profilesObj = await profilesRes.json() as IPlayerSummariesResponse;
         if (profilesObj.response.players.length === 0) {
           throw new Error('Profile not found');
         }
-        setProfile({
-          ...profile,
+        p = {
+          ...p,
           name: profilesObj.response.players[0].personaname,
           public: profilesObj.response.players[0].communityvisibilitystate === 3,
           state: profilesObj.response.players[0].personastate,
           url: profilesObj.response.players[0].avatarmedium,
-        });
+        };
         setSnackSuccess(true);
         setSuccessText('Profile found');
       } catch (err) {
@@ -85,6 +95,7 @@ export default function StackProfilesMain(props: IProfilesProps) {
         Sentry.React.captureException(err);
       } finally {
         setLoading(false);
+        setProfile(p);
       }
     }
   };
@@ -99,9 +110,8 @@ export default function StackProfilesMain(props: IProfilesProps) {
     setProfileModalVisible(!isProfileModalVisible);
   };
 
-  // ! Clipboard is deprecated. Use '@react-native-community/clipboard' instead.
   const copyToClipboard = async (copiedText: string | number) => {
-    await Clipboard.setStringAsync(copiedText.toString());
+    Clipboard.setString(copiedText.toString());
     setSnackSuccess(true);
     setSuccessText('SteamID64 copied to clipboard');
     await helpers.sleep(3000);
@@ -113,6 +123,24 @@ export default function StackProfilesMain(props: IProfilesProps) {
     setErrorText('Selected profile privacy is set to PRIVATE');
   }
 
+  // async function saveProfile() {
+  //   const profileToSave = profile;
+  //   if (profileToSave.public) {
+  //     await helpers.saveProfile(profileToSave);
+  //     return;
+  //   }
+  //   setSnackError(true);
+  //   setErrorText('Profile privacy is set to PRIVATE');
+  // }
+
+  async function saveProfile() {
+    if (profiles.exists(profile.id)) {
+      throw new Error('Profile is already saved');
+    }
+    await AsyncStorage.setItem(profile.id, JSON.stringify(profile));
+    profiles.add(profile);
+  }
+
   return (
     <View style={{ height: '100%' }}>
       <View style={global.inputView}>
@@ -121,7 +149,7 @@ export default function StackProfilesMain(props: IProfilesProps) {
           placeholder='Enter SteamID64'
           mode={'outlined'}
           onChangeText={text => setSteamIDtyped(text)}
-          onSubmitEditing={() => void getProfileData(steamIDtyped)}
+          onSubmitEditing={() => void getProfileData()}
           label={'Steam ID64'}
           activeOutlineColor={ colors.primary }
           left={
@@ -137,7 +165,7 @@ export default function StackProfilesMain(props: IProfilesProps) {
               icon={() => (<Icon name={'search'} type={'feather'} color={'#1F4690'} />)}
               size={ variables.iconLarge }
               style={ global.inputIcon }
-              onPress={() => void getProfileData(steamIDtyped) }
+              onPress={() => void getProfileData() }
               forceTextInputFocus={false}
             />
           }
@@ -156,23 +184,24 @@ export default function StackProfilesMain(props: IProfilesProps) {
         isLoading ?
           <Loader text={ profileSearchText } /> :
           <View style={[ styles.profileSearch.section, (profile.name === '' && profile.id === '') && { display: 'none' } ]}>
-            <Image style={styles.profileSearch.image} source={{ uri: profile.url }}/>
-            <View style={styles.profileSearch.flowDown}>
-              <Text bold style={styles.profileSearch.profileID}>{ profile.id }</Text>
-              <Text bold style={styles.profileSearch.profileName}>{ profile.name }</Text>
-
-              <View style={styles.profileSearch.flowRow}>
-                <TouchableOpacity style={global.buttonSmall} onPress={() => props.navigation.navigate('Games', { steamId: profile.id })}
-                  disabled={!helpers.isSteamIDValid(profile.id)}>
-                  <Text bold style={global.buttonText}>Load</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={global.buttonSmall}
-                  onPress={() => void helpers.saveProfile(profile)}
-                  disabled={!helpers.isSteamIDValid(profile.id)}>
-                  <Text bold style={global.buttonText}>Save</Text>
-                </TouchableOpacity>
+            <View style={global.row}>
+              <Image style={styles.profileSearch.image} source={{ uri: profile.url }}/>
+              <View style={styles.profileSearch.flowDown}>
+                <Text bold style={styles.profileSearch.profileName}>{ profile.name }</Text>
+                <Text bold style={styles.profileSearch.profileID}>{ profile.id }</Text>
               </View>
+            </View>
+            <View style={[ global.smallButtonRow, { marginTop: helpers.resize(8) } ]}>
+              <TouchableOpacity style={global.buttonSmall} onPress={() => props.navigation.navigate('Games', { steamId: profile.id })}
+                disabled={!helpers.isSteamIDValid(profile.id)}>
+                <Text bold style={global.buttonText}>Load</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={global.buttonSmall}
+                onPress={() => void saveProfile()}
+                disabled={!helpers.isSteamIDValid(profile.id)}>
+                <Text bold style={global.buttonText}>Save</Text>
+              </TouchableOpacity>
             </View>
           </View>
       }

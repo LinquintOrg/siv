@@ -2,6 +2,8 @@ import { ImmutableObject, State, hookstate, useHookstate } from '@hookstate/core
 import { ICurrency, ISteamProfile } from './types';
 import { Dimensions } from 'react-native';
 
+console.log('store and shit');
+
 const rate = hookstate<number>(46);
 const rates = hookstate<ICurrency[]>([]);
 const profiles = hookstate<ISteamProfile[]>([]);
@@ -31,11 +33,13 @@ const wrapRates = (s: State<ICurrency[]>) => ({
 const wrapProfiles = (s: State<ISteamProfile[]>) => ({
   getAll: () => s.value.map(item => object<ISteamProfile>(item)),
   getByID: (id: string): ISteamProfile | undefined => {
-    return s.value.find(p => p.id === id);
+    const obj = s.value.map(item => object<ISteamProfile>(item));
+    return obj.find(p => p.id === id);
   },
   add: (newProfile: ISteamProfile) => s.set(val => [ ...val, newProfile ]),
   set: (newProfiles: ISteamProfile[]) => s.set(() => newProfiles),
   delete: (id: string) => s.set(val => val.filter(p => !(p.id === id))),
+  exists: (id: string) => s.value.some(p => p.id === id),
 });
 
 const wrapPreloaded = (s: State<boolean>) => ({
@@ -47,8 +51,16 @@ const wrapScale = (s: State<number>) => ({
   get: () => s.value,
 });
 
-export const useRateState = () => wrapRate(rate);
+export const useRateState = () => wrapRate(useHookstate(rate));
 export const useRatesState = () => wrapRates(useHookstate(rates));
 export const useProfilesState = () => wrapProfiles(useHookstate(profiles));
 export const usePreloadedState = () => wrapPreloaded(useHookstate(preloaded));
 export const useScaleState = () => wrapScale(scale);
+
+export function useStore() {
+  useRateState();
+  useRatesState();
+  useProfilesState();
+  usePreloadedState();
+  useScaleState();
+}

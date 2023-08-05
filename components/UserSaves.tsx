@@ -8,12 +8,13 @@ import Loader from './Loader';
 
 export default function (props: IUserSavesProps) {
   const { navigation, displayErr, toggleModal } = props;
-  const profiles = useProfilesState();
-  const preload = usePreloadedState();
   const [ scale ] = useState(Dimensions.get('window').width / 423);
   const resize = (size: number) => {
     return Math.ceil(size * scale);
   };
+
+  const preload = usePreloadedState();
+  const profiles = useProfilesState();
 
   return (
     <ScrollView style={{ height: '100%' }}>
