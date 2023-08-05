@@ -106,7 +106,9 @@ export default function MusicKits() {
     });
   }
 
-  // TODO: Replace ActivityIndicator elements with Loader component
+  // TODO: Replace ActivityIndicator elements with Loader components
+
+  // TODO: Fix music kit page rerendering every second for some reason
   return (
     (loading) ?
       <View style={[ global.column, { alignSelf: 'center', width: helpers.resize(300) } ]}>

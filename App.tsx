@@ -41,7 +41,8 @@ function App() {
   const rates = useRatesState();
   const preload = usePreloadedState();
 
-  // ! For some reason it is not loaded
+  // TODO: Load custom fonts, preferably Nunito
+
   // const [ fontsLoaded ] = useFonts({
   //   Nunito: require('./assets/fonts/Nunito-Regular.ttf'),
   //   NunitoBold: require('./assets/fonts/Nunito-Bold.ttf'),

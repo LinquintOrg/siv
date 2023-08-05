@@ -6,6 +6,8 @@ import { ActivityIndicator } from 'react-native-paper';
 import { IActionListProps } from '../utils/types';
 
 export default function (props: IActionListProps) {
+  // TODO: Improve the look of the actions list
+
   const { steamid, list, act } = props;
   const [ scale ] = useState(Dimensions.get('window').width / 423);
   const resize = (size: number) => {
@@ -64,6 +66,8 @@ export default function (props: IActionListProps) {
     </ScrollView>
   );
 }
+
+// TODO: Move action list styles to global.ts
 
 const resize = (size: number) => {
   const scale = Dimensions.get('window').width / 423;

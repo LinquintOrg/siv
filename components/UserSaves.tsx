@@ -16,6 +16,8 @@ export default function (props: IUserSavesProps) {
   const preload = usePreloadedState();
   const profiles = useProfilesState();
 
+  // TODO: Remove divider and use the secondary color for the user container background
+
   return (
     <ScrollView style={{ height: '100%' }}>
       <View>
@@ -58,6 +60,7 @@ export default function (props: IUserSavesProps) {
 }
 
 // TODO: Move user saves component styles to global.ts
+
 const resize = (size: number) => {
   const scale = Dimensions.get('window').width / 423;
   return Math.ceil(size * scale);

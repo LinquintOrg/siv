@@ -6,6 +6,7 @@ import Text from '../Elements/text';
 
 export default function Loader(props: ILoaderProps) {
   // TODO: Improve by adding more options for loader size and perhaps color
+
   return (
     <View style={ styles.loader.container }>
       <ActivityIndicator size="small" color={ colors.primary } />

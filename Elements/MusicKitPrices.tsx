@@ -33,7 +33,8 @@ export default function(props: IMusicKitPricesProps) {
     if (pNormal !== undefined && pStat !== undefined) break;
   }
 
-  // TODO: Something wrong with styles here :(. Nvm, I don't remember what were wrong with them
+  // TODO: Move styles to global.ts
+
   const styles = StyleSheet.create({
     price: {
       fontSize: 14,

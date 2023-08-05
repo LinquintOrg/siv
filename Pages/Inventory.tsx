@@ -89,7 +89,7 @@ export default function Inventory(props: IInventoryPageProps) {
         setSnackError('No internet connection');
         setSnackbarVisible(true);
         await helpers.waitUntil(() => !!internetConnection.isInternetReachable && internetConnection.isConnected, 40);
-        // TODO: Hide error snackbar and display success snackbar with message 'Connected to internet' or something similar
+        // TODO: Hide error snackbar and display success snackbar with message 'Connected to the internet' or something similar
         setSnackbarVisible(false);
       }
 

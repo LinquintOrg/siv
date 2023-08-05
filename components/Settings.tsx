@@ -8,6 +8,8 @@ import { useRateState, useRatesState } from '../utils/store';
 import { helpers } from '../utils/helpers';
 
 export default function () {
+  // TODO: Replace deprecated expo-clipboard library with community library
+
   const [ scale ] = useState(Dimensions.get('window').width / 423);
   const resize = (size: number) => {
     return Math.ceil(size * scale);

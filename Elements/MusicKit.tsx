@@ -9,6 +9,8 @@ export default function MusicKit(props: IMusicKitProps) {
   const { item, prices, search, play } = props;
   const imgNotFound = 'https://inventory.linquint.dev/api/Files/img/no-photo.png';
 
+  // TODO: Music kit container does not take up full width as it should, might be rerender related problem
+
   if (item.artist.toLowerCase().includes(search.toLowerCase()) || item.song.toLowerCase().includes(search.toLowerCase())) {
     return (
       <TouchableOpacity
