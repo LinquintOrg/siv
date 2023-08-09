@@ -13,7 +13,7 @@ export default function (props: ITextProps) {
   // }
 
   return (
-    <Text {...newProps} style={[ style/*, font*/ ]}>
+    <Text {...newProps} style={[ style, bold ? { fontWeight: 'bold' } : {} ]}>
       {children}
     </Text>
   );

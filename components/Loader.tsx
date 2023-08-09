@@ -10,7 +10,7 @@ export default function Loader(props: ILoaderProps) {
   return (
     <View style={ styles.loader.container }>
       <ActivityIndicator size="small" color={ colors.primary } />
-      { props.text && <Text bold style={ styles.loader.text }>{ props.text }</Text> }
+      { props.text && <Text style={ styles.loader.text }>{ props.text }</Text> }
     </View>
   );
 }

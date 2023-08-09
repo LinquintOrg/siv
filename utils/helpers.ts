@@ -1,6 +1,8 @@
+import { colors } from './../styles/global';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useScaleState } from './store.ts';
-import { IInventoryGame, IInventoryResAsset, IInventoryResDescriptionDescription, ISteamProfile } from './types.ts';
+import { IInventory, IInventoryGame, IInventoryItem, IInventoryResAsset, IInventoryResDescriptionDescription, IInventoryResDescriptionTag,
+  ISteamProfile } from './types.ts';
 
 /**
  * ! Helper functions should not be used with states store
@@ -44,6 +46,9 @@ export const helpers = {
   resize(size: number) {
     return Math.ceil(size * useScaleState().get());
   },
+  capitalize(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  },
   async loadPreviousGames(id: string): Promise<IInventoryGame[]> {
     const savedKeys = await AsyncStorage.getAllKeys();
     const savedGamesKey = savedKeys.find(key => key === `prevGames${id}`);
@@ -69,11 +74,15 @@ export const helpers = {
     const count = (html.match(/img/g) || []).length;
     const type = (html.match('Sticker')) ? 'sticker' : 'patch';
 
+    if (count === 0) {
+      return undefined;
+    }
+
     // eslint-disable-next-line max-len
-    html = html.replaceAll(`<br><div id="sticker_info" name="sticker_info" title="${type.toUpperCase()}" style="border: 2px solid rgb(102, 102, 102); border-radius: 6px; width=100; margin:4px; padding:8px;"><center>`, '');
+    html = html.replaceAll(`<br><div id="sticker_info" name="sticker_info" title="${this.capitalize(type)}" style="border: 2px solid rgb(102, 102, 102); border-radius: 6px; width=100; margin:4px; padding:8px;"><center>`, '');
     html = html.replaceAll('</center></div>', '');
     html = html.replaceAll('<img width=64 height=48 src="', '');
-    html = html.replaceAll(`<br>${type.toUpperCase()}: `, '');
+    html = html.replaceAll(`<br>${this.capitalize(type)}: `, '');
     html = html.replaceAll('">', ';');
 
     let tmpArr = html.split(';');
@@ -93,5 +102,49 @@ export const helpers = {
     }
 
     return { type, sticker_count: count, stickers: tmpStickers };
+  },
+  pastelify(color: string, white = 255) {
+    if (!color) {
+      return colors.text;
+    }
+    color = color.replace('#', '');
+    const matched = Array.from(color.match(/.{1,2}/g)!);
+    const rgb: number[] = [];
+    matched.forEach(c => rgb.push(Math.ceil((parseInt(c, 16) + white) / 2)));
+    return `rgb(${rgb.join(',')})`;
+  },
+  inventory: {
+    getRarity(tags: IInventoryResDescriptionTag[]) {
+      return tags.find(tag => tag.category.toLowerCase() === 'rarity')?.localized_tag_name;
+    },
+    getRarityColor(tags: IInventoryResDescriptionTag[]) {
+      return tags.find(tag => tag.category.toLowerCase() === 'rarity')?.color || colors.textAccent;
+    },
+    isEmpty(inventory: IInventory) {
+      let len = 0;
+      Object.keys(inventory).forEach(key => {
+        len += inventory[parseInt(key, 10)].items.length;
+      });
+      return len === 0;
+    },
+    itemType(item: IInventoryItem): string {
+      if (item.appid === 232090) {
+        return 'None';
+      }
+      if (item.tags) {
+        return item.tags[0].localized_tag_name;
+      }
+      if (item.type) {
+        return item.type;
+      }
+      return 'None';
+    },
+    gameItemsPrice(items: IInventoryItem[]): number {
+      let price = 0;
+      items.forEach(item => {
+        price += item.price.price * item.amount;
+      });
+      return price;
+    },
   },
 };

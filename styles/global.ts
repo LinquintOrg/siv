@@ -39,16 +39,21 @@ export const templates = StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
   },
+  actionButton: {
+    bottom: resize(80),
+    position: 'absolute',
+    backgroundColor: colors.secondary,
+    borderRadius: resize(16),
+  },
 });
 
 export const global = StyleSheet.create({
   rowContainer: {
+    ...templates.row,
     marginTop: resize(8),
     marginBottom: resize(8),
     width: resize(400),
     alignItems: 'center',
-    display: 'flex',
-    flexDirection: 'row',
     borderRadius: resize(12),
     alignSelf: 'center',
     padding: resize(8),
@@ -67,7 +72,7 @@ export const global = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'center',
-    marginBottom: resize(8),
+    marginVertical: resize(8),
   },
   input: {
     width: resize(400),
@@ -102,7 +107,6 @@ export const global = StyleSheet.create({
   buttonText: {
     color: colors.white,
     fontSize: resize(20),
-    fontWeight: 'bold',
   },
   snackbarText: {
     fontSize: resize(16),
@@ -119,6 +123,68 @@ export const global = StyleSheet.create({
   smallButtonRow: {
     ...templates.row,
     justifyContent: 'space-evenly',
+  },
+  header: {
+    ...templates.row,
+    width: resize(400),
+    alignSelf: 'center',
+    padding: resize(12),
+    backgroundColor: colors.textAccent,
+    marginBottom: resize(8),
+    alignContent: 'center',
+    borderRadius: resize(16),
+    gap: resize(8),
+  },
+  headerTitle: {
+    fontSize: resize(20),
+    color: colors.white,
+  },
+  headerImage: {
+    width: resize(48),
+    aspectRatio: 1,
+    borderRadius: resize(10),
+  },
+  wrapRow: {
+    ...templates.row,
+    flexWrap: 'wrap',
+    gap: resize(8),
+  },
+  actionButtonLeft: {
+    ...templates.actionButton,
+    left: resize(12),
+  },
+  actionButtonRight: {
+    ...templates.actionButton,
+    right: resize(12),
+  },
+  modal: {
+    ...templates.column,
+    borderRadius: resize(16),
+    padding: resize(8),
+    backgroundColor: colors.background,
+    maxHeight: '80%',
+    width: resize(400),
+    alignSelf: 'center',
+  },
+  modalButton: {
+    ...templates.button,
+    backgroundColor: colors.background,
+    borderColor: colors.primary,
+    borderWidth: resize(2),
+    margin: resize(8),
+  },
+  modalButtonActive: {
+    backgroundColor: colors.primary,
+  },
+  modalButtonText: {
+    height: templates.button.height,
+    fontSize: resize(16),
+    color: colors.primary,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+  },
+  modalButtonTextActive: {
+    color: colors.white,
   },
 });
 
@@ -163,7 +229,6 @@ export const styles = {
     profileID: {
       fontSize: resize(16),
       color: colors.textAccent,
-      fontWeight: 'bold',
     },
     flowDown: {
       ...templates.column,
@@ -185,7 +250,6 @@ export const styles = {
     modalUser: {
       fontSize: resize(16),
       color: colors.textAccent,
-      fontWeight: 'bold',
       marginBottom: resize(8),
     },
   }),
@@ -196,8 +260,42 @@ export const styles = {
     },
     appid: {
       fontSize: resize(15),
-      fontWeight: 'bold',
       color: colors.textAccent,
+    },
+  }),
+  inventory: StyleSheet.create({
+    itemContainer: {
+      ...templates.row,
+      marginVertical: resize(8),
+      width: resize(400),
+      alignContent: 'center',
+      borderRadius: resize(16),
+      alignSelf: 'center',
+      padding: resize(8),
+      backgroundColor: colors.background,
+    },
+    pill: {
+      fontSize: resize(14),
+      color: colors.textAccent,
+      backgroundColor: colors.white,
+      paddingHorizontal: resize(8),
+      paddingVertical: resize(4),
+      borderRadius: 50,
+      textAlign: 'center',
+    },
+    itemName: {
+      fontSize: resize(16),
+      color: colors.textAccent,
+    },
+    priceSingle: {
+      fontSize: resize(14),
+      color: colors.textAccent,
+      textAlign: 'center',
+    },
+    priceTotal: {
+      fontSize: resize(18),
+      color: colors.text,
+      textAlign: 'center',
     },
   }),
   loader: StyleSheet.create({

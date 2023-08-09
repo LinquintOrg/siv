@@ -202,6 +202,7 @@ export interface IInventoryResponse {
 }
 
 export interface IInventoryOmittedItem {
+  appid: number;
   classid: string;
   instanceid: string;
   icon_urL: string;
@@ -212,6 +213,7 @@ export interface IInventoryOmittedItem {
   market_name: string;
   commodity: number;
   marketable: number;
+  fraudwarnings?: string[];
   descriptions: IInventoryResDescriptionDescription[];
   owner_descriptions: { type: string; value: string; color?: string }[];
   tags: IInventoryResDescriptionTag[];
@@ -221,8 +223,39 @@ export interface IInventoryOmittedItemAmount extends IInventoryOmittedItem {
   amount: number;
 }
 
-export interface IInventoryItem extends IInventoryOmittedItem {
+export interface IPriceBase {
+  found: boolean;
+}
 
+export interface IPrice extends IPriceBase {
+  price: number;
+  listed: number;
+  ago: number;
+  avg24: number;
+  avg7: number;
+  avg30: number;
+  min: number;
+  max: number;
+  p30ago: number;
+  p24ago: number;
+  p90ago: number;
+}
+
+export interface IPricesResponse {
+  [appid: string]: {
+    [hash: string]: IPriceBase | IPrice;
+  }
+}
+
+export interface ISticker {
+  type: string;
+  sticker_count: number;
+  stickers: { name: string; img: string; long_name: string; }[];
+}
+
+export interface IInventoryItem extends IInventoryOmittedItemAmount {
+  price: IPrice;
+  stickers?: ISticker;
 }
 
 export interface IInventoryBase {
@@ -230,4 +263,16 @@ export interface IInventoryBase {
     count: number;
     items: IInventoryOmittedItemAmount[];
   }
+}
+
+export interface IInventory extends IInventoryBase {
+  [appid: number]: {
+    count: number;
+    items: IInventoryItem[];
+  }
+}
+
+export interface IGameExtended extends IInventoryGame {
+  price: number;
+  items: number;
 }

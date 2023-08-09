@@ -185,7 +185,7 @@ export default function StackProfilesMain(props: IProfilesProps) {
         />
       </View>
       <View style={[ global.row, styles.profileSearch.type, { justifyContent: 'space-between' } ]}>
-        <Text bold>Search by: { /[a-zA-Z]+/.test(steamIDtyped) ? 'CustomURL' : 'SteamID64' }</Text>
+        <Text>Searching by <Text bold>{ /[a-zA-Z]+/.test(steamIDtyped) ? 'CustomURL' : 'SteamID64' }</Text></Text>
         <Text style={[ steamIDtyped.length === 17 ? { color: colors.success }
           : { color: colors.error } ]}
         >
