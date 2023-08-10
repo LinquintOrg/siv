@@ -8,4 +8,4 @@ Current version on Play store uses Expo 46.
 
 ## How to run?
 
-After pulling the repository, first run ```npm install```, then ```npx expo start```.
+After cloning the repository, first run ```npm install```, then ```npx expo start```.
