@@ -6,6 +6,11 @@ const resize = (size: number) => {
   return Math.ceil(size * scale);
 };
 
+const transparentize = (color: string, opacity: number) => {
+  const alpha = parseInt(String(opacity * 255), 16);
+  return `${color}${alpha}`;
+};
+
 export const colors = {
   text: '#000',
   textAccent: '#444',
@@ -21,6 +26,7 @@ export const colors = {
 export const variables = {
   iconSize: resize(24),
   iconLarge: resize(36),
+  iconXLarge: resize(48),
 };
 
 export const templates = StyleSheet.create({
@@ -162,7 +168,7 @@ export const global = StyleSheet.create({
     borderRadius: resize(16),
     padding: resize(8),
     backgroundColor: colors.background,
-    maxHeight: '80%',
+    maxHeight: '85%',
     width: resize(400),
     alignSelf: 'center',
   },
@@ -185,6 +191,27 @@ export const global = StyleSheet.create({
   },
   modalButtonTextActive: {
     color: colors.white,
+  },
+  width50: {
+    width: '50%',
+  },
+  width33: {
+    width: '33.3%',
+  },
+  width100: {
+    width: '100%',
+  },
+  pcIncrease: {
+    backgroundColor: '#7fff7f',
+    color: '#336433',
+  },
+  pcDecrease: {
+    backgroundColor: '#ff7f7f',
+    color: '#663333',
+  },
+  pcUnchanged: {
+    backgroundColor: '#ff9f7f',
+    color: '#664033',
   },
 });
 
@@ -295,6 +322,43 @@ export const styles = {
     priceTotal: {
       fontSize: resize(18),
       color: colors.text,
+      textAlign: 'center',
+    },
+    itemImage: {
+      width: resize(216),
+      height: resize(216),
+      borderWidth: resize(2),
+      borderRadius: resize(12),
+      backgroundColor: colors.background,
+      marginVertical: resize(8),
+      alignSelf: 'center',
+    },
+    stickerImage: {
+      height: variables.iconXLarge,
+      width: variables.iconXLarge,
+      marginRight: resize(8),
+      borderRadius: resize(8),
+      backgroundColor: colors.white,
+    },
+    stickersSection: {
+      ...templates.column,
+      gap: resize(8),
+      padding: resize(8),
+      borderRadius: resize(16),
+      backgroundColor: transparentize(colors.secondary, 0.25),
+    },
+    itemModalTitle: {
+      textAlign: 'center',
+      fontSize: resize(20),
+      marginVertical: resize(8),
+    },
+    dismissHint: {
+      marginTop: resize(32),
+      backgroundColor: colors.secondary,
+      paddingVertical: resize(16),
+      paddingHorizontal: resize(8),
+      borderRadius: resize(12),
+      fontSize: resize(16),
       textAlign: 'center',
     },
   }),

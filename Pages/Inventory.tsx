@@ -1,39 +1,26 @@
-import {
-  ActivityIndicator,
-  Dimensions, FlatList,
-  Image,
-  LayoutAnimation,
-  Platform,
-  Pressable, SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  UIManager,
-  View,
-  SectionList,
-  SectionListData,
-} from 'react-native';
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Dimensions, Image, Platform, Pressable, SafeAreaView, StyleSheet, TouchableOpacity, UIManager, View, SectionList,
+  NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
 import gamesJson from '../assets/inv-games.json';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
-import { Divider, Icon } from 'react-native-elements';
-import { Dropdown } from 'react-native-element-dropdown';
-import { Portal, Provider, Snackbar, FAB, AnimatedFAB } from 'react-native-paper';
+import { Snackbar, AnimatedFAB } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import Text from '../Elements/text';
 import Modal from 'react-native-modal';
-import * as Clipboard from 'expo-clipboard';
 import cloneDeep from 'lodash';
 import { TextInput } from 'react-native-paper';
 import ActionList from '../Elements/actionList';
 import Summary from '../Elements/Inventory/Summary';
-import { GestureHandlerRootView, NativeViewGestureHandler } from 'react-native-gesture-handler';
-import { IGameExtended, IInventory, IInventoryBase, IInventoryGame, IInventoryItem, IInventoryOmittedItem, IInventoryOmittedItemAmount, IInventoryPageProps, IInventoryResponse, IPrice, IPriceBase, IPricesResponse } from '../utils/types';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { IGameExtended, IInventory, IInventoryBase, IInventoryGame, IInventoryItem, IInventoryOmittedItem, IInventoryOmittedItemAmount,
+  IInventoryPageProps, IInventoryResponse, IPrice, IPricesResponse } from '../utils/types';
 import { useProfilesState, useRateState, useRatesState } from '../utils/store';
 import * as Sentry from 'sentry-expo';
 import { helpers } from '../utils/helpers';
 import Loader from '../components/Loader';
 import { colors, global, styles, variables } from '../styles/global';
+import Item from '../components/Item';
+import { Icon } from 'react-native-elements';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -130,6 +117,7 @@ export default function Inventory(props: IInventoryPageProps) {
 
         await helpers.sleep(1000);
         const invObj = await getInventoryPrices();
+        // TODO: Before creating a renderable section list, calculate statistics
         createRenderable(invObj);
       } catch (err) {
         setErrorText((err as Error).message);
@@ -567,18 +555,29 @@ export default function Inventory(props: IInventoryPageProps) {
   // loadInventory();
 
   const scrollRef = useRef<SectionList>(null);
+  const sheetRef = React.createRef();
+  const [ isExpanded, setIsExpanded ] = useState(true);
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const currentScrollPosition = Math.floor(e.nativeEvent.contentOffset.y) ?? 0;
+    setIsExpanded(currentScrollPosition <= 0);
+  };
 
   const [ filterVisible, setFilterVisible ] = useState(false);
   const [ orderVisible, setOrderVisible ] = useState(false);
   const [ itemVisible, setItemVisible ] = useState(false);
-  const [ modalItem, setModalItem ] = useState({ price: { found: false } });
+  const [ modalItem, setModalItem ] = useState<IInventoryItem>();
 
   const [ sortBy, setSortBy ] = useState(0);
   const [ sortOrder, setSortOrder ] = useState(0);
+  const [ sortUsePercent, setSortUsePercent ] = useState(false);
 
   const [ renderUnsellable, setRenderUnsellable ] = useState(false);
   const [ renderNameTag, setRenderNameTag ] = useState(false);
   const [ renderAppliedSticker, setRenderAppliedSticker ] = useState(false);
+
+  // TODO: Sort by percentage is not visible when 24 hours are selected
+
+  // TODO: when sorting by percentage (probably) 90 days, it seems like it's not very accurate. Test it
 
   const changeSortBy = (sort: number) => {
     if (sort !== sortBy) {
@@ -604,6 +603,30 @@ export default function Inventory(props: IInventoryPageProps) {
         if (sort === 3) {
           game.items.sort((a, b) => {
             if (a.price.found && b.price.found) return b.price.price * b.amount - a.price.price * a.amount;
+            if (!a.price.found && !b.price.found) return 0;
+            if (!a.price.found) return 1;
+            else return -1;
+          });
+        }
+
+        if (sort === 4) {
+          game.items.sort((a, b) => {
+            if (a.price.found && b.price.found) {
+              if (sortUsePercent) return (b.price.price / b.price.p24ago - 1) - (a.price.price / a.price.p24ago - 1);
+              return (b.price.price - b.price.p24ago) - (a.price.price - a.price.p24ago);
+            }
+            if (!a.price.found && !b.price.found) return 0;
+            if (!a.price.found) return 1;
+            else return -1;
+          });
+        }
+
+        if (sort === 5) {
+          game.items.sort((a, b) => {
+            if (a.price.found && b.price.found) {
+              if (sortUsePercent) return (b.price.price / b.price.p90ago - 1) - (a.price.price / a.price.p90ago - 1);
+              return (b.price.price - b.price.p90ago) - (a.price.price - a.price.p90ago);
+            }
             if (!a.price.found && !b.price.found) return 0;
             if (!a.price.found) return 1;
             else return -1;
@@ -724,21 +747,21 @@ export default function Inventory(props: IInventoryPageProps) {
     if (oldPrice > 0 && currentPrice > 0) {
       if (oldPrice > currentPrice) {
         return (
-          <Text bold style={[ styles.inventory.pill, stylesLocal.pcDecrease, (removeBg ? { backgroundColor: '#ffffff00', width: '33.3%' } : {}) ]}>
+          <Text bold style={[ styles.inventory.pill, global.pcDecrease, (removeBg ? { backgroundColor: '#ffffff00', width: '33.3%' } : {}) ]}>
             <Text>{ (((currentPrice - oldPrice) / oldPrice) * 100).toFixed(1) }%</Text>
           </Text>
         );
       }
       if (oldPrice < currentPrice) {
         return (
-          <Text bold style={[ styles.inventory.pill, stylesLocal.pcIncrease, (removeBg ? { backgroundColor: '#ffffff00', width: '33.3%' } : {}) ]}>
+          <Text bold style={[ styles.inventory.pill, global.pcIncrease, (removeBg ? { backgroundColor: '#ffffff00', width: '33.3%' } : {}) ]}>
             <Text>+{ (((currentPrice - oldPrice) / oldPrice) * 100).toFixed(1) }%</Text>
           </Text>
         );
       }
     }
     return (
-      <Text bold style={[ styles.inventory.pill, stylesLocal.pcUnchanged, (removeBg ? { backgroundColor: '#ffffff00', width: '33.3%' } : {}) ]}>
+      <Text bold style={[ styles.inventory.pill, global.pcUnchanged, (removeBg ? { backgroundColor: '#ffffff00', width: '33.3%' } : {}) ]}>
         <Text>0%</Text>
       </Text>
     );
@@ -746,20 +769,6 @@ export default function Inventory(props: IInventoryPageProps) {
 
   const [ fabVisible, setFabVisible ] = useState(false);
   const [ showSheet, setShowSheet ] = useState(false);
-  const sheetRef = React.createRef();
-  const [ isExpanded, setIsExpanded ] = useState(true);
-  const onScroll = ({ nativeEvent }) => {
-    const currentScrollPosition = Math.floor(nativeEvent?.contentOffset?.y) ?? 0;
-    setIsExpanded(currentScrollPosition <= 0);
-  };
-
-  const getAppliedValue = (applied) => {
-    let tmpPrice = 0.0;
-    applied.forEach(apply => {
-      tmpPrice += (Math.round(stickerPrices[apply.long_name].Price * 100 * rate)) / 100;
-    });
-    return tmpPrice;
-  };
 
   // TODO: loading screen should be improved. Maybe use Action list component.
   return (
@@ -943,7 +952,15 @@ export default function Inventory(props: IInventoryPageProps) {
                       </TouchableOpacity>
 
                       <TouchableOpacity style={[ global.modalButton, sortBy === 3 ? global.modalButtonActive : {} ]} onPress={() => changeSortBy(3)}>
-                        <Text bold style={[ global.modalButtonText, sortBy === 3 ? global.modalButtonTextActive : {} ]}>Total Price</Text>
+                        <Text bold style={[ global.modalButtonText, sortBy === 3 ? global.modalButtonTextActive : {} ]}>Total price</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity style={[ global.modalButton, sortBy === 4 ? global.modalButtonActive : {} ]} onPress={() => changeSortBy(4)}>
+                        <Text bold style={[ global.modalButtonText, sortBy === 4 ? global.modalButtonTextActive : {} ]}>24 hour price change</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity style={[ global.modalButton, sortBy === 5 ? global.modalButtonActive : {} ]} onPress={() => changeSortBy(5)}>
+                        <Text bold style={[ global.modalButtonText, sortBy === 5 ? global.modalButtonTextActive : {} ]}>90 day price change</Text>
                       </TouchableOpacity>
                     </View>
 
@@ -952,18 +969,35 @@ export default function Inventory(props: IInventoryPageProps) {
 
                       <TouchableOpacity style={[ global.modalButton, sortOrder === 0 ? global.modalButtonActive : {} ]} onPress={() => changeSortOrder(0)}>
                         <Text bold style={[ global.modalButtonText, sortOrder === 0 ? global.modalButtonTextActive : {} ]}>{
-                          sortBy === 0 ? 'Newest first' : sortBy === 1 ? 'A to Z' : 'Expensive first'
+                          sortBy === 0 ? 'Newest first' : sortBy === 1 ? 'A to Z' : sortBy === 2 || sortBy === 3 ? 'Expensive first' : 'Profit first'
                         }</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity style={[ global.modalButton, sortOrder === 1 ? global.modalButtonActive : {} ]} onPress={() => changeSortOrder(1)}>
                         <Text bold style={[ global.modalButtonText, sortOrder === 1 ? global.modalButtonTextActive : {} ]}>{
-                          sortBy === 0 ? 'Oldest first' : sortBy === 1 ? 'Z to A' : 'Cheapest first'
+                          sortBy === 0 ? 'Oldest first' : sortBy === 1 ? 'Z to A' : sortBy === 2 || sortBy === 3 ? 'Cheapest first' : 'Loss first'
                         }</Text>
                       </TouchableOpacity>
+
+                      {
+                        sortBy === 4 || sortBy === 5 &&
+                        <TouchableOpacity style={[ global.modalButton, global.modalButtonActive ]} onPress={() => setSortUsePercent(!sortUsePercent)}>
+                          <Text bold style={[ global.modalButtonText, sortUsePercent ? global.modalButtonTextActive : {} ]}>Change in %</Text>
+                        </TouchableOpacity>
+                      }
                     </View>
                   </View>
                 </SafeAreaView>
+              </Modal>
+
+              <Modal
+                isVisible={itemVisible}
+                onBackdropPress={() => setItemVisible(false)}
+                animationIn={'rubberBand'}
+                animationOut={'fadeOutDown'}
+                animationInTiming={200}
+              >
+                <Item item={modalItem} stickerPrices={stickerPrices} />
               </Modal>
             </>
           }
@@ -1258,11 +1292,11 @@ export default function Inventory(props: IInventoryPageProps) {
   //               </View> : null
   //             }
 
-  //             <Image
-  //               source={{ uri: 'https://community.cloudflare.steamstatic.com/economy/image/' + modalItem.image }}
-  //               resizeMode={'contain'}
-  //               style={[ styles.itemIcon, (modalItem.rarity_color != null) ? { borderColor: modalItem.rarity_color } : null ]}
-  //             />
+  // <Image
+  //   source={{ uri: 'https://community.cloudflare.steamstatic.com/economy/image/' + modalItem.image }}
+  //   resizeMode={'contain'}
+  //   style={[ styles.itemIcon, (modalItem.rarity_color != null) ? { borderColor: modalItem.rarity_color } : null ]}
+  // />
 
   //             {modalItem.stickers != null ?
   //               <View style={styles.column}>
@@ -1314,45 +1348,45 @@ export default function Inventory(props: IInventoryPageProps) {
   //                     <Text style={styles.itemModalListed}>listings on Steam Market</Text>
   //                   </View>
 
-  //                   <View style={[ styles.row, { justifyContent: 'space-evenly', marginTop: resize(4) } ]}>
-  //                     <Text style={styles.itemModalAvgTitle}>Min price</Text>
-  //                     <Text style={styles.itemModalAvgTitle}>Max price</Text>
-  //                   </View>
+  // <View style={[ styles.row, { justifyContent: 'space-evenly', marginTop: resize(4) } ]}>
+  //   <Text style={styles.itemModalAvgTitle}>Min price</Text>
+  //   <Text style={styles.itemModalAvgTitle}>Max price</Text>
+  // </View>
 
-  //                   <View style={[ styles.row, { justifyContent: 'space-evenly' } ]}>
-  //                     <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.min * rate).toFixed(2) }</Text>
-  //                     <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.max * rate).toFixed(2) }</Text>
-  //                   </View>
+  // <View style={[ styles.row, { justifyContent: 'space-evenly' } ]}>
+  //   <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.min * rate).toFixed(2) }</Text>
+  //   <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.max * rate).toFixed(2) }</Text>
+  // </View>
 
-  //                   <View style={[ styles.row, { justifyContent: 'space-evenly', marginTop: resize(4) } ]}>
-  //                     <Text style={styles.itemModalAvgTitle}>24 hours ago</Text>
-  //                     <Text style={styles.itemModalAvgTitle}>30 days ago</Text>
-  //                     <Text style={styles.itemModalAvgTitle}>90 days ago</Text>
-  //                   </View>
+  // <View style={[ styles.row, { justifyContent: 'space-evenly', marginTop: resize(4) } ]}>
+  //   <Text style={styles.itemModalAvgTitle}>24 hours ago</Text>
+  //   <Text style={styles.itemModalAvgTitle}>30 days ago</Text>
+  //   <Text style={styles.itemModalAvgTitle}>90 days ago</Text>
+  // </View>
 
-  //                   <View style={[ styles.row, { justifyContent: 'space-evenly' } ]}>
-  //                     <Text bold style={styles.itemModalPriceHistory}>{ curr } { (modalItem.price.p24ago * rate).toFixed(2) }</Text>
-  //                     <Text bold style={styles.itemModalPriceHistory}>{ curr } { (modalItem.price.p30ago * rate).toFixed(2) }</Text>
-  //                     <Text bold style={styles.itemModalPriceHistory}>{ curr } { (modalItem.price.p90ago * rate).toFixed(2) }</Text>
-  //                   </View>
+  // <View style={[ styles.row, { justifyContent: 'space-evenly' } ]}>
+  //   <Text bold style={styles.itemModalPriceHistory}>{ curr } { (modalItem.price.p24ago * rate).toFixed(2) }</Text>
+  //   <Text bold style={styles.itemModalPriceHistory}>{ curr } { (modalItem.price.p30ago * rate).toFixed(2) }</Text>
+  //   <Text bold style={styles.itemModalPriceHistory}>{ curr } { (modalItem.price.p90ago * rate).toFixed(2) }</Text>
+  // </View>
 
-  //                   <View style={[ styles.row, { justifyContent: 'space-evenly' } ]}>
-  //                     { priceChange(modalItem.price.p24ago * rate, modalItem.price.price * rate, true) }
-  //                     { priceChange(modalItem.price.p30ago * rate, modalItem.price.price * rate, true) }
-  //                     { priceChange(modalItem.price.p90ago * rate, modalItem.price.price * rate, true) }
-  //                   </View>
+  // <View style={[ styles.row, { justifyContent: 'space-evenly' } ]}>
+  //   { priceChange(modalItem.price.p24ago * rate, modalItem.price.price * rate, true) }
+  //   { priceChange(modalItem.price.p30ago * rate, modalItem.price.price * rate, true) }
+  //   { priceChange(modalItem.price.p90ago * rate, modalItem.price.price * rate, true) }
+  // </View>
 
-  //                   <View style={[ styles.row, { justifyContent: 'space-evenly', marginTop: resize(4) } ]}>
-  //                     <Text style={styles.itemModalAvgTitle}>24h average</Text>
-  //                     <Text style={styles.itemModalAvgTitle}>7d average</Text>
-  //                     <Text style={styles.itemModalAvgTitle}>30d average</Text>
-  //                   </View>
+  // <View style={[ styles.row, { justifyContent: 'space-evenly', marginTop: resize(4) } ]}>
+  //   <Text style={styles.itemModalAvgTitle}>24h average</Text>
+  //   <Text style={styles.itemModalAvgTitle}>7d average</Text>
+  //   <Text style={styles.itemModalAvgTitle}>30d average</Text>
+  // </View>
 
-  //                   <View style={[ styles.row, { justifyContent: 'space-evenly', marginBottom: resize(12) } ]}>
-  //                     <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.avg24 * rate).toFixed(3) }</Text>
-  //                     <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.avg7 * rate).toFixed(3) }</Text>
-  //                     <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.avg30 * rate).toFixed(3) }</Text>
-  //                   </View>
+  // <View style={[ styles.row, { justifyContent: 'space-evenly', marginBottom: resize(12) } ]}>
+  //   <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.avg24 * rate).toFixed(3) }</Text>
+  //   <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.avg7 * rate).toFixed(3) }</Text>
+  //   <Text bold style={styles.itemModalAvgValue}>{curr} { (modalItem.price.avg30 * rate).toFixed(3) }</Text>
+  // </View>
 
   //                   <View style={[ styles.row ]}>
   //                     <Text style={styles.itemModalPriceOwned}><Text bold>{ curr } { (modalItem.price.price * rate).toFixed(2) }</Text> x { modalItem.amount }</Text>
@@ -1515,6 +1549,8 @@ export default function Inventory(props: IInventoryPageProps) {
 //         </Pressable>
 //     )
 // }
+
+// TODO: remove local styles. If necessary, add them to global styles.
 
 const resize = (size) => {
   const scale = Dimensions.get('window').width / 423;

@@ -113,6 +113,23 @@ export const helpers = {
     matched.forEach(c => rgb.push(Math.ceil((parseInt(c, 16) + white) / 2)));
     return `rgb(${rgb.join(',')})`;
   },
+  transparentize(color: string, opacity: number) {
+    const alpha = (Math.round(opacity * 255)).toString(16);
+    const opaqueColor = `${color}${alpha}`;
+    if (opaqueColor.includes('#')) {
+      return opaqueColor;
+    }
+    return `#${opaqueColor}`;
+  },
+  timeAgo(time: number, ms = false) {
+    if (ms) {
+      time = Math.round(time / 1000);
+    }
+    const days = Math.floor(time / (24 * 60 * 60));
+    const hours = Math.floor((time % (24 * 60 * 60)) / (60 * 60));
+    const minutes = Math.floor((time % (60 * 60)) / 60);
+    return `${days} days ${hours} hours ${minutes} minutes ago`;
+  },
   inventory: {
     getRarity(tags: IInventoryResDescriptionTag[]) {
       return tags.find(tag => tag.category.toLowerCase() === 'rarity')?.localized_tag_name;

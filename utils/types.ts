@@ -169,43 +169,12 @@ export interface IInventoryResDescriptionTag {
   color?: string;
 }
 
-export interface IInventoryResDescription {
-  appid: number;
-  classid: string;
-  instanceid: string;
-  currency: number;
-  background_color: string;
-  icon_url: string;
-  icon_url_large: string;
-  tradable: number;
-  name: string;
-  name_color: string;
-  type: string;
-  market_name: string;
-  market_hash_name: string;
-  commodity: number;
-  marketable: number;
-  market_tradable_restriction: number;
-  descriptions: IInventoryResDescriptionDescription[];
-  actions: { link: string; name: string }[];
-  owner_descriptions: { type: string; value: string; color?: string }[];
-  market_actions: { link: string; name: string }[];
-  tags: IInventoryResDescriptionTag[];
-}
-
-export interface IInventoryResponse {
-  success: number;
-  rwgrsn: number;
-  total_inventory_count: number;
-  assets: IInventoryResAsset[];
-  descriptions: IInventoryResDescription[];
-}
-
 export interface IInventoryOmittedItem {
   appid: number;
   classid: string;
   instanceid: string;
-  icon_urL: string;
+  icon_url: string;
+  icon_url_large: string;
   tradable: number;
   name: string;
   name_color: string;
@@ -217,6 +186,23 @@ export interface IInventoryOmittedItem {
   descriptions: IInventoryResDescriptionDescription[];
   owner_descriptions: { type: string; value: string; color?: string }[];
   tags: IInventoryResDescriptionTag[];
+}
+
+export interface IInventoryResDescription extends IInventoryOmittedItem {
+  currency: number;
+  background_color: string;
+  market_hash_name: string;
+  market_tradable_restriction: number;
+  actions: { link: string; name: string }[];
+  market_actions: { link: string; name: string }[];
+}
+
+export interface IInventoryResponse {
+  success: number;
+  rwgrsn: number;
+  total_inventory_count: number;
+  assets: IInventoryResAsset[];
+  descriptions: IInventoryResDescription[];
 }
 
 export interface IInventoryOmittedItemAmount extends IInventoryOmittedItem {
@@ -275,4 +261,9 @@ export interface IInventory extends IInventoryBase {
 export interface IGameExtended extends IInventoryGame {
   price: number;
   items: number;
+}
+
+export interface IDisplayItemProps {
+  item?: IInventoryItem;
+  stickerPrices: { [hash: string]: { Price: number } };
 }
