@@ -3,7 +3,7 @@ import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
 import gamesJson from '../assets/inv-games.json';
 import { IChooseGamesProps, IInventoryGame } from '../utils/types';
 import { helpers } from '../utils/helpers';
-import Text from '../Elements/text';
+import Text from '../components/Text';
 import { colors, global, styles, variables } from '../styles/global';
 import { Icon } from 'react-native-elements';
 import { Snackbar } from 'react-native-paper';

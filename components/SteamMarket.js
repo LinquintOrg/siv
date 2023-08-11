@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import {Divider, Icon} from "react-native-elements";
 import {Dropdown} from "react-native-element-dropdown";
-import Text from '../Elements/text'
+import Text from './Text'
 import {AnimatedFAB, Snackbar, TextInput} from "react-native-paper";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import NetInfo from '@react-native-community/netinfo';

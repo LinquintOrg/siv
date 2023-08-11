@@ -1,6 +1,6 @@
 import { View, StyleSheet } from 'react-native';
 import React from 'react';
-import Text from './text';
+import Text from '../components/Text';
 import { IMusicKitPricesProps } from '../utils/types';
 import { useRateState, useRatesState } from '../utils/store';
 

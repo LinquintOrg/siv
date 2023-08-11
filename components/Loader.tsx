@@ -2,7 +2,7 @@ import * as React from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { ILoaderProps } from '../utils/types';
 import { styles, colors } from '../styles/global';
-import Text from '../Elements/text';
+import Text from './Text';
 
 export default function Loader(props: ILoaderProps) {
   // TODO: Improve by adding more options for loader size and perhaps color

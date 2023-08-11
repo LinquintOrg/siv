@@ -56,8 +56,7 @@ export const templates = StyleSheet.create({
 export const global = StyleSheet.create({
   rowContainer: {
     ...templates.row,
-    marginTop: resize(8),
-    marginBottom: resize(8),
+    marginVertical: resize(8),
     width: resize(400),
     alignItems: 'center',
     borderRadius: resize(12),
@@ -212,6 +211,20 @@ export const global = StyleSheet.create({
   pcUnchanged: {
     backgroundColor: '#ff9f7f',
     color: '#664033',
+  },
+  dataRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  statsTitle: {
+    fontSize: resize(15),
+    textAlignVertical: 'center',
+  },
+  statsValue: {
+    fontSize: resize(16),
+    color: colors.textAccent,
+    textAlign: 'right',
   },
 });
 

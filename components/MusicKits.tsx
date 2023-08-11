@@ -8,7 +8,7 @@ import { AVPlaybackStatusSuccess, Audio } from 'expo-av';
 import { Icon } from 'react-native-elements';
 import { Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
-import Text from '../Elements/text';
+import Text from './Text';
 import { TextInput } from 'react-native-paper';
 import { IMusicKit, IMusicKitPrice } from '../utils/types';
 import MusicKit from '../Elements/MusicKit';

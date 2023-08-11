@@ -267,3 +267,32 @@ export interface IDisplayItemProps {
   item?: IInventoryItem;
   stickerPrices: { [hash: string]: { Price: number } };
 }
+
+export interface IGameStatistic {
+  game: IInventoryGame;
+  price: number;
+  owned: number;
+  ownedTradeable: number;
+  avg24: number;
+  avg7: number;
+  avg30: number;
+  p24ago: number;
+  p30ago: number;
+  p90ago: number;
+  missingPrices: number;
+  cheapest: {
+    name: string;
+    price: number;
+  };
+  expensive: {
+    name: string;
+    price: number;
+  };
+  stickersVal?: number;
+  patchesVal?: number;
+}
+
+export interface IInventoryStats extends Omit<IGameStatistic, 'game'> {
+  steamID: string;
+  games: IGameStatistic[];
+}

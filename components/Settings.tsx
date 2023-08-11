@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Dimensions, Pressable } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { Divider, Icon } from 'react-native-elements';
-import Text from '../Elements/text';
+import Text from './Text';
 import * as Clipboard from 'expo-clipboard';
 import { useRateState, useRatesState } from '../utils/store';
 import { helpers } from '../utils/helpers';

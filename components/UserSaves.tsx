@@ -1,7 +1,7 @@
 import { Dimensions, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import React, { useState } from 'react';
 import { Divider, Icon } from 'react-native-elements';
-import Text from '../Elements/text';
+import Text from './Text';
 import { IUserSavesProps } from '../utils/types';
 import { usePreloadedState, useProfilesState } from '../utils/store';
 import Loader from './Loader';

@@ -5,7 +5,7 @@ import { Snackbar, TextInput } from 'react-native-paper';
 import UserSaves from '../components/UserSaves';
 import { global, styles, colors, variables } from '../styles/global';
 import { helpers } from '../utils/helpers';
-import Text from '../Elements/text';
+import Text from '../components/Text';
 import Modal from 'react-native-modal';
 import NetInfo from '@react-native-community/netinfo';
 import * as Sentry from 'sentry-expo';

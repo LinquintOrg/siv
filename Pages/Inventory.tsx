@@ -5,15 +5,15 @@ import gamesJson from '../assets/inv-games.json';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
 import { Snackbar, AnimatedFAB } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
-import Text from '../Elements/text';
+import Text from '../components/Text';
 import Modal from 'react-native-modal';
 import cloneDeep from 'lodash';
 import { TextInput } from 'react-native-paper';
 import ActionList from '../Elements/actionList';
-import Summary from '../Elements/Inventory/Summary';
+import Summary from '../components/Summary';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { IGameExtended, IInventory, IInventoryBase, IInventoryGame, IInventoryItem, IInventoryOmittedItem, IInventoryOmittedItemAmount,
-  IInventoryPageProps, IInventoryResponse, IPrice, IPricesResponse } from '../utils/types';
+  IInventoryPageProps, IInventoryResponse, IInventoryStats, IPrice, IPricesResponse } from '../utils/types';
 import { useProfilesState, useRateState, useRatesState } from '../utils/store';
 import * as Sentry from 'sentry-expo';
 import { helpers } from '../utils/helpers';
@@ -21,6 +21,7 @@ import Loader from '../components/Loader';
 import { colors, global, styles, variables } from '../styles/global';
 import Item from '../components/Item';
 import { Icon } from 'react-native-elements';
+import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -56,26 +57,27 @@ export default function Inventory(props: IInventoryPageProps) {
   const [ stickerPrices, setStickerPrices ] = useState<{ [hash: string]: { Price: number } }>({});
   const [ inventory, setInventory ] = useState<IInventory>({});
   const [ renderableInventory, setRenderableInventory ] = useState<{ game: IGameExtended, data: IInventoryItem[] }[]>([]);
-  const [ stats ] = useState({
-    'price': 0,
-    'owned': 0,
-    'ownedTradeable': 0,
-    'avg24': 0,
-    'avg7': 0,
-    'avg30': 0,
-    'p24ago': 0,
-    'p30ago': 0,
-    'p90ago': 0,
+  const [ stats ] = useState<IInventoryStats>({
+    steamID,
+    price: 0,
+    owned: 0,
+    ownedTradeable: 0,
+    avg24: 0,
+    avg7: 0,
+    avg30: 0,
+    p24ago: 0,
+    p30ago: 0,
+    p90ago: 0,
     missingPrices: 0,
-    'cheapest': {
-      'name': '',
-      'price': 0,
+    cheapest: {
+      name: '',
+      price: 0,
     },
-    'expensive': {
-      'name': '',
-      'price': 0,
+    expensive: {
+      name: '',
+      price: 0,
     },
-    'games': [],
+    games: [],
   });
 
   useEffect(() => {
@@ -93,39 +95,40 @@ export default function Inventory(props: IInventoryPageProps) {
         }, 3000);
       }
 
-      try {
-        setLoading(true);
-        setLoaded(false);
-        games.every(async (game, index) => {
-          const url = __DEV__ ? DEV_INV :
-            `https://steamcommunity.com/inventory/${steamID}/${game.appid}/${(game.appid === 238960)?steamID:(game.appid===264710)?1847277:2}/?count=1000`;
-          const gameInventoryRes = await fetch(url);
-          const gameInventoryFull = await gameInventoryRes.json() as IInventoryResponse;
-          if (gameInventoryFull.success && gameInventoryFull.total_inventory_count > 0) {
-            const gameInventory: IInventoryOmittedItemAmount[] = gameInventoryFull.descriptions.map(item => {
-              return {
-                ...item as unknown as IInventoryOmittedItem,
-                amount: helpers.countItems(item.classid, item.instanceid, gameInventoryFull.assets),
-              };
-            });
-            baseInventory[game.appid] = { count: gameInventory.length, items: gameInventory };
-          }
-          if (index < games.length - 1) {
-            await helpers.sleep(3000);
-          }
-        });
+      // try {
+      setLoading(true);
+      setLoaded(false);
+      games.every(async (game, index) => {
+        const url = __DEV__ ? DEV_INV :
+          `https://steamcommunity.com/inventory/${steamID}/${game.appid}/${(game.appid === 238960)?steamID:(game.appid===264710)?1847277:2}/?count=1000`;
+        const gameInventoryRes = await fetch(url);
+        const gameInventoryFull = await gameInventoryRes.json() as IInventoryResponse;
+        if (gameInventoryFull.success && gameInventoryFull.total_inventory_count > 0) {
+          const gameInventory: IInventoryOmittedItemAmount[] = gameInventoryFull.descriptions.map(item => {
+            return {
+              ...item as unknown as IInventoryOmittedItem,
+              amount: helpers.countItems(item.classid, item.instanceid, gameInventoryFull.assets),
+            };
+          });
+          baseInventory[game.appid] = { count: gameInventory.length, items: gameInventory };
+        }
+        if (index < games.length - 1) {
+          await helpers.sleep(3000);
+        }
+      });
 
-        await helpers.sleep(1000);
-        const invObj = await getInventoryPrices();
-        // TODO: Before creating a renderable section list, calculate statistics
-        createRenderable(invObj);
-      } catch (err) {
-        setErrorText((err as Error).message);
-        setErrorSnack(true);
-        Sentry.React.captureException(err);
-      } finally {
-        setLoading(false);
-      }
+      await helpers.sleep(1000);
+      const invObj = await getInventoryPrices();
+      // TODO: Before creating a renderable section list, calculate statistics
+      createRenderable(invObj);
+      setLoading(false);
+      // } catch (err) {
+      //   setErrorText((err as Error).message);
+      //   setErrorSnack(true);
+      //   Sentry.React.captureException(err);
+      // } finally {
+      //   setLoading(false);
+      // }
     }
 
     void loadInventory();
@@ -555,7 +558,7 @@ export default function Inventory(props: IInventoryPageProps) {
   // loadInventory();
 
   const scrollRef = useRef<SectionList>(null);
-  const sheetRef = React.createRef();
+  const sheetRef = React.createRef<BottomSheetMethods>();
   const [ isExpanded, setIsExpanded ] = useState(true);
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const currentScrollPosition = Math.floor(e.nativeEvent.contentOffset.y) ?? 0;
@@ -980,7 +983,7 @@ export default function Inventory(props: IInventoryPageProps) {
                       </TouchableOpacity>
 
                       {
-                        sortBy === 4 || sortBy === 5 &&
+                        (sortBy === 4 || sortBy === 5) &&
                         <TouchableOpacity style={[ global.modalButton, global.modalButtonActive ]} onPress={() => setSortUsePercent(!sortUsePercent)}>
                           <Text bold style={[ global.modalButtonText, sortUsePercent ? global.modalButtonTextActive : {} ]}>Change in %</Text>
                         </TouchableOpacity>
@@ -999,6 +1002,11 @@ export default function Inventory(props: IInventoryPageProps) {
               >
                 <Item item={modalItem} stickerPrices={stickerPrices} />
               </Modal>
+
+              <Summary
+                ref={sheetRef}
+                stats={stats}
+              />
             </>
           }
         </View>
