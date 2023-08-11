@@ -1,4 +1,4 @@
-import { Dimensions, Image, Platform, Pressable, SafeAreaView, StyleSheet, TouchableOpacity, UIManager, View, SectionList,
+import { Dimensions, Image, Platform, Pressable, SafeAreaView, TouchableOpacity, UIManager, View, SectionList,
   NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import gamesJson from '../assets/inv-games.json';
@@ -12,7 +12,7 @@ import { TextInput } from 'react-native-paper';
 import ActionList from '../Elements/actionList';
 import Summary from '../components/Summary';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { IGameExtended, IInventory, IInventoryBase, IInventoryGame, IInventoryItem, IInventoryOmittedItem, IInventoryOmittedItemAmount,
+import { IGameExtended, IGameStatistic, IInventory, IInventoryBase, IInventoryGame, IInventoryItem, IInventoryOmittedItem, IInventoryOmittedItemAmount,
   IInventoryPageProps, IInventoryResponse, IInventoryStats, IPrice, IPricesResponse } from '../utils/types';
 import { useProfilesState, useRateState, useRatesState } from '../utils/store';
 import * as Sentry from 'sentry-expo';
@@ -71,7 +71,7 @@ export default function Inventory(props: IInventoryPageProps) {
     missingPrices: 0,
     cheapest: {
       name: '',
-      price: 0,
+      price: 99999,
     },
     expensive: {
       name: '',
@@ -79,6 +79,16 @@ export default function Inventory(props: IInventoryPageProps) {
     },
     games: [],
   });
+
+  function convertPrice(p: number, amount = 1) {
+    const r = rates.getOne(rate.get());
+    return (Math.round(p * 100 * r.exc) * amount / 100);
+  }
+
+  function price(p: number, amount = 1) {
+    const r = rates.getOne(rate.get());
+    return `${r.abb} ${convertPrice(p, amount).toFixed(2)}`;
+  }
 
   useEffect(() => {
     async function loadInventory() {
@@ -95,40 +105,39 @@ export default function Inventory(props: IInventoryPageProps) {
         }, 3000);
       }
 
-      // try {
-      setLoading(true);
-      setLoaded(false);
-      games.every(async (game, index) => {
-        const url = __DEV__ ? DEV_INV :
-          `https://steamcommunity.com/inventory/${steamID}/${game.appid}/${(game.appid === 238960)?steamID:(game.appid===264710)?1847277:2}/?count=1000`;
-        const gameInventoryRes = await fetch(url);
-        const gameInventoryFull = await gameInventoryRes.json() as IInventoryResponse;
-        if (gameInventoryFull.success && gameInventoryFull.total_inventory_count > 0) {
-          const gameInventory: IInventoryOmittedItemAmount[] = gameInventoryFull.descriptions.map(item => {
-            return {
-              ...item as unknown as IInventoryOmittedItem,
-              amount: helpers.countItems(item.classid, item.instanceid, gameInventoryFull.assets),
-            };
-          });
-          baseInventory[game.appid] = { count: gameInventory.length, items: gameInventory };
-        }
-        if (index < games.length - 1) {
-          await helpers.sleep(3000);
-        }
-      });
+      try {
+        setLoading(true);
+        setLoaded(false);
+        games.every(async (game, index) => {
+          const url = __DEV__ ? DEV_INV :
+            `https://steamcommunity.com/inventory/${steamID}/${game.appid}/${(game.appid === 238960)?steamID:(game.appid===264710)?1847277:2}/?count=1000`;
+          const gameInventoryRes = await fetch(url);
+          const gameInventoryFull = await gameInventoryRes.json() as IInventoryResponse;
+          if (gameInventoryFull.success && gameInventoryFull.total_inventory_count > 0) {
+            const gameInventory: IInventoryOmittedItemAmount[] = gameInventoryFull.descriptions.map(item => {
+              return {
+                ...item as unknown as IInventoryOmittedItem,
+                amount: helpers.countItems(item.classid, item.instanceid, gameInventoryFull.assets),
+              };
+            });
+            baseInventory[game.appid] = { count: gameInventory.length, items: gameInventory };
+          }
+          if (index < games.length - 1) {
+            await helpers.sleep(3000);
+          }
+        });
 
-      await helpers.sleep(1000);
-      const invObj = await getInventoryPrices();
-      // TODO: Before creating a renderable section list, calculate statistics
-      createRenderable(invObj);
-      setLoading(false);
-      // } catch (err) {
-      //   setErrorText((err as Error).message);
-      //   setErrorSnack(true);
-      //   Sentry.React.captureException(err);
-      // } finally {
-      //   setLoading(false);
-      // }
+        await helpers.sleep(1000);
+        const invObj = await getInventoryPrices();
+        generateStatistics(invObj);
+        createRenderable(invObj);
+      } catch (err) {
+        setErrorText((err as Error).message);
+        setErrorSnack(true);
+        Sentry.React.captureException(err);
+      } finally {
+        setLoading(false);
+      }
     }
 
     void loadInventory();
@@ -207,6 +216,99 @@ export default function Inventory(props: IInventoryPageProps) {
     });
     setInventory(inv);
     return inv;
+  }
+
+  function generateStatistics(inv: IInventory) {
+    stats.cheapest = { name: '', price: 99999 };
+    stats.expensive = { name: '', price: -1 };
+    stats.games.length = 0;
+    Object.keys(stats).forEach(key => {
+      if (typeof stats[key as keyof IInventoryStats] === 'number') {
+        (stats as unknown as { [key: string]: unknown })[key] = 0;
+      }
+    });
+
+    Object.keys(inv).forEach(appid => {
+      const game = gamesList.find(g => String(g.appid) === appid);
+      if (!game) {
+        throw new Error(`Could not find game with appid ${appid}`);
+      }
+
+      const data = inv[parseInt(appid, 10)].items;
+      if (!data) {
+        throw new Error(`Could not find items for game with appid ${appid}`);
+      }
+
+      const gameStats: IGameStatistic = {
+        game,
+        price: 0,
+        owned: 0,
+        ownedTradeable: 0,
+        avg24: 0,
+        avg7: 0,
+        avg30: 0,
+        p24ago: 0,
+        p30ago: 0,
+        p90ago: 0,
+        missingPrices: 0,
+        cheapest: {
+          name: '',
+          price: 99999,
+        },
+        expensive: {
+          name: '',
+          price: -1,
+        },
+        stickersVal: 0,
+        patchesVal: 0,
+      };
+      data.forEach(item => {
+        if (item.price.found) {
+          stats.price += convertPrice(item.price.price, item.amount);
+          gameStats.price += convertPrice(item.price.price, item.amount);
+          if (item.marketable > 0) {
+            stats.ownedTradeable += item.amount;
+            gameStats.ownedTradeable += item.amount;
+          }
+          stats.avg24 += convertPrice(item.price.avg24, item.amount);
+          gameStats.avg24 += convertPrice(item.price.avg24, item.amount);
+          stats.avg7 += convertPrice(item.price.avg7, item.amount);
+          gameStats.avg7 += convertPrice(item.price.avg7, item.amount);
+          stats.avg30 += convertPrice(item.price.avg30, item.amount);
+          gameStats.avg30 += convertPrice(item.price.avg30, item.amount);
+          stats.p24ago += convertPrice(item.price.p24ago, item.amount);
+          gameStats.p24ago += convertPrice(item.price.p24ago, item.amount);
+          stats.p30ago += convertPrice(item.price.p30ago, item.amount);
+          gameStats.p30ago += convertPrice(item.price.p30ago, item.amount);
+          stats.p90ago += convertPrice(item.price.p90ago, item.amount);
+          gameStats.p90ago += convertPrice(item.price.p90ago, item.amount);
+          if (item.price.price < gameStats.cheapest.price) {
+            stats.cheapest = { price: convertPrice(item.price.price), name: item.market_name };
+            gameStats.cheapest = { price: convertPrice(item.price.price), name: item.market_name };
+          }
+          if (item.price.price > gameStats.expensive.price) {
+            stats.expensive = { price: convertPrice(item.price.price), name: item.market_name };
+            gameStats.expensive = { price: convertPrice(item.price.price), name: item.market_name };
+          }
+        } else if (item.marketable) {
+          stats.missingPrices += item.amount;
+          gameStats.missingPrices += item.amount;
+        }
+
+        if (item.stickers) {
+          if (item.stickers.type === 'sticker') {
+            gameStats.stickersVal! += helpers.inventory.appliedValue(rates.getOne(rate.get()).exc, item.stickers, stickerPrices);
+          }
+          if (item.stickers.type === 'patch') {
+            gameStats.patchesVal! += helpers.inventory.appliedValue(rates.getOne(rate.get()).exc, item.stickers, stickerPrices);
+          }
+        }
+
+        stats.owned += item.amount;
+        gameStats.owned += item.amount;
+      });
+      stats.games.push(gameStats);
+    });
   }
 
   function createRenderable(inv: IInventory) {
@@ -656,11 +758,6 @@ export default function Inventory(props: IInventoryPageProps) {
     }
   };
 
-  function price(p: number, amount = 1) {
-    const r = rates.getOne(rate.get());
-    return `${r.abb} ${(Math.round(p * 100 * r.exc) * amount / 100).toFixed(2)}`;
-  }
-
   function displayItem(item: IInventoryItem) {
     let render = item.tradable === 1 || item.marketable === 1;
     let renderSearch = true;
@@ -770,9 +867,6 @@ export default function Inventory(props: IInventoryPageProps) {
     );
   };
 
-  const [ fabVisible, setFabVisible ] = useState(false);
-  const [ showSheet, setShowSheet ] = useState(false);
-
   // TODO: loading screen should be improved. Maybe use Action list component.
   return (
     <GestureHandlerRootView>
@@ -818,7 +912,7 @@ export default function Inventory(props: IInventoryPageProps) {
                     <TextInput.Icon
                       icon={() => (<Icon name={'filter'} type={'feather'} color={ colors.primary } />)}
                       size={ variables.iconSize }
-                      style={{ margin: 0, paddingTop: resize(8) }}
+                      style={{ margin: 0, paddingTop: helpers.resize(8) }}
                       forceTextInputFocus={false}
                     />
                   }
@@ -834,18 +928,16 @@ export default function Inventory(props: IInventoryPageProps) {
                 onScroll={onScroll}
                 nestedScrollEnabled={true}
                 ListEmptyComponent={() => (
-                  (loaded) ?
-                    <Text>Inventory is empty</Text> : null
+                  <Text>Inventory is empty</Text>
                 )}
                 ListFooterComponent={() => (
-                  (loaded) ?
-                    <TouchableOpacity style={stylesLocal.scrollProgress} onPress={() => {
-                      scrollRef.current?.scrollToLocation({ itemIndex: 0, sectionIndex: 0, animated: true });
-                    }}>
-                      <Icon name={'angle-double-up'} type={'font-awesome'} size={resize(48)} color={'#555'} />
-                      <Text style={{ fontSize: resize(14) }}>This is the end of the inventory</Text>
-                      <Text style={{ fontSize: resize(14) }}>Tap to scroll back to top</Text>
-                    </TouchableOpacity> : null
+                  <TouchableOpacity style={global.scrollEnd} onPress={() => {
+                    scrollRef.current?.scrollToLocation({ itemIndex: 0, sectionIndex: 0, animated: true });
+                  }}>
+                    <Icon name={'angle-double-up'} type={'font-awesome'} size={variables.iconXLarge} color={colors.textAccent} />
+                    <Text style={{ fontSize: helpers.resize(14) }}>This is the end of the inventory</Text>
+                    <Text style={{ fontSize: helpers.resize(14) }}>Tap to scroll back to top</Text>
+                  </TouchableOpacity>
                 )}
               />
 
@@ -894,9 +986,9 @@ export default function Inventory(props: IInventoryPageProps) {
                     text='Display non-tradable items'
                     textStyle={[ global.subtitle, { textDecorationLine: 'none' } ]}
                     fillColor={ colors.accent }
-                    iconStyle={{ borderWidth:resize(3) }}
-                    style={{ marginLeft: resize(16) }}
-                    size={resize(22)}
+                    iconStyle={{ borderWidth: helpers.resize(2) }}
+                    style={{ marginLeft: helpers.resize(16) }}
+                    size={variables.iconSize}
                   />
 
                   { Object.keys(inventory).includes('730') &&
@@ -908,9 +1000,9 @@ export default function Inventory(props: IInventoryPageProps) {
                         text='Display items with Name Tags only'
                         textStyle={[ global.subtitle, { textDecorationLine: 'none' } ]}
                         fillColor={ colors.accent }
-                        iconStyle={{ borderWidth:resize(3) }}
-                        style={{ marginLeft: resize(16), marginVertical: resize(8) }}
-                        size={resize(22)}
+                        iconStyle={{ borderWidth: helpers.resize(2) }}
+                        style={{ marginLeft: helpers.resize(16), marginVertical: helpers.resize(8) }}
+                        size={variables.iconSize}
                       />
 
                       <BouncyCheckbox
@@ -919,9 +1011,9 @@ export default function Inventory(props: IInventoryPageProps) {
                         text='Display items with Stickers only'
                         textStyle={[ global.subtitle, { textDecorationLine: 'none' } ]}
                         fillColor={ colors.accent }
-                        iconStyle={{ borderWidth:resize(3) }}
-                        style={{ marginLeft: resize(16), marginVertical: resize(8) }}
-                        size={resize(22)}
+                        iconStyle={{ borderWidth: helpers.resize(2) }}
+                        style={{ marginLeft: helpers.resize(16), marginVertical: helpers.resize(8) }}
+                        size={variables.iconSize}
                       />
                     </>
                   }
@@ -1003,10 +1095,7 @@ export default function Inventory(props: IInventoryPageProps) {
                 <Item item={modalItem} stickerPrices={stickerPrices} />
               </Modal>
 
-              <Summary
-                ref={sheetRef}
-                stats={stats}
-              />
+              <Summary ref={sheetRef} stats={stats} />
             </>
           }
         </View>
@@ -1557,441 +1646,3 @@ export default function Inventory(props: IInventoryPageProps) {
 //         </Pressable>
 //     )
 // }
-
-// TODO: remove local styles. If necessary, add them to global styles.
-
-const resize = (size) => {
-  const scale = Dimensions.get('window').width / 423;
-  return Math.ceil(size * scale);
-};
-
-const stylesLocal = StyleSheet.create ({
-  sectionContainer: {
-    backgroundColor: '#F2F2F2',
-    paddingVertical: resize(8),
-    paddingLeft: resize(8),
-  },
-  sectionText: {
-    fontSize: resize(24),
-    color: '#0A5270',
-  },
-  itemContainer: {
-    borderRadius: 16,
-    paddingVertical: resize(8),
-    width: '94%',
-    alignSelf: 'center',
-    display: 'flex',
-    flexDirection: 'row',
-  },
-  itemPriceSingular: {
-    fontSize: resize(14),
-    color: '#0B4F6C',
-    textAlign: 'center',
-  },
-  itemPriceTotal: {
-    fontSize: resize(16),
-    color: '#131B23',
-    textAlign: 'center',
-  },
-  itemImageSmall: {
-    height: resize(64),
-    width: resize(64),
-    marginRight: 8,
-  },
-  container: {
-    marginTop: 6,
-    marginBottom: 6,
-    width: '95%',
-    alignItems: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    borderRadius: 8,
-    alignSelf: 'center',
-  },
-  containerCollapsable: {
-    width: '95%',
-    display: 'flex',
-    flexDirection: 'column',
-    marginVertical: 4,
-    alignSelf: 'center',
-    borderRadius: 8,
-    padding: 4,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: '#00a',
-  },
-  row: {
-    display: 'flex',
-    flexDirection: 'row',
-  },
-  column: {
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  flowRow: {
-    display: 'flex',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-evenly',
-  },
-  flowColumn: {
-    display: 'flex',
-    flexDirection: 'column',
-    flexWrap: 'wrap',
-    justifyContent: 'space-evenly',
-  },
-  gameTitle: {
-    color: '#222',
-  },
-  appID: {
-    color: '#222',
-  },
-  containerSelected: {
-    borderWidth: 1.0,
-    borderColor: '#0f0',
-  },
-  gameName: {
-    fontSize: resize(24),
-    marginVertical: 8,
-    marginLeft: 8,
-    color: '#333',
-  },
-  itemIcon: {
-    width: resize(160),
-    height: resize(160),
-    borderWidth: 1,
-    borderColor: '#00a',
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    marginTop: resize(8),
-    alignSelf: 'center',
-  },
-  itemName: {
-    fontSize: resize(15),
-    color: '#485A70',
-    height: resize(48),
-  },
-  itemType: {
-    fontSize: resize(13),
-    color: '#2F3C4A',
-    backgroundColor: '#AFBBCA',
-    paddingHorizontal: resize(8),
-    paddingVertical: resize(4),
-    borderRadius: 30,
-    marginRight: resize(8),
-  },
-  itemPriceChange: {
-    fontSize: resize(13),
-    color: '#fff',
-    paddingHorizontal: resize(8),
-    paddingVertical: resize(4),
-    borderRadius: 30,
-    textAlign: 'center',
-  },
-  pcIncrease: {
-    backgroundColor: '#7fff7f',
-    color: '#336433',
-  },
-  pcDecrease: {
-    backgroundColor: '#ff7f7f',
-    color: '#663333',
-  },
-  pcUnchanged: {
-    backgroundColor: '#ff9f7f',
-    color: '#664033',
-  },
-  itemPriceTitle: {
-    width: '33%',
-    textAlign: 'center',
-    color: '#777',
-    fontSize: resize(14),
-  },
-  itemPrice: {
-    width: '33%',
-    textAlign: 'center',
-    color: '#333',
-    fontSize: resize(16),
-  },
-  avgTitle: {
-    color: '#777',
-    width: '32%',
-    textAlign: 'center',
-    fontSize: resize(14),
-  },
-  avgDetails: {
-    fontSize: resize(14),
-    color: '#333',
-    width: '32%',
-    textAlign: 'center',
-  },
-  alert: {
-    position: 'absolute',
-    top: resize(8),
-    backgroundColor: '#229',
-    width: '90%',
-    overflow: 'hidden',
-    alignSelf: 'center',
-    borderRadius: 8,
-  },
-  msg: {
-    margin: resize(8),
-    color: '#fff',
-  },
-  detailsPress: {
-    width: '67%',
-    alignSelf: 'center',
-    backgroundColor: '#d3d5d8',
-    marginVertical: resize(8),
-    borderRadius: 8,
-  },
-  detailsText: {
-    fontSize: resize(18),
-    fontWeight: 'bold',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    marginVertical: 8,
-    color: '#333',
-  },
-  statsTitle: {
-    fontSize: resize(14),
-    textAlignVertical: 'center',
-    textAlign: 'left',
-    width: '45%',
-    color: '#555',
-  },
-  statsDetails: {
-    fontSize: resize(16),
-    textAlign: 'right',
-    width: '55%',
-    color: '#333',
-  },
-  statsDetailsS: {
-    fontSize: resize(12),
-    fontWeight: 'normal',
-    textAlign: 'right',
-    width: '55%',
-    color: '#333',
-  },
-  scrollProgress: {
-    width: '65%',
-    alignSelf: 'center',
-    alignItems: 'center',
-    padding: 8,
-    margin: 8,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    elevation: 5,
-    marginBottom: 82,
-  },
-  summarySection: {
-    paddingVertical: resize(12),
-    alignSelf: 'center',
-  },
-  inputView: {
-    width: '90%',
-    height: resize(44),
-    borderRadius: 8,
-    paddingHorizontal: resize(10),
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-  },
-  searchInput: {
-    fontSize: resize(14),
-    width: '100%',
-  },
-  fsRow: {
-    width: '90%',
-    alignSelf: 'center',
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  fsCell: {
-    width: '48%',
-    alignItems: 'center',
-    display: 'flex',
-    flexDirection: 'row',
-  },
-  dropdown: {
-    backgroundColor: 'white',
-    borderColor: '#229',
-    borderWidth: 2,
-    width: '100%',
-    alignSelf: 'center',
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    height: resize(38.5),
-  },
-  shadow: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
-    borderRadius: 8,
-  },
-  item: {
-    paddingVertical: resize(16),
-    paddingHorizontal: 4,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  textItem: {
-    flex: 1,
-    fontSize: resize(16),
-  },
-  filterPressable: {
-    display: 'flex',
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    borderColor: '#229',
-    borderWidth: 2,
-    borderRadius: 8,
-    alignItems: 'center',
-    width: '100%',
-    height: resize(38.5),
-    justifyContent: 'center',
-  },
-  filterPressableText: {
-    fontSize: resize(18),
-    textAlignVertical: 'center',
-    height: '100%',
-  },
-  stpaRow: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    width: '96%',
-    alignSelf: 'center',
-  },
-  stpaType: {
-    fontSize: resize(16),
-    width: '100%',
-    textAlign: 'center',
-  },
-  sumGame: {
-    fontSize: resize(20),
-    textAlign: 'center',
-    marginBottom: 4,
-    color: '#0A5270',
-  },
-  totalAppliedValueText: {
-    fontSize: resize(16),
-    marginBottom: resize(8),
-    color: '#777',
-  },
-  totalAppliedValue: {
-    fontSize: resize(16),
-    color: '#333',
-    textAlign: 'right',
-  },
-  snackbarText: {
-    fontSize: resize(12),
-    color: '#ddd',
-  },
-  containerStyle: {
-    backgroundColor: '#fdfcdc',
-    padding: resize(16),
-    alignSelf: 'center',
-    borderRadius: 24,
-    width: '100%',
-  },
-  fModalTitle: {
-    textAlign: 'left',
-    color: '#0081a7',
-    fontSize: resize(28),
-  },
-  fModalGameTitle: {
-    color: '#0081a7',
-    fontSize: resize(20),
-    marginVertical: resize(8),
-  },
-  detailBold: {
-    fontSize: resize(14),
-  },
-  detail: {
-    fontSize: resize(14),
-  },
-  sortButton: {
-    borderRadius: 16,
-    borderWidth: 1,
-    marginHorizontal: resize(12),
-    marginVertical: resize(8),
-    backgroundColor: '#ffffff00',
-    borderColor: '#f07167',
-  },
-  sortButtonText: {
-    height: resize(48),
-    fontSize: resize(18),
-    color: '#f07167',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-  },
-  itemModalTitle: {
-    fontSize: resize(18),
-    textAlign: 'center',
-    color: '#333',
-  },
-  itemModalSubtitle: {
-    fontSize: resize(16),
-    textAlign: 'center',
-    color: '#666',
-  },
-  itemModalAlert: {
-    fontSize: resize(14),
-    textAlign: 'center',
-    color: '#f07167',
-    marginLeft: resize(4),
-  },
-  itemModalStickerImage: {
-    width: resize(64),
-    height: resize(64),
-    marginRight: resize(12),
-  },
-  itemModalUpdated: {
-    fontSize: resize(12),
-    color: '#666',
-  },
-  itemModalAvgTitle: {
-    fontSize: resize(14),
-    color: '#666',
-    width: '33.3%',
-    textAlign: 'center',
-  },
-  itemModalAvgValue: {
-    fontSize: resize(14),
-    color: '#444',
-    width: '33.3%',
-    textAlign: 'center',
-  },
-  itemModalPriceOwned: {
-    fontSize: resize(16),
-    color: '#555',
-    width: '50%',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-  },
-  itemModalPrice: {
-    fontSize: resize(18),
-    color: '#333',
-    width: '50%',
-    textAlign: 'center',
-  },
-  itemModalListed: {
-    fontSize: resize(14),
-    color: '#555',
-  },
-  itemModalPriceHistory: {
-    fontSize: resize(16),
-    color: '#333',
-    width: '33.3%',
-    textAlign: 'center',
-  },
-});

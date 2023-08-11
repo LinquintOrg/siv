@@ -226,6 +226,22 @@ export const global = StyleSheet.create({
     color: colors.textAccent,
     textAlign: 'right',
   },
+  divider: {
+    width: resize(64),
+    alignSelf: 'center',
+    borderRadius: 8,
+    marginVertical: resize(12),
+  },
+  scrollEnd: {
+    width: resize(256),
+    alignSelf: 'center',
+    alignItems: 'center',
+    padding: resize(8),
+    backgroundColor: colors.secondary,
+    borderRadius: resize(20),
+    marginTop: resize(8),
+    marginBottom: resize(96),
+  },
 });
 
 export const styles = {

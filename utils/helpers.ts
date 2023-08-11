@@ -2,7 +2,7 @@ import { colors } from './../styles/global';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useScaleState } from './store.ts';
 import { IInventory, IInventoryGame, IInventoryItem, IInventoryResAsset, IInventoryResDescriptionDescription, IInventoryResDescriptionTag,
-  ISteamProfile } from './types.ts';
+  ISteamProfile, ISticker } from './types.ts';
 
 /**
  * ! Helper functions should not be used with states store
@@ -162,6 +162,14 @@ export const helpers = {
         price += item.price.price * item.amount;
       });
       return price;
+    },
+    appliedValue(rate: number, stickers: ISticker, prices: { [key: string]: { Price: number } } ) {
+      let total = 0;
+      stickers.stickers.forEach(sticker => {
+        const price = prices[sticker.long_name]?.Price || 0;
+        total += Math.round(price * 100 * rate) / 100;
+      });
+      return total;
     },
   },
 };
