@@ -66,7 +66,7 @@ const Summary = React.forwardRef<BottomSheetMethods, { stats: IInventoryStats }>
           <View style={ global.rowContainer }>
             <Image style={ global.rowImage } source={{ uri: profiles.getByID(stats.steamID)!.url || '' }} />
             <View style={ global.column }>
-              <Text style={ global.subtitle }>{ profiles.getByID(stats.steamID)!.name }</Text>
+              <Text style={[ global.subtitle, { textAlign: 'left' } ]}>{ profiles.getByID(stats.steamID)!.name }</Text>
               <Text bold>{ stats.steamID }</Text>
             </View>
           </View>
@@ -98,7 +98,7 @@ const Summary = React.forwardRef<BottomSheetMethods, { stats: IInventoryStats }>
 
         <View style={global.dataRow}>
           <Text style={global.statsTitle}>Total 24 hours ago</Text>
-          <Text bold style={global.statsValue}>{ stats.p24ago }</Text>
+          <Text bold style={global.statsValue}>{ price(stats.p24ago) }</Text>
         </View>
         <View style={global.dataRow}>
           <Text style={global.statsTitle}>Price change</Text>
@@ -176,7 +176,7 @@ const Summary = React.forwardRef<BottomSheetMethods, { stats: IInventoryStats }>
 
               <View style={global.dataRow}>
                 <Text style={global.statsTitle}>Total 24 hours ago</Text>
-                <Text bold style={global.statsValue}>{ data.p24ago }</Text>
+                <Text bold style={global.statsValue}>{ price(data.p24ago) }</Text>
               </View>
               <View style={global.dataRow}>
                 <Text style={global.statsTitle}>Price change</Text>

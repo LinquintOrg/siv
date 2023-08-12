@@ -27,6 +27,8 @@ export default function StackProfilesMain(props: IProfilesProps) {
   });
   const [ selectedProfile, setSelectedProfile ] = React.useState<ISteamProfile | undefined>(undefined);
 
+  // TODO: [Pages/Profiles.tsx]: See if it would be possible to keep the same order when updating profiles.
+
   const getProfileData = async () => {
     // TODO: use STEAM_API value from .env file
     const id = '7401764DA0F7B99794826E9E2512E311';

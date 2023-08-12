@@ -3,13 +3,11 @@ import { View, StyleSheet, ScrollView, Dimensions, Pressable } from 'react-nativ
 import { Dropdown } from 'react-native-element-dropdown';
 import { Divider, Icon } from 'react-native-elements';
 import Text from './Text';
-import * as Clipboard from 'expo-clipboard';
 import { useRateState, useRatesState } from '../utils/store';
 import { helpers } from '../utils/helpers';
+import Clipboard from '@react-native-community/clipboard';
 
 export default function () {
-  // TODO: Replace deprecated expo-clipboard library with community library
-
   const [ scale ] = useState(Dimensions.get('window').width / 423);
   const resize = (size: number) => {
     return Math.ceil(size * scale);
@@ -92,7 +90,7 @@ export default function () {
         Website URL @ <Text bold style={{ color: '#3342A3' }}>inventory.linquint.dev</Text>
       </Text>
       <Pressable
-        onPress={() => Clipboard.setStringAsync('https://inventory.linquint.dev/') }
+        onPress={() => Clipboard.setString('https://inventory.linquint.dev/') }
         style={({ pressed }) => pressed ? [ styles.copyButton, { backgroundColor: '#8f9eff' } ] : styles.copyButton}
       >
         <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
@@ -103,7 +101,7 @@ export default function () {
         You can check API status @ <Text bold style={{ color: '#3342A3' }}>status.linquint.dev</Text>
       </Text>
       <Pressable
-        onPress={() => Clipboard.setStringAsync('https://status.linquint.dev/')}
+        onPress={() => Clipboard.setString('https://status.linquint.dev/')}
         style={({ pressed }) => pressed ? [ styles.copyButton, { backgroundColor: '#8f9eff' } ] : styles.copyButton}
       >
         <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
@@ -114,7 +112,7 @@ export default function () {
         You can find credits @ <Text bold style={{ color: '#3342A3' }}>inventory.linquint.dev/credits</Text>
       </Text>
       <Pressable
-        onPress={() => Clipboard.setStringAsync('https://inventory.linquint.dev/credits/')}
+        onPress={() => Clipboard.setString('https://inventory.linquint.dev/credits/')}
         style={({ pressed }) => pressed ? [ styles.copyButton, { backgroundColor: '#8f9eff' } ] : styles.copyButton}
       >
         <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
@@ -125,7 +123,7 @@ export default function () {
         You can find changelogs @ <Text bold style={{ color: '#3342A3' }}>inventory.linquint.dev/changelogs</Text>
       </Text>
       <Pressable
-        onPress={() => Clipboard.setStringAsync('https://inventory.linquint.dev/changelogs/')}
+        onPress={() => Clipboard.setString('https://inventory.linquint.dev/changelogs/')}
         style={({ pressed }) => pressed ? [ styles.copyButton, { backgroundColor: '#8f9eff' } ] : styles.copyButton}
       >
         <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />

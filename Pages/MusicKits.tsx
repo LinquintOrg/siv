@@ -3,17 +3,17 @@ import {
   Dimensions, FlatList,
   View,
 } from 'react-native';
-import React, { useCallback, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AVPlaybackStatusSuccess, Audio } from 'expo-av';
 import { Icon } from 'react-native-elements';
 import { Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
-import Text from './Text';
+import Text from '../components/Text';
 import { TextInput } from 'react-native-paper';
 import { IMusicKit, IMusicKitPrice } from '../utils/types';
 import MusicKit from '../Elements/MusicKit';
 import * as Sentry from 'sentry-expo';
-import { global, variables } from '../styles/global';
+import { global, variables, colors } from '../styles/global';
 import { helpers } from '../utils/helpers';
 
 export default function MusicKits() {
@@ -23,53 +23,57 @@ export default function MusicKits() {
   const [ prices, setPrices ] = useState<IMusicKitPrice[]>([]);
   const [ playbackTimeout, setPlaybackTimeout ] = useState(false);
   const [ search, setSearch ] = useState<string>('');
-  const [ snackbarVisible, setSnackbarVisible ] = useState(false);
-  const [ snackbarWhatsPlaying, setSnackbarWhatsPlaying ] = useState(false);
-  const [ snackError, setSnackError ] = useState('');
-  const [ playing, setPlaying ] = useState<{ kit: IMusicKit, length: number }>({ kit: { artist: '', song: '', dir: '' }, length: 0 });
 
-  const getMusicKits = useCallback(async () => {
-    const internetConnection = await NetInfo.fetch();
-    if (internetConnection.isInternetReachable && internetConnection.isConnected) {
+  const [ playing, setPlaying ] = useState<{ kit: IMusicKit, length: number }>({ kit: { artist: '', song: '', dir: '' }, length: 0 });
+  const [ snackbarWhatsPlaying, setSnackbarWhatsPlaying ] = useState(false);
+  const [ errorText, setErrorText ] = useState('');
+  const [ successText, setSuccessText ] = useState('');
+  const [ errorSnack, setErrorSnack ] = useState(false);
+  const [ successSnack, setSuccessSnack ] = useState(false);
+
+  // TODO: [Pages/MusicKits.tsx]: Align prices, non-stattrack music kit prices are 'NaN' (probably undefined). Snackbar text is difficult to read.
+
+  useEffect(() => {
+    async function prepare() {
       try {
-        const musicKitsRes = await fetch('https://inventory.linquint.dev/api/Steam/rq/music_kits.json');
+        const internetConnection = await NetInfo.fetch();
+        if (!(internetConnection.isInternetReachable && internetConnection.isConnected)) {
+          setErrorText('No internet connection');
+          setErrorSnack(true);
+          await helpers.waitUntil(() => !!internetConnection.isInternetReachable && internetConnection.isConnected, 40);
+          setErrorSnack(false);
+          setSuccessSnack(true);
+          setSuccessText('Connected to the internet');
+          setTimeout(() => {
+            setSuccessSnack(false);
+          }, 3000);
+        }
+
+        const [ musicKitsRes, pricesRes ] = await Promise.all([
+          fetch('https://inventory.linquint.dev/api/Steam/rq/music_kits.json'),
+          fetch('https://inventory.linquint.dev/api/Steam/v3/music_kit_prices.php'),
+        ]);
         const musicKits = await musicKitsRes.json() as { musickit: IMusicKit[] };
+        const pricesObj = await pricesRes.json() as IMusicKitPrice[];
         setKits(musicKits.musickit);
+        setPrices(pricesObj);
         setLoading(false);
-        setLoadingPrices(true);
-      } catch(err) {
-        setSnackbarVisible(true);
-        setSnackError((err as Error).message);
+        setLoadingPrices(false);
+      } catch (err) {
+        setErrorText((err as Error).message);
+        setErrorSnack(true);
         Sentry.React.captureException(err);
+      } finally {
+        setLoading(false);
       }
     }
+
+    void prepare();
   }, []);
 
-  const getMusicKitPrices = useCallback(async () => {
-    const pricesRes = await fetch('https://inventory.linquint.dev/api/Steam/v3/music_kit_prices.php');
-    const pricesObj = await pricesRes.json() as IMusicKitPrice[];
-    setPrices(pricesObj);
-    setLoadingPrices(false);
-  }, []);
-
-  try {
-    Promise.all<void>([
-      getMusicKits(),
-      getMusicKitPrices(),
-    ]).catch((reason: Error) => {
-      setSnackError(reason.message || 'Failed to load music kit data.');
-      setSnackbarVisible(true);
-    });
-  } catch (err) {
-    setSnackError((err as Error).message || 'Failed to load music kit data.');
-    setSnackbarVisible(true);
-  }
-
-  const whatIsPlaying = async (item: IMusicKit, length: number) => {
+  const whatIsPlaying = (item: IMusicKit, length: number) => {
     setSnackbarWhatsPlaying(true);
     setPlaying({ kit: item, length });
-    await sleep(5000);
-    setSnackbarVisible(false);
   };
 
   async function playSound(item: IMusicKit) {
@@ -88,12 +92,13 @@ export default function MusicKits() {
           soundLen = playbackStatus.durationMillis;
         }
 
-        await whatIsPlaying(item, soundLen);
+        whatIsPlaying(item, soundLen);
         await playbackObject.playAsync();
         await sleep(soundLen + 2000);
       } catch (err) {
-        setSnackError('Oh oh! An error has occurred.');
-        setSnackbarVisible(true);
+        setErrorText((err as Error).message);
+        setErrorSnack(true);
+        Sentry.React.captureException(err);
       } finally {
         setPlaybackTimeout(false);
       }
@@ -108,7 +113,6 @@ export default function MusicKits() {
 
   // TODO: Replace ActivityIndicator elements with Loader components
 
-  // TODO: Fix music kit page rerendering every second for some reason
   return (
     (loading) ?
       <View style={[ global.column, { alignSelf: 'center', width: helpers.resize(300) } ]}>
@@ -153,17 +157,48 @@ export default function MusicKits() {
           />
 
           <Snackbar
-            visible={snackbarVisible}
-            style={{ backgroundColor: '#193C6E' }}
-            onDismiss={() => setSnackbarVisible(false)}
+            visible={errorSnack}
+            onDismiss={() => setErrorSnack(false)}
+            style={{ backgroundColor: colors.error }}
+            duration={3000}
+            action={{
+              label: 'Okay',
+              textColor: colors.text,
+              buttonColor: colors.white,
+              onPress: () => {
+                setErrorSnack(false);
+              },
+            }}
           >
-            <View><Text style={ global.snackbarText }>{ snackError }</Text></View>
+            <View>
+              <Text style={global.snackbarText}>{ errorText }</Text>
+            </View>
+          </Snackbar>
+
+          <Snackbar
+            visible={successSnack}
+            onDismiss={() => setSuccessSnack(false)}
+            style={{ backgroundColor: colors.success }}
+            duration={3000}
+            action={{
+              label: 'Okay',
+              textColor: colors.text,
+              buttonColor: colors.white,
+              onPress: () => {
+                setSuccessSnack(false);
+              },
+            }}
+          >
+            <View>
+              <Text style={global.snackbarText}>{ successText }</Text>
+            </View>
           </Snackbar>
 
           <Snackbar
             visible={snackbarWhatsPlaying}
             style={{ backgroundColor: '#193C6E' }}
             onDismiss={() => setSnackbarWhatsPlaying(false)}
+            duration={5000}
           >
             <Text style={{ fontSize: helpers.resize(14) }}>
               Now playing <Text bold style={{ color: '#6FC8F7' }}>

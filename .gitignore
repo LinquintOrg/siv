@@ -1,7 +1,6 @@
 node_modules/
 .expo/
 npm-debug.*
-package-lock.json
 .env
 *.jks
 *.p8

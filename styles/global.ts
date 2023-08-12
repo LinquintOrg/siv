@@ -242,6 +242,49 @@ export const global = StyleSheet.create({
     marginTop: resize(8),
     marginBottom: resize(96),
   },
+  dropdownInput: {
+    fontSize: resize(16),
+    color: colors.textAccent,
+    borderRadius: resize(16),
+    borderColor: colors.primary,
+  },
+  selectedTextStyle: {
+    fontSize: resize(18),
+  },
+  dropdown: {
+    backgroundColor: colors.background,
+    borderColor: colors.primary,
+    borderWidth: resize(2),
+    width: '100%',
+    alignSelf: 'center',
+    paddingHorizontal: resize(8),
+    borderRadius: resize(16),
+    marginHorizontal: resize(8),
+    minHeight: resize(48),
+  },
+  dropdownTitle: {
+    fontSize: resize(18),
+    textAlign: 'left',
+    marginBottom: resize(2),
+    marginTop: resize(12),
+    color: colors.textAccent,
+  },
+  dropdownSelect: {
+    ...templates.row,
+    backgroundColor: transparentize(colors.secondary, 0.1),
+    paddingVertical: resize(12),
+    marginVertical: resize(4),
+    paddingHorizontal: resize(8),
+    marginHorizontal: resize(4),
+    borderColor: colors.primary,
+    borderRadius: resize(12),
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownSelectText: {
+    flex: 1,
+    fontSize: resize(14),
+  },
 });
 
 export const styles = {

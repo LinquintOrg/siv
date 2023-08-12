@@ -208,11 +208,11 @@ export default function Item(props: IDisplayItemProps) {
                 </View>
               </View>
           }
-
-          <Text style={ styles.inventory.dismissHint }>
-            Click outside the modal to dismiss it
-          </Text>
         </ScrollView>
+
+        <Text style={[ styles.inventory.dismissHint, { backgroundColor: helpers.transparentize(helpers.inventory.getRarityColor(item.tags), 0.36) } ]}>
+          Click outside the modal to dismiss it
+        </Text>
       </SafeAreaView>
     );
   } else {
