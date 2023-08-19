@@ -7,7 +7,7 @@ import NetInfo from '@react-native-community/netinfo';
 import Text from '../components/Text';
 import { TextInput } from 'react-native-paper';
 import { IMusicKit, IMusicKitPrice } from '../utils/types';
-import MusicKit from '../Elements/MusicKit';
+import MusicKit from '../components/MusicKit';
 import * as Sentry from 'sentry-expo';
 import { global, variables, colors } from '../styles/global';
 import { helpers } from '../utils/helpers';
@@ -101,12 +101,10 @@ export default function MusicKits() {
   }
 
   function sleep(milliseconds: number) {
-    return new Promise((resolve) => {
+    return new Promise((resolve: (value?: unknown) => void) => {
       setTimeout(resolve, milliseconds);
     });
   }
-
-  // TODO: Replace ActivityIndicator elements with Loader components
 
   return (<>
     {

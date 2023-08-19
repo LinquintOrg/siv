@@ -51,7 +51,6 @@ function App() {
 
 
   async function updateProfiles() {
-    // TODO: Use Steam API key from .env
     try {
       const id = STEAM_API;
       const savedKeys = await AsyncStorage.getAllKeys();
@@ -142,7 +141,7 @@ function App() {
     ...DefaultTheme,
     colors: {
       ...DefaultTheme.colors,
-      background: '#fafafa',
+      background: '#f7f7f7',
       primary: colors.primary,
     },
   };
@@ -158,7 +157,7 @@ function App() {
           maxWidth={helpers.resize(420)}
           height={helpers.resize(64)}
           darkMode={true}
-          colorPalette={{ light: colors.primary, dark: colors.secondary }}
+          colorPalette={{ light: colors.primary, dark: colors.white }}
         />
       }>
         <Tab.Screen name="Profiles" component={TabProfile}

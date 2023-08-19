@@ -16,7 +16,7 @@ export const colors = {
   textAccent: '#444',
   background: '#fff',
   primary: '#1058a7',
-  secondary: '#d8e2f5',
+  secondary: '#e1f1ff',
   accent: '#ee3082',
   success: '#9AD797',
   error: '#eb5855',
@@ -201,6 +201,9 @@ export const global = StyleSheet.create({
   width100: {
     width: '100%',
   },
+  fullHeight: {
+    height: '100%',
+  },
   pcIncrease: {
     backgroundColor: '#7fff7f',
     color: '#336433',
@@ -286,6 +289,10 @@ export const global = StyleSheet.create({
     flex: 1,
     fontSize: resize(14),
   },
+  center: {
+    alignContent: 'center',
+    justifyContent: 'center',
+  },
 });
 
 export const styles = {
@@ -358,6 +365,33 @@ export const styles = {
       fontSize: resize(16),
       color: colors.textAccent,
       marginBottom: resize(8),
+    },
+    profile: {
+      ...templates.row,
+      width: resize(400),
+      borderRadius: resize(16),
+      padding: resize(8),
+      alignSelf: 'center',
+      gap: resize(8),
+      backgroundColor: colors.white,
+    },
+    profileAvatar: {
+      width: resize(64),
+      height: resize(64),
+      borderRadius: resize(12),
+    },
+    profileName: {
+      fontSize: resize(16),
+      color: colors.textAccent,
+    },
+    profileID: {
+      fontSize: resize(14),
+      color: colors.text,
+    },
+    list: {
+      ...templates.column,
+      marginVertical: resize(12),
+      gap: resize(12),
     },
   }),
   games: StyleSheet.create({

@@ -31,7 +31,6 @@ export default function StackProfilesMain(props: IProfilesProps) {
   // TODO: [Pages/Profiles.tsx]: See if it would be possible to keep the same order when updating profiles.
 
   const getProfileData = async () => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const id = STEAM_API;
     setLoading(true);
     const steamid = steamIDtyped;
@@ -137,10 +136,17 @@ export default function StackProfilesMain(props: IProfilesProps) {
   //   setErrorText('Profile privacy is set to PRIVATE');
   // }
 
+  function clearProfileSearch() {
+    setProfile({
+      id: '', name: '', public: false, state: 3, url: 'https://inventory.linquint.dev/api/Files/img/profile.png',
+    });
+  }
+
   async function saveProfile() {
     try {
       await helpers.saveProfile(profile);
       profiles.add(profile);
+      clearProfileSearch();
     } catch (err) {
       setSnackError(true);
       setErrorText((err as Error).message);

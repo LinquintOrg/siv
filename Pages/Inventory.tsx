@@ -371,10 +371,6 @@ export default function Inventory(props: IInventoryPageProps) {
   const [ renderNameTag, setRenderNameTag ] = useState(false);
   const [ renderAppliedSticker, setRenderAppliedSticker ] = useState(false);
 
-  // TODO: Sort by percentage is not visible when 24 hours are selected
-
-  // TODO: when sorting by percentage (probably) 90 days, it seems like it's not very accurate. Test it
-
   const changeSortUsePercentage = (perc: boolean) => {
     setSortUsePercent(perc);
     changeSortBy(sortBy, true, perc);
