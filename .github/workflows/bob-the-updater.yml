@@ -1,9 +1,9 @@
-on:
-  push:
-    branches:
-      - master
+name: update
+on: push
+
 jobs:
-  build:
+  update:
+    name: EAS Update
     runs-on: ubuntu-latest
     steps:
       - name: Check for EXPO_TOKEN
@@ -12,24 +12,24 @@ jobs:
             echo "You must provide an EXPO_TOKEN secret linked to this project's Expo account in this repo's secrets. Learn more: https://docs.expo.dev/eas-update/github-actions"
             exit 1
           fi
-
-      - name: 🏗 Setup repo
+      
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: 🏗 Setup Node
+      - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
           cache: npm
 
-      - name: 🏗 Setup EAS
+      - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: npm install
 
-      - name: 🚀 Build app
-        run: eas build --non-interactive
+      - name: Publish update
+        run: eas update --auto
