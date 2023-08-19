@@ -13,6 +13,7 @@ import { IPlayerSummariesResponse, IProfilesProps, ISteamProfile, IVanitySearchR
 import Loader from '../components/Loader';
 // import Clipboard from '@react-native-community/clipboard';
 import { useProfilesState } from '../utils/store';
+import { STEAM_API } from '@env';
 
 export default function StackProfilesMain(props: IProfilesProps) {
   const profiles = useProfilesState();
@@ -30,8 +31,7 @@ export default function StackProfilesMain(props: IProfilesProps) {
   // TODO: [Pages/Profiles.tsx]: See if it would be possible to keep the same order when updating profiles.
 
   const getProfileData = async () => {
-    // TODO: use STEAM_API value from .env file
-    const id = '7401764DA0F7B99794826E9E2512E311';
+    const id = STEAM_API;
     setLoading(true);
     const steamid = steamIDtyped;
     let validValue = helpers.isSteamIDValid(steamid);
@@ -136,10 +136,17 @@ export default function StackProfilesMain(props: IProfilesProps) {
   //   setErrorText('Profile privacy is set to PRIVATE');
   // }
 
+  function clearProfileSearch() {
+    setProfile({
+      id: '', name: '', public: false, state: 3, url: 'https://inventory.linquint.dev/api/Files/img/profile.png',
+    });
+  }
+
   async function saveProfile() {
     try {
       await helpers.saveProfile(profile);
       profiles.add(profile);
+      clearProfileSearch();
     } catch (err) {
       setSnackError(true);
       setErrorText((err as Error).message);

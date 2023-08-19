@@ -113,10 +113,6 @@ export interface IPlayerSummariesResponse {
   }
 }
 
-export interface ILoaderProps {
-  text?: string;
-}
-
 export const VPages: string[] = [ 'Profiles', 'Games', 'Inventory' ];
 export type TPagesType = typeof VPages[number];
 
