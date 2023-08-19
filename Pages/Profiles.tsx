@@ -31,7 +31,8 @@ export default function StackProfilesMain(props: IProfilesProps) {
   // TODO: [Pages/Profiles.tsx]: See if it would be possible to keep the same order when updating profiles.
 
   const getProfileData = async () => {
-    const id = STEAM_API;
+    // const id = STEAM_API;
+    const id = '7401764DA0F7B99794826E9E2512E311';
     setLoading(true);
     const steamid = steamIDtyped;
     let validValue = helpers.isSteamIDValid(steamid);

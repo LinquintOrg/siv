@@ -52,7 +52,8 @@ function App() {
 
   async function updateProfiles() {
     try {
-      const id = STEAM_API;
+      // const id = STEAM_API;
+      const id = '7401764DA0F7B99794826E9E2512E311';
       const savedKeys = await AsyncStorage.getAllKeys();
       const savedKeysFiltered = savedKeys.filter(key => !key.includes('prevGames') && key !== 'currency');
       const response = await fetch(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${id}&steamids=${savedKeysFiltered.join(',')}`);
