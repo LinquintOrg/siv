@@ -85,9 +85,9 @@ export default function ChooseGames(props: IChooseGamesProps) {
             >
               <ScrollView style={[ { width: '100%', flexWrap: 'wrap' }, global.row ]} horizontal showsHorizontalScrollIndicator={false}>
                 {
-                  previousGames.map((game, index) =>
+                  previousGames.map((game, index) => (
                     <Image key={`previous-${index}`} style={ global.rowImage } source={{ uri: game.url }} />
-                  )
+                  ))
                 }
               </ScrollView>
             </TouchableOpacity>
