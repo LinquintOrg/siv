@@ -1,7 +1,7 @@
 import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
 import React, { useState } from 'react';
 import { Icon } from 'react-native-elements';
-import Text from '../components/Text';
+import Text from './Text';
 import { ActivityIndicator } from 'react-native-paper';
 import { IActionListProps } from '../utils/types';
 
