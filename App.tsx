@@ -23,6 +23,7 @@ import ChooseGames from './Pages/ChooseGames.tsx';
 import { helpers } from './utils/helpers.ts';
 import { colors } from './styles/global.ts';
 import { BottomTabDescriptorMap } from 'react-navigation-tabbar-collection/lib/typescript/types';
+import { STEAM_API } from '@env';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<TStackNavigationList>();
@@ -52,7 +53,7 @@ function App() {
   async function updateProfiles() {
     // TODO: Use Steam API key from .env
     try {
-      const id = '7401764DA0F7B99794826E9E2512E311';
+      const id = STEAM_API;
       const savedKeys = await AsyncStorage.getAllKeys();
       const savedKeysFiltered = savedKeys.filter(key => !key.includes('prevGames') && key !== 'currency');
       const response = await fetch(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${id}&steamids=${savedKeysFiltered.join(',')}`);
