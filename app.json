@@ -44,8 +44,7 @@
           "file": "sentry-expo/upload-sourcemaps",
           "config": {
             "organization": "domr",
-            "project": "domr",
-            "authToken": "32896b340c8f4d3689d68d2f0b7174ecd57e6ba09cf44f1fb63fa9f6d571950e"
+            "project": "domr"
           }
         }
       ]
