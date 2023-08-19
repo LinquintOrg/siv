@@ -375,8 +375,14 @@ export default function Inventory(props: IInventoryPageProps) {
 
   // TODO: when sorting by percentage (probably) 90 days, it seems like it's not very accurate. Test it
 
-  const changeSortBy = (sort: number) => {
-    if (sort !== sortBy) {
+  const changeSortUsePercentage = (perc: boolean) => {
+    setSortUsePercent(perc);
+    changeSortBy(sortBy, true, perc);
+  };
+
+  const changeSortBy = (sort: number, force = false, percentages?: boolean) => {
+    if (force || sort !== sortBy) {
+      const usePercent = typeof percentages === 'undefined' ? sortUsePercent : percentages;
       setSortBy(sort);
       const tmpInventory = cloneDeep(inventory).value();
 
@@ -408,7 +414,7 @@ export default function Inventory(props: IInventoryPageProps) {
         if (sort === 4) {
           game.items.sort((a, b) => {
             if (a.price.found && b.price.found) {
-              if (sortUsePercent) return (b.price.price / b.price.p24ago - 1) - (a.price.price / a.price.p24ago - 1);
+              if (usePercent) return (b.price.price / b.price.p24ago - a.price.price / a.price.p24ago);
               return (b.price.price - b.price.p24ago) - (a.price.price - a.price.p24ago);
             }
             if (!a.price.found && !b.price.found) return 0;
@@ -420,8 +426,11 @@ export default function Inventory(props: IInventoryPageProps) {
         if (sort === 5) {
           game.items.sort((a, b) => {
             if (a.price.found && b.price.found) {
-              if (sortUsePercent) return (b.price.price / b.price.p90ago - 1) - (a.price.price / a.price.p90ago - 1);
-              return (b.price.price - b.price.p90ago) - (a.price.price - a.price.p90ago);
+              if (!a.price.p30ago || !b.price.p30ago) {
+                return 0;
+              }
+              if (usePercent) return (b.price.price / b.price.p30ago - a.price.price / a.price.p30ago);
+              return (b.price.price - b.price.p30ago) - (a.price.price - a.price.p30ago);
             }
             if (!a.price.found && !b.price.found) return 0;
             if (!a.price.found) return 1;
@@ -507,7 +516,7 @@ export default function Inventory(props: IInventoryPageProps) {
             <View style={[ global.column, { justifyContent: 'space-between', width: helpers.resize(120), alignContent: 'center' } ]}>
               <Text style={ styles.inventory.priceSingle }><Text bold>{ price(invItem.price.price) }</Text> x { invItem.amount }</Text>
               <Text bold style={ styles.inventory.priceTotal }>{ price(invItem.price.price, invItem.amount) }</Text>
-              { priceChange(invItem.price.p24ago, invItem.price.price) }
+              { priceChange(sortBy === 5 ? invItem.price.p30ago : invItem.price.p24ago, invItem.price.price) }
             </View>
           </Pressable>
         </View> : null
@@ -567,7 +576,6 @@ export default function Inventory(props: IInventoryPageProps) {
             !loaded && loading &&
             <View style={{ marginTop: Dimensions.get('window').height / 2 - 36 }}>
               <View style={ global.column }>
-                <Text bold style={ global.title }>Player</Text>
                 <View style={[ global.rowContainer, global.column, { alignItems: 'center' } ]}>
                   <Text>{ profiles.getByID(steamID)?.name }</Text>
                   <Text>{ steamID }</Text>
@@ -746,7 +754,7 @@ export default function Inventory(props: IInventoryPageProps) {
                       </TouchableOpacity>
 
                       <TouchableOpacity style={[ global.modalButton, sortBy === 5 ? global.modalButtonActive : {} ]} onPress={() => changeSortBy(5)}>
-                        <Text bold style={[ global.modalButtonText, sortBy === 5 ? global.modalButtonTextActive : {} ]}>90 day price change</Text>
+                        <Text bold style={[ global.modalButtonText, sortBy === 5 ? global.modalButtonTextActive : {} ]}>30 day price change</Text>
                       </TouchableOpacity>
                     </View>
 
@@ -767,7 +775,10 @@ export default function Inventory(props: IInventoryPageProps) {
 
                       {
                         (sortBy === 4 || sortBy === 5) &&
-                        <TouchableOpacity style={[ global.modalButton, global.modalButtonActive ]} onPress={() => setSortUsePercent(!sortUsePercent)}>
+                        <TouchableOpacity
+                          style={[ global.modalButton, sortUsePercent ? global.modalButtonActive : {} ]}
+                          onPress={() => changeSortUsePercentage(!sortUsePercent)}
+                        >
                           <Text bold style={[ global.modalButtonText, sortUsePercent ? global.modalButtonTextActive : {} ]}>Change in %</Text>
                         </TouchableOpacity>
                       }

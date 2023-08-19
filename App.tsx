@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { usePreloadedState, useProfilesState, useRatesState, useStore } from './utils/store.ts';
 import { View, Dimensions } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, Theme, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Icon } from 'react-native-elements';
 import { useEffect } from 'react';
@@ -119,7 +119,6 @@ function App() {
     );
   }
 
-  // ! Music kits is always rerendering for some reason :/
   function TabMusicKit() {
     return (
       <View style={{ height: '100%' }}>
@@ -138,8 +137,17 @@ function App() {
 
   enableScreens();
 
+  const MyTheme: Theme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: '#fafafa',
+      primary: colors.primary,
+    },
+  };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={MyTheme}>
       <Store />
       <Tab.Navigator tabBar={props =>
         <CleanTabBar

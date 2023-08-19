@@ -4,6 +4,7 @@ import { global, styles } from '../styles/global';
 import { IMusicKitProps } from '../utils/types';
 import Text from '../components/Text';
 import MusicKitPrices from './MusicKitPrices';
+import { helpers } from '../utils/helpers';
 
 export default function MusicKit(props: IMusicKitProps) {
   const { item, prices, search, play } = props;
@@ -18,7 +19,7 @@ export default function MusicKit(props: IMusicKitProps) {
         onPress={() => void play(item)}>
         <Image style={global.rowImage}
           source={{ uri: (item.img || imgNotFound) }} />
-        <View style={[ global.column ]}>
+        <View style={[ global.column, { width: helpers.resize(240) } ]}>
           <Text bold style={styles.musicKits.song}>{item.song}</Text>
           <Text bold style={styles.musicKits.artist}>{item.artist}</Text>
         </View>

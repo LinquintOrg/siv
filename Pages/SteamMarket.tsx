@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FlatList, Image, NativeScrollEvent, NativeSyntheticEvent, Pressable, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
 import { Icon } from 'react-native-elements';
 import { Dropdown } from 'react-native-element-dropdown';
 import Text from '../components/Text';
@@ -39,6 +39,7 @@ export default function () {
     results: [],
   });
 
+  // TODO: [SteamMarket.tsx]: Search query persists after querying a search.
   const sortByValues = [
     { label: 'Default - no specific order', value: 0 },
     { label: 'Price', value: 1 },
@@ -195,11 +196,15 @@ export default function () {
     <>
       {
         loading &&
-        <Loader text='Downloading Steam Market games list' />
+        <View style={{ marginTop: Dimensions.get('window').height / 2 - 36 }}>
+          <Loader text='Downloading Steam Market games list' />
+        </View>
       }
       {
         loadingResults &&
-        <Loader text='Searching the Steam Market...' />
+        <View style={{ marginTop: Dimensions.get('window').height / 2 - 36 }}>
+          <Loader text='Searching the Steam Market...' />
+        </View>
       }
       {
         loadedGames && !loadingResults &&
@@ -238,109 +243,111 @@ export default function () {
             animationInTiming={250}
           >
             <SafeAreaView style={global.modal}>
-              <Text bold style={global.title}>Search community market</Text>
+              <ScrollView>
+                <Text bold style={global.title}>Search community market</Text>
 
-              <TextInput
-                style={[ global.input, global.width100, { marginHorizontal: 0 } ]}
-                placeholder='Search query'
-                mode={'outlined'}
-                onChangeText={text => setSearchQuery(text)}
-                label={'Search query'}
-                activeOutlineColor={colors.primary}
-                left={
-                  <TextInput.Icon
-                    icon={() => (<Icon name={'search'} type={'ionicons'} color={colors.primary} />)}
-                    size={variables.iconSize}
-                    style={{ margin: 0, marginTop: helpers.resize(8) }}
-                    forceTextInputFocus={false}
-                  />
-                }
-              />
+                <TextInput
+                  style={[ global.input, global.width100, { marginHorizontal: 0 } ]}
+                  placeholder='Search query'
+                  mode={'outlined'}
+                  onChangeText={text => setSearchQuery(text)}
+                  label={'Search query'}
+                  activeOutlineColor={colors.primary}
+                  left={
+                    <TextInput.Icon
+                      icon={() => (<Icon name={'search'} type={'ionicons'} color={colors.primary} />)}
+                      size={variables.iconSize}
+                      style={{ margin: 0, marginTop: helpers.resize(8) }}
+                      forceTextInputFocus={false}
+                    />
+                  }
+                />
 
-              <Text bold style={[ global.dropdownTitle ]}>Game</Text>
-              <Dropdown
-                data={games}
-                search
-                searchPlaceholder={'Search for game...'}
-                labelField={'label'}
-                valueField={'value'}
-                placeholder={'Select a game...'}
-                maxHeight={helpers.resize(320)}
-                onChange={(item: IDropdownItem) => setFilterGame(item.value)}
-                value={filterGame}
-                renderItem={(item: IDropdownItem) => _renderItem(item, filterGame)}
-                renderLeftIcon={() => (
-                  <Icon name="gamepad" type={'font-awesome'} size={variables.iconSize} color={colors.primary} style={{ marginRight: helpers.resize(8) }} />
-                )}
-                inputSearchStyle={global.dropdownInput}
-                style={global.dropdown}
-                selectedTextStyle={global.selectedTextStyle}
-              />
+                <Text bold style={[ global.dropdownTitle ]}>Game</Text>
+                <Dropdown
+                  data={games}
+                  search
+                  searchPlaceholder={'Search for game...'}
+                  labelField={'label'}
+                  valueField={'value'}
+                  placeholder={'Select a game...'}
+                  maxHeight={helpers.resize(320)}
+                  onChange={(item: IDropdownItem) => setFilterGame(item.value)}
+                  value={filterGame}
+                  renderItem={(item: IDropdownItem) => _renderItem(item, filterGame)}
+                  renderLeftIcon={() => (
+                    <Icon name="gamepad" type={'font-awesome'} size={variables.iconSize} color={colors.primary} style={{ marginRight: helpers.resize(8) }} />
+                  )}
+                  inputSearchStyle={global.dropdownInput}
+                  style={global.dropdown}
+                  selectedTextStyle={global.selectedTextStyle}
+                />
 
-              <Text bold style={[ global.dropdownTitle ]}>Sort by</Text>
-              <Dropdown
-                data={sortByValues}
-                labelField={'label'}
-                valueField={'value'}
-                placeholder={'Select a sort option...'}
-                maxHeight={helpers.resize(170)}
-                onChange={(item: IDropdownItem) => setSortBy(item.value)}
-                value={sortBy}
-                renderItem={(item: IDropdownItem) => _renderItem(item, sortBy)}
-                renderLeftIcon={() => (
-                  <Icon name="sort" type={'font-awesome'} size={variables.iconSize} color={colors.primary} style={{ marginRight: helpers.resize(8) }} />
-                )}
-                inputSearchStyle={global.dropdownInput}
-                style={global.dropdown}
-                selectedTextStyle={global.selectedTextStyle}
-              />
+                <Text bold style={[ global.dropdownTitle ]}>Sort by</Text>
+                <Dropdown
+                  data={sortByValues}
+                  labelField={'label'}
+                  valueField={'value'}
+                  placeholder={'Select a sort option...'}
+                  maxHeight={helpers.resize(170)}
+                  onChange={(item: IDropdownItem) => setSortBy(item.value)}
+                  value={sortBy}
+                  renderItem={(item: IDropdownItem) => _renderItem(item, sortBy)}
+                  renderLeftIcon={() => (
+                    <Icon name="sort" type={'font-awesome'} size={variables.iconSize} color={colors.primary} style={{ marginRight: helpers.resize(8) }} />
+                  )}
+                  inputSearchStyle={global.dropdownInput}
+                  style={global.dropdown}
+                  selectedTextStyle={global.selectedTextStyle}
+                />
 
-              <Text bold style={[ global.dropdownTitle ]}>Sort order</Text>
-              <Dropdown
-                data={sortBy === 0 ? [ { value: 0, label: 'Default order' } ] : [ { value: 0, label: 'Ascending' }, { value: 1, label: 'Descending' } ]}
-                labelField={'label'}
-                valueField={'value'}
-                placeholder={'Select a sort order option...'}
-                maxHeight={helpers.resize(170)}
-                onChange={(item: IDropdownItem) => setSortAsc(item.label === 'Ascending')}
-                value={sortAsc ? 0 : 1}
-                renderItem={(item: IDropdownItem) => _renderItem(item, sortAsc ? 0 : 1)}
-                renderLeftIcon={() => (
-                  <Icon
-                    name={getSortIcon()}
-                    type={'font-awesome'}
-                    size={variables.iconSize}
-                    color={colors.primary}
-                    style={{ marginRight: helpers.resize(8) }}
-                  />
-                )}
-                inputSearchStyle={global.dropdownInput}
-                style={global.dropdown}
-                selectedTextStyle={global.selectedTextStyle}
-              />
+                <Text bold style={[ global.dropdownTitle ]}>Sort order</Text>
+                <Dropdown
+                  data={sortBy === 0 ? [ { value: 0, label: 'Default order' } ] : [ { value: 0, label: 'Ascending' }, { value: 1, label: 'Descending' } ]}
+                  labelField={'label'}
+                  valueField={'value'}
+                  placeholder={'Select a sort order option...'}
+                  maxHeight={helpers.resize(170)}
+                  onChange={(item: IDropdownItem) => setSortAsc(item.label === 'Ascending')}
+                  value={sortAsc ? 0 : 1}
+                  renderItem={(item: IDropdownItem) => _renderItem(item, sortAsc ? 0 : 1)}
+                  renderLeftIcon={() => (
+                    <Icon
+                      name={getSortIcon()}
+                      type={'font-awesome'}
+                      size={variables.iconSize}
+                      color={colors.primary}
+                      style={{ marginRight: helpers.resize(8) }}
+                    />
+                  )}
+                  inputSearchStyle={global.dropdownInput}
+                  style={global.dropdown}
+                  selectedTextStyle={global.selectedTextStyle}
+                />
 
-              <BouncyCheckbox
-                isChecked={searchDesc}
-                onPress={(isChecked) => setSearchDesc(isChecked)}
-                text={<Text style={{ fontSize: helpers.resize(16), color: colors.primary }}>Search in <Text bold>item description</Text></Text>}
-                textStyle={{ textDecorationLine: 'none' }}
-                fillColor={colors.primary}
-                iconStyle={{ borderWidth: helpers.resize(3), borderColor: colors.primary }}
-                style={{ marginVertical: helpers.resize(16), alignSelf: 'center' }}
-                size={helpers.resize(26)}
-              />
+                <BouncyCheckbox
+                  isChecked={searchDesc}
+                  onPress={(isChecked) => setSearchDesc(isChecked)}
+                  text={<Text style={{ fontSize: helpers.resize(16), color: colors.primary }}>Search in <Text bold>item description</Text></Text>}
+                  textStyle={{ textDecorationLine: 'none' }}
+                  fillColor={colors.primary}
+                  iconStyle={{ borderWidth: helpers.resize(3), borderColor: colors.primary }}
+                  style={{ marginVertical: helpers.resize(16), alignSelf: 'center' }}
+                  size={helpers.resize(26)}
+                />
 
-              <Pressable
-                style={[ global.modalButton, { marginHorizontal: 0 }, !searchTimeout && global.modalButtonActive ]}
-                onPress={() => {
-                  void search();
-                }}
-                disabled={searchTimeout}
-              >
-                <Text bold style={[ global.modalButtonText, !searchTimeout ? global.modalButtonTextActive : {} ]}>
+                <Pressable
+                  style={[ global.modalButton, { marginHorizontal: 0 }, !searchTimeout && global.modalButtonActive ]}
+                  onPress={() => {
+                    void search();
+                  }}
+                  disabled={searchTimeout}
+                >
+                  <Text bold style={[ global.modalButtonText, !searchTimeout ? global.modalButtonTextActive : {} ]}>
                   SEARCH{timeoutLen > 0 && ` (${timeoutLen})`}
-                </Text>
-              </Pressable>
+                  </Text>
+                </Pressable>
+              </ScrollView>
             </SafeAreaView>
           </Modal>
 

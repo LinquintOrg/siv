@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions, Pressable } from 'react-native';
+import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-import { Divider, Icon } from 'react-native-elements';
+import { Divider } from 'react-native-elements';
 import Text from './Text';
 import { useRateState, useRatesState } from '../utils/store';
 import { helpers } from '../utils/helpers';
-import Clipboard from '@react-native-community/clipboard';
+// import Clipboard from '@react-native-community/clipboard';
+
+// TODO: [Settings.tsx]: When clicking on copy link, an error is thrown (Cannot read property 'setString' of null)
 
 export default function () {
   const [ scale ] = useState(Dimensions.get('window').width / 423);
@@ -89,46 +91,46 @@ export default function () {
       <Text style={{ fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4 }}>
         Website URL @ <Text bold style={{ color: '#3342A3' }}>inventory.linquint.dev</Text>
       </Text>
-      <Pressable
+      {/* <Pressable
         onPress={() => Clipboard.setString('https://inventory.linquint.dev/') }
         style={({ pressed }) => pressed ? [ styles.copyButton, { backgroundColor: '#8f9eff' } ] : styles.copyButton}
       >
         <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
         <Text bold style={styles.copyText}>Copy Link</Text>
-      </Pressable>
+      </Pressable> */}
 
       <Text style={{ fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4 }}>
         You can check API status @ <Text bold style={{ color: '#3342A3' }}>status.linquint.dev</Text>
       </Text>
-      <Pressable
+      {/* <Pressable
         onPress={() => Clipboard.setString('https://status.linquint.dev/')}
         style={({ pressed }) => pressed ? [ styles.copyButton, { backgroundColor: '#8f9eff' } ] : styles.copyButton}
       >
         <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
         <Text bold style={styles.copyText}>Copy Link</Text>
-      </Pressable>
+      </Pressable> */}
 
       <Text style={{ fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4 }}>
         You can find credits @ <Text bold style={{ color: '#3342A3' }}>inventory.linquint.dev/credits</Text>
       </Text>
-      <Pressable
+      {/* <Pressable
         onPress={() => Clipboard.setString('https://inventory.linquint.dev/credits/')}
         style={({ pressed }) => pressed ? [ styles.copyButton, { backgroundColor: '#8f9eff' } ] : styles.copyButton}
       >
         <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
         <Text bold style={styles.copyText}>Copy Link</Text>
-      </Pressable>
+      </Pressable> */}
 
       <Text style={{ fontSize: resize(16), textAlign: 'center', width: '95%', alignSelf: 'center', marginVertical: 4 }}>
         You can find changelogs @ <Text bold style={{ color: '#3342A3' }}>inventory.linquint.dev/changelogs</Text>
       </Text>
-      <Pressable
+      {/* <Pressable
         onPress={() => Clipboard.setString('https://inventory.linquint.dev/changelogs/')}
         style={({ pressed }) => pressed ? [ styles.copyButton, { backgroundColor: '#8f9eff' } ] : styles.copyButton}
       >
         <Icon name="copy" type="feather" size={resize(18)} color='#3342A3' />
         <Text bold style={styles.copyText}>Copy Link</Text>
-      </Pressable>
+      </Pressable> */}
 
       <Divider width={4} style={{ width: '20%', alignSelf: 'center', marginVertical: resize(16), borderRadius: 8 }} color={'#0A5270'} />
 

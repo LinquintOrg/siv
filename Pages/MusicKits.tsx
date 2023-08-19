@@ -1,8 +1,4 @@
-import {
-  ActivityIndicator,
-  Dimensions, FlatList,
-  View,
-} from 'react-native';
+import { Dimensions, FlatList, View } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { AVPlaybackStatusSuccess, Audio } from 'expo-av';
 import { Icon } from 'react-native-elements';
@@ -15,10 +11,10 @@ import MusicKit from '../Elements/MusicKit';
 import * as Sentry from 'sentry-expo';
 import { global, variables, colors } from '../styles/global';
 import { helpers } from '../utils/helpers';
+import Loader from '../components/Loader';
 
 export default function MusicKits() {
   const [ loading, setLoading ] = useState(true);
-  const [ loadingPrices, setLoadingPrices ] = useState(false);
   const [ kits, setKits ] = useState<IMusicKit[]>([]);
   const [ prices, setPrices ] = useState<IMusicKitPrice[]>([]);
   const [ playbackTimeout, setPlaybackTimeout ] = useState(false);
@@ -30,6 +26,7 @@ export default function MusicKits() {
   const [ successText, setSuccessText ] = useState('');
   const [ errorSnack, setErrorSnack ] = useState(false);
   const [ successSnack, setSuccessSnack ] = useState(false);
+  const [ internet, setInternet ] = useState(true);
 
   // TODO: [Pages/MusicKits.tsx]: Align prices, non-stattrack music kit prices are 'NaN' (probably undefined). Snackbar text is difficult to read.
 
@@ -40,15 +37,14 @@ export default function MusicKits() {
         if (!(internetConnection.isInternetReachable && internetConnection.isConnected)) {
           setErrorText('No internet connection');
           setErrorSnack(true);
+          setInternet(false);
           await helpers.waitUntil(() => !!internetConnection.isInternetReachable && internetConnection.isConnected, 40);
           setErrorSnack(false);
           setSuccessSnack(true);
           setSuccessText('Connected to the internet');
-          setTimeout(() => {
-            setSuccessSnack(false);
-          }, 3000);
         }
 
+        setInternet(true);
         const [ musicKitsRes, pricesRes ] = await Promise.all([
           fetch('https://inventory.linquint.dev/api/Steam/rq/music_kits.json'),
           fetch('https://inventory.linquint.dev/api/Steam/v3/music_kit_prices.php'),
@@ -58,7 +54,6 @@ export default function MusicKits() {
         setKits(musicKits.musickit);
         setPrices(pricesObj);
         setLoading(false);
-        setLoadingPrices(false);
       } catch (err) {
         setErrorText((err as Error).message);
         setErrorSnack(true);
@@ -113,101 +108,106 @@ export default function MusicKits() {
 
   // TODO: Replace ActivityIndicator elements with Loader components
 
-  return (
-    (loading) ?
-      <View style={[ global.column, { alignSelf: 'center', width: helpers.resize(300) } ]}>
-        <ActivityIndicator style={{ marginTop: Dimensions.get('window').height / 2 - 36 }} size="large"
-          color='#000'/>
-        <Text style={{ textAlign: 'center' }}>Downloading list of music kits...</Text>
-      </View> :
-      (loadingPrices) ?
-        <View>
-          <ActivityIndicator style={{ marginTop: Dimensions.get('window').height / 2 - 36 }} size="large"
-            color='#000'/>
-          <Text style={{ textAlign: 'center' }}>Downloading music kit prices...</Text>
-        </View> :
-        <View style={{ height: '100%' }}>
-          <View style={{ marginVertical: helpers.resize(8) }}>
-            <Text style={global.title}>Tap to play <Text bold>MVP anthem</Text></Text>
-          </View>
-
-          <View style={ global.inputView }>
-            <TextInput
-              style={ global.input }
-              placeholder='Start typing artist or song name'
-              mode={'outlined'}
-              onChangeText={text => setSearch(text)}
-              label={'Music kit search'}
-              activeOutlineColor={'#1f4690'}
-              left={
-                <TextInput.Icon
-                  icon={() => (<Icon name={'filter'} type={'feather'} color={'#1f4690'} />)}
-                  size={variables.iconSize}
-                  style={{ margin: 0, paddingTop: helpers.resize(8) }}
-                  forceTextInputFocus={false}
-                />
-              }
-            />
-          </View>
-
-          <FlatList
-            data={kits}
-            renderItem={({ item }) => <MusicKit item={item} play={playSound} search={search} prices={prices} />}
-            keyExtractor={item => item.dir}
-          />
-
-          <Snackbar
-            visible={errorSnack}
-            onDismiss={() => setErrorSnack(false)}
-            style={{ backgroundColor: colors.error }}
-            duration={3000}
-            action={{
-              label: 'Okay',
-              textColor: colors.text,
-              buttonColor: colors.white,
-              onPress: () => {
-                setErrorSnack(false);
-              },
-            }}
-          >
-            <View>
-              <Text style={global.snackbarText}>{ errorText }</Text>
-            </View>
-          </Snackbar>
-
-          <Snackbar
-            visible={successSnack}
-            onDismiss={() => setSuccessSnack(false)}
-            style={{ backgroundColor: colors.success }}
-            duration={3000}
-            action={{
-              label: 'Okay',
-              textColor: colors.text,
-              buttonColor: colors.white,
-              onPress: () => {
-                setSuccessSnack(false);
-              },
-            }}
-          >
-            <View>
-              <Text style={global.snackbarText}>{ successText }</Text>
-            </View>
-          </Snackbar>
-
-          <Snackbar
-            visible={snackbarWhatsPlaying}
-            style={{ backgroundColor: '#193C6E' }}
-            onDismiss={() => setSnackbarWhatsPlaying(false)}
-            duration={5000}
-          >
-            <Text style={{ fontSize: helpers.resize(14) }}>
-              Now playing <Text bold style={{ color: '#6FC8F7' }}>
-                { playing.kit.song }
-              </Text> by <Text style={{ color: '#6FC8F7' }}>{ playing.kit.artist }</Text>
-              {'\n'}
-              Length: <Text bold style={{ color: '#6FC8F7' }}>{Math.ceil(playing.length / 1000)}</Text> seconds
-            </Text>
-          </Snackbar>
+  return (<>
+    {
+      !internet &&
+      <View style={[ global.column, { alignItems: 'center', justifyContent: 'center' } ]}>
+        <Icon name='wifi-off' type='feather' color={colors.primary} size={variables.iconLarge} />
+        <Text style={global.subtitle}>No internet connection. Waiting...</Text>
+      </View>
+    }
+    {
+      (internet && loading) &&
+      <View style={{ marginTop: Dimensions.get('window').height / 2 - 36 }}>
+        <Loader text='Loading music kits...' />
+      </View>
+    }
+    {
+      (internet && !loading) &&
+      <View style={{ height: '100%' }}>
+        <View style={{ marginVertical: helpers.resize(8) }}>
+          <Text bold style={global.title}>Music Kits</Text>
+          <Text style={global.subtitle}>Tap to play the <Text bold>MVP anthem</Text></Text>
         </View>
-  );
+
+        <View style={ global.inputView }>
+          <TextInput
+            style={ global.input }
+            placeholder='Start typing artist or song name'
+            mode={'outlined'}
+            onChangeText={text => setSearch(text)}
+            label={'Music kit search'}
+            activeOutlineColor={'#1f4690'}
+            left={
+              <TextInput.Icon
+                icon={() => (<Icon name={'filter'} type={'feather'} color={'#1f4690'} />)}
+                size={variables.iconSize}
+                style={{ margin: 0, paddingTop: helpers.resize(8) }}
+                forceTextInputFocus={false}
+              />
+            }
+          />
+        </View>
+
+        <FlatList
+          data={kits}
+          renderItem={({ item }) => <MusicKit item={item} play={playSound} search={search} prices={prices} />}
+          keyExtractor={item => item.dir}
+        />
+      </View>
+    }
+
+    <Snackbar
+      visible={errorSnack}
+      onDismiss={() => setErrorSnack(false)}
+      style={{ backgroundColor: colors.error }}
+      duration={3000}
+      action={{
+        label: 'Okay',
+        textColor: colors.text,
+        buttonColor: colors.white,
+        onPress: () => {
+          setErrorSnack(false);
+        },
+      }}
+    >
+      <View>
+        <Text style={global.snackbarText}>{ errorText }</Text>
+      </View>
+    </Snackbar>
+
+    <Snackbar
+      visible={successSnack}
+      onDismiss={() => setSuccessSnack(false)}
+      style={{ backgroundColor: colors.success }}
+      duration={3000}
+      action={{
+        label: 'Okay',
+        textColor: colors.text,
+        buttonColor: colors.white,
+        onPress: () => {
+          setSuccessSnack(false);
+        },
+      }}
+    >
+      <View>
+        <Text style={global.snackbarText}>{ successText }</Text>
+      </View>
+    </Snackbar>
+
+    <Snackbar
+      visible={snackbarWhatsPlaying}
+      style={{ backgroundColor: colors.primary }}
+      onDismiss={() => setSnackbarWhatsPlaying(false)}
+      duration={5000}
+    >
+      <Text style={{ fontSize: helpers.resize(14), color: colors.white }}>
+        Now playing <Text bold style={{ color: colors.secondary }}>
+          { playing.kit.song }
+        </Text> by <Text style={{ color: colors.secondary }}>{ playing.kit.artist }</Text>
+        {'\n'}
+        Length: <Text bold style={{ color: colors.secondary }}>{Math.ceil(playing.length / 1000)}</Text> seconds
+      </Text>
+    </Snackbar>
+  </>);
 }

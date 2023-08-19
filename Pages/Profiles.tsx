@@ -11,7 +11,7 @@ import NetInfo from '@react-native-community/netinfo';
 import * as Sentry from 'sentry-expo';
 import { IPlayerSummariesResponse, IProfilesProps, ISteamProfile, IVanitySearchResponse } from '../utils/types';
 import Loader from '../components/Loader';
-import Clipboard from '@react-native-community/clipboard';
+// import Clipboard from '@react-native-community/clipboard';
 import { useProfilesState } from '../utils/store';
 
 export default function StackProfilesMain(props: IProfilesProps) {
@@ -111,8 +111,10 @@ export default function StackProfilesMain(props: IProfilesProps) {
     setProfileModalVisible(!isProfileModalVisible);
   };
 
+  // TODO: [Profiles.tsx]: Clipboard library issue the same as inside the settings page.
+
   const copyToClipboard = async (copiedText: string | number) => {
-    Clipboard.setString(copiedText.toString());
+    // Clipboard.setString(copiedText.toString());
     setSnackSuccess(true);
     setSuccessText('SteamID64 copied to clipboard');
     await helpers.sleep(3000);
@@ -266,14 +268,14 @@ export default function StackProfilesMain(props: IProfilesProps) {
             <Text bold style={ global.title }>Choose an action</Text>
             <Text style={ styles.profiles.modalUser }>{ selectedProfile.name }</Text>
 
-            <View style={[ global.row, { justifyContent: 'space-between' } ]}>
-              <TouchableOpacity onPress={() => void deleteProfile()} style={ global.buttonSmall }>
+            <View style={[ global.column, { gap: helpers.resize(8) } ]}>
+              <TouchableOpacity onPress={() => void deleteProfile()} style={[ global.buttonLarge, { marginVertical: 0 } ]}>
                 <Text bold style={ global.buttonText }>Delete user</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => void copyToClipboard(selectedProfile.id)} style={ global.buttonSmall }>
+              {/* <TouchableOpacity onPress={() => void copyToClipboard(selectedProfile.id)} style={ global.buttonSmall }>
                 <Text bold style={ global.buttonText }>Copy SteamID64</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           </View> : <View>
             <Text bold style={ global.title }>No profile selected</Text>

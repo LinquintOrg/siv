@@ -16,7 +16,7 @@ export const colors = {
   textAccent: '#444',
   background: '#fff',
   primary: '#1058a7',
-  secondary: '#c4d2f0',
+  secondary: '#d8e2f5',
   accent: '#ee3082',
   success: '#9AD797',
   error: '#eb5855',
@@ -124,6 +124,7 @@ export const global = StyleSheet.create({
     aspectRatio: 1,
     marginRight: resize(12),
     borderRadius: resize(8),
+    backgroundColor: colors.white,
   },
   smallButtonRow: {
     ...templates.row,
@@ -296,6 +297,13 @@ export const styles = {
     song: {
       fontSize: resize(16),
       color: colors.text,
+    },
+    price: {
+      fontSize: resize(16),
+      color: colors.textAccent,
+      textAlign: 'center',
+      alignSelf: 'center',
+      width: resize(84),
     },
   }),
   profileSearch: StyleSheet.create({
