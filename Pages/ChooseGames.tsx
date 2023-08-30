@@ -14,21 +14,29 @@ export default function ChooseGames(props: IChooseGamesProps) {
   const [ selected, setSelected ] = React.useState<IInventoryGame[]>([]);
   const [ previousGames, setPreviousGames ] = React.useState<IInventoryGame[]>([]);
   const [ snackbarVisible, setSnackbarVisible ] = React.useState(false);
+  const [ errorText, setErrorText ] = React.useState('');
 
   React.useEffect(() => {
     async function prepare() {
-      const previous = await helpers.loadPreviousGames(route.params.steamId);
-      setPreviousGames(previousGames.concat(...previous));
+      try {
+        setPreviousGames([]);
+        const previous = await helpers.loadPreviousGames(route.params.steamId);
+        setPreviousGames(previous);
+      } catch (err) {
+        setErrorText('Failed to load previous games');
+        setSnackbarVisible(true);
+      }
     }
     void prepare();
   }, []);
 
-  function proceedToLoading() {
-    // TODO: Save games to previous games list save
+  async function proceedToLoading() {
     if (selected.length === 0) {
+      setErrorText('Choose at least one game.');
       setSnackbarVisible(true);
       return;
     }
+    await helpers.savePreviousGames(route.params.steamId, selected);
     navigation.navigate('Inventory', { games: selected, steamId: route.params.steamId });
   }
 
@@ -80,10 +88,10 @@ export default function ChooseGames(props: IChooseGamesProps) {
           <View style={ global.column }>
             <Text style={global.subtitle}>Click to add previous games to selection</Text>
             <TouchableOpacity
-              style={global.row}
+              style={[ global.row, { width: '85%', alignSelf: 'center' } ]}
               onPress={() => appendPreviousGames()}
             >
-              <ScrollView style={[ { width: '100%', flexWrap: 'wrap' }, global.row ]} horizontal showsHorizontalScrollIndicator={false}>
+              <ScrollView style={[ { width: '90%', flexWrap: 'wrap' }, global.row ]} horizontal showsHorizontalScrollIndicator={false}>
                 {
                   previousGames.map((game, index) => (
                     <Image key={`previous-${index}`} style={ global.rowImage } source={{ uri: game.url }} />
@@ -95,7 +103,7 @@ export default function ChooseGames(props: IChooseGamesProps) {
       }
 
       <TouchableOpacity style={ global.buttonLarge }
-        onPress={() => proceedToLoading()}
+        onPress={() => void proceedToLoading()}
       >
         <Text bold style={ global.buttonText }>Select games</Text>
       </TouchableOpacity>
@@ -104,8 +112,9 @@ export default function ChooseGames(props: IChooseGamesProps) {
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
         style={{ backgroundColor: colors.error }}
+        duration={3000}
       >
-        <View><Text style={ global.snackbarText }>Choose at least one game.</Text></View>
+        <View><Text style={ global.snackbarText }>{ errorText }</Text></View>
       </Snackbar>
     </View>
   );

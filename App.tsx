@@ -23,7 +23,7 @@ import ChooseGames from './Pages/ChooseGames.tsx';
 import { helpers } from './utils/helpers.ts';
 import { colors } from './styles/global.ts';
 import { BottomTabDescriptorMap } from 'react-navigation-tabbar-collection/lib/typescript/types';
-import { STEAM_API } from '@env';
+// import { STEAM_API } from '@env';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<TStackNavigationList>();

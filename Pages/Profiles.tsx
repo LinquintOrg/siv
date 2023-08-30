@@ -13,7 +13,7 @@ import { IPlayerSummariesResponse, IProfilesProps, ISteamProfile, IVanitySearchR
 import Loader from '../components/Loader';
 // import Clipboard from '@react-native-community/clipboard';
 import { useProfilesState } from '../utils/store';
-import { STEAM_API } from '@env';
+// import { STEAM_API } from '@env';
 
 export default function StackProfilesMain(props: IProfilesProps) {
   const profiles = useProfilesState();
@@ -138,6 +138,7 @@ export default function StackProfilesMain(props: IProfilesProps) {
   // }
 
   function clearProfileSearch() {
+    setSteamIDtyped('');
     setProfile({
       id: '', name: '', public: false, state: 3, url: 'https://inventory.linquint.dev/api/Files/img/profile.png',
     });

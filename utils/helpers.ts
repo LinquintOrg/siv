@@ -26,7 +26,7 @@ export const helpers = {
       && steamID.length === 17 && /^[0-9]+$/.test(steamID);
   },
   sleep(milliseconds: number) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       setTimeout(resolve, milliseconds);
     });
   },
@@ -55,10 +55,17 @@ export const helpers = {
     if (savedGamesKey) {
       const games = await AsyncStorage.getItem(savedGamesKey);
       if (games) {
-        return (JSON.parse(games) as { val: IInventoryGame[] }).val;
+        return (JSON.parse(games) as IInventoryGame[]);
       }
     }
     return [];
+  },
+  async savePreviousGames(id: string, games: IInventoryGame[]): Promise<void> {
+    if (games.length) {
+      await AsyncStorage.setItem(`prevGames${id}`, JSON.stringify(games));
+    } else {
+      throw new Error('You must select at least one game.');
+    }
   },
   countItems(classid: string, instanceid: string, assetData: IInventoryResAsset[]) {
     const items = assetData.filter(asset => asset.classid === classid && asset.instanceid === instanceid);

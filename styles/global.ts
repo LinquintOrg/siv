@@ -16,7 +16,7 @@ export const colors = {
   textAccent: '#444',
   background: '#fff',
   primary: '#1058a7',
-  secondary: '#e1f1ff',
+  secondary: '#D4EDE5',
   accent: '#ee3082',
   success: '#9AD797',
   error: '#eb5855',
