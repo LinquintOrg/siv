@@ -27,7 +27,9 @@ export default function ChooseGames(props: IChooseGamesProps) {
         setSnackbarVisible(true);
       }
     }
-    void prepare();
+    setTimeout(() => {
+      void prepare();
+    }, 50);
   }, []);
 
   async function proceedToLoading() {

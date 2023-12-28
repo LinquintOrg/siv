@@ -51,7 +51,7 @@ export default function StackProfilesMain(props: IProfilesProps) {
         const profileRes = await fetch(`https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${id}&vanityurl=${steamid}`);
         const profileObj = await profileRes.json() as IVanitySearchResponse;
 
-        if (profileObj.response.success == 0) {
+        if (!profileObj.response?.success) {
           throw new Error('Profile not found');
         }
         validValue = true;
