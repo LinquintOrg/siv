@@ -30,7 +30,7 @@
         
       },
       "package": "com.rsds.steaminventoryvalue",
-      "versionCode": 2010000170
+      "versionCode": 2010000171
     },
     "web": {
       "favicon": "./assets/favicon.png"
