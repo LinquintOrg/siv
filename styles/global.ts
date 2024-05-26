@@ -77,7 +77,6 @@ export const global = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'center',
-    marginVertical: resize(8),
   },
   input: {
     width: resize(400),
@@ -91,9 +90,9 @@ export const global = StyleSheet.create({
     paddingTop: resize(8),
   },
   title: {
-    textAlign: 'center',
-    fontSize: resize(24),
-    marginVertical: resize(8),
+    fontSize: resize(32),
+    fontWeight: 'bold',
+    marginVertical: resize(16),
   },
   subtitle: {
     textAlign: 'center',
@@ -296,23 +295,6 @@ export const global = StyleSheet.create({
 });
 
 export const styles = {
-  musicKits: StyleSheet.create({
-    artist: {
-      fontSize: resize(14),
-      color: colors.textAccent,
-    },
-    song: {
-      fontSize: resize(16),
-      color: colors.text,
-    },
-    price: {
-      fontSize: resize(16),
-      color: colors.textAccent,
-      textAlign: 'center',
-      alignSelf: 'center',
-      width: resize(84),
-    },
-  }),
   profileSearch: StyleSheet.create({
     type: {
       fontSize: resize(14),

@@ -3,5 +3,10 @@
   "compilerOptions": {
     "strict": true,
     "baseUrl": ".",
+    "paths": {
+      "@/*": [ "./components/*" ],
+      "@utils/*": [ "./utils/*" ],
+      "types": [ "./types/types.ts" ]
+    }
   },
 }

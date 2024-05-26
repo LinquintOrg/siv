@@ -9,10 +9,11 @@ import Text from '../components/Text';
 import Modal from 'react-native-modal';
 import NetInfo from '@react-native-community/netinfo';
 import * as Sentry from 'sentry-expo';
-import { IPlayerSummariesResponse, IProfilesProps, ISteamProfile, IVanitySearchResponse } from '../utils/types';
+import { IPlayerSummariesResponse, IProfilesProps, IVanitySearchResponse } from '../utils/types';
 import Loader from '../components/Loader';
 // import Clipboard from '@react-native-community/clipboard';
 import { useProfilesState } from '../utils/store';
+import { ISteamProfile } from 'types';
 // import { STEAM_API } from '@env';
 
 export default function StackProfilesMain(props: IProfilesProps) {

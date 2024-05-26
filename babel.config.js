@@ -6,6 +6,28 @@ module.exports = function(api) {
     plugins: [
       'react-native-reanimated/plugin',
       'module:react-native-dotenv',
+      [
+        'module-resolver',
+        {
+          root: [ './' ],
+          alias: {
+            '@': './components',
+            '@utils': './utils',
+            'types': './types/types.ts',
+          },
+          extensions: [
+            '.ios.ts',
+            '.android.ts',
+            '.ts',
+            '.ios.tsx',
+            '.android.tsx',
+            '.tsx',
+            '.jsx',
+            '.js',
+            '.json',
+          ],
+        },
+      ],
     ],
   };
 };

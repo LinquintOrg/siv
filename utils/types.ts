@@ -1,6 +1,7 @@
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ReactNode } from 'react';
+import { ISteamProfile } from 'types';
 
 export interface ITextStyle {
   [key: string]: string | number;
@@ -30,14 +31,6 @@ export interface IActionListProps {
   act: number;
   list: IActionList[];
   steamid: string;
-}
-
-export interface ISteamProfile {
-  id: string;
-  name: string;
-  url: string;
-  public: boolean;
-  state: number;
 }
 
 export interface IUserSavesProps {

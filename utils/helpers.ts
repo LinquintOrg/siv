@@ -51,6 +51,9 @@ export const helpers = {
   capitalize(str: string) {
     return str.charAt(0).toUpperCase() + str.slice(1);
   },
+  price(currency: string, num: number): string {
+    return new Intl.NumberFormat('en-UK', { style: 'currency', currency }).format(num);
+  },
   async loadPreviousGames(id: string): Promise<IInventoryGame[]> {
     const savedKeys = await AsyncStorage.getAllKeys();
     const savedGamesKey = savedKeys.find(key => key === `prevGames${id}`);

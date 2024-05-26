@@ -1,8 +1,9 @@
 import { ImmutableObject, State, hookstate, useHookstate } from '@hookstate/core';
-import { ICurrency, ISteamProfile } from './types';
+import { ICurrency } from './types';
 import { Dimensions } from 'react-native';
+import { ISteamProfile } from 'types';
 
-const rate = hookstate<number>(46);
+const rate = hookstate<string>('EUR');
 const rates = hookstate<ICurrency[]>([]);
 const profiles = hookstate<ISteamProfile[]>([]);
 const preloaded = hookstate<boolean>(false);
@@ -12,9 +13,9 @@ function object<T>(value: ImmutableObject<T>): T {
   return JSON.parse(JSON.stringify(value)) as unknown as T;
 }
 
-const wrapRate = (s: State<number>) => ({
+const wrapRate = (s: State<string>) => ({
   get: () => s.value,
-  set: (newState: number) => s.set(() => newState),
+  set: (newState: string) => s.set(() => newState),
 });
 
 const wrapRates = (s: State<ICurrency[]>) => ({

@@ -1,5 +1,4 @@
 import { Pressable, View } from 'react-native';
-import Text from './Text';
 import navStyles from 'styles/components/nav';
 import { Link, usePathname } from 'expo-router';
 import { Icon } from 'react-native-elements';

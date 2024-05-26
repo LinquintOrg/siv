@@ -2,6 +2,13 @@
     "extends": [
         "expo"
     ],
+    "settings": {
+        "import/resolver": {
+            "babel-module": {
+                "allowExistingDirectories": true
+            }
+        }
+    },
     "rules": {
         "indent": [ "error", 2 ],
         "linebreak-style": 0,
