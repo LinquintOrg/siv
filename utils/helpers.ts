@@ -1,8 +1,9 @@
 import { colors } from './../styles/global';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useScaleState } from './store.ts';
+import { useScaleState } from './store';
 import { IInventory, IInventoryGame, IInventoryItem, IInventoryResAsset, IInventoryResDescriptionDescription, IInventoryResDescriptionTag,
-  ISteamProfile, ISticker } from './types.ts';
+  ISteamProfile, ISticker } from './types';
+import { Dimensions } from 'react-native';
 
 /**
  * ! Helper functions should not be used with states store
@@ -22,7 +23,7 @@ export const helpers = {
     });
   },
   isSteamIDValid(steamID: string) {
-    return !(steamID == '' || /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/? ]+/.test(steamID) || /[a-zA-Z]/.test(steamID) || steamID.length === 0)
+    return !(steamID === '' || /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/? ]+/.test(steamID) || /[a-zA-Z]/.test(steamID) || steamID.length === 0)
       && steamID.length === 17 && /^[0-9]+$/.test(steamID);
   },
   sleep(milliseconds: number) {
@@ -44,7 +45,8 @@ export const helpers = {
     await AsyncStorage.setItem(name, JSON.stringify({ value }));
   },
   resize(size: number) {
-    return Math.ceil(size * useScaleState().get());
+    const scale = Dimensions.get('window').width / 423;
+    return Math.ceil(size * scale);
   },
   capitalize(str: string) {
     return str.charAt(0).toUpperCase() + str.slice(1);
