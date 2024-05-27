@@ -1,6 +1,7 @@
 import Button from '@/Button';
 import Input from '@/Input';
 import Loader from '@/Loader';
+import Profile from '@/Profile';
 import Text from '@/Text';
 import api from '@utils/api';
 import { helpers } from '@utils/helpers';
@@ -117,7 +118,7 @@ export default function HomePage() {
       <Text bold style={global.title}>Saved Profiles</Text>
       {
         savedProfiles.map(profile => (
-          <Text>{ profile.id }</Text>
+          <Profile profile={profile} />
         ))
       }
     </>

@@ -44,7 +44,7 @@ export abstract class sql {
     if (!this.db) {
       return;
     }
-    const exists = sql.getOneProfile(profile.id);
+    const exists = await sql.getOneProfile(profile.id);
     const stmt = !exists
       ? await this.db.prepareAsync('INSERT INTO SavedProfiles VALUES ($id, $name, $url, $public, $state);')
       : await this.db.prepareAsync('UPDATE SavedProfiles SET name = $name, url = $url, public = $public, state = $state WHERE id = $id;');
