@@ -1,9 +1,9 @@
 import { colors } from './../styles/global';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useScaleState } from './store';
 import { IInventory, IInventoryGame, IInventoryItem, IInventoryResAsset, IInventoryResDescriptionDescription, IInventoryResDescriptionTag,
-  ISteamProfile, ISticker } from './types';
+  ISticker } from './types';
 import { Dimensions } from 'react-native';
+import { ISteamProfile, ISteamUser } from 'types';
 
 /**
  * ! Helper functions should not be used with states store
@@ -40,6 +40,21 @@ export const helpers = {
   },
   async deleteProfile(id: string) {
     await AsyncStorage.removeItem(id);
+  },
+  async loadDataForMigration(): Promise<{ currency?: number; profiles: ISteamProfile[] }> {
+    const dataToMigrate: { currency?: number; profiles: ISteamProfile[] } = {
+      profiles: [],
+    };
+    const savedKeys = await AsyncStorage.getAllKeys();
+    for (const key of savedKeys) {
+      if (key === 'currency') {
+        dataToMigrate.currency = +JSON.parse(await AsyncStorage.getItem(key) || '').val;
+      } else if (!key.startsWith('prevGames')) {
+        const profile = JSON.parse(await AsyncStorage.getItem(key) || '') as ISteamProfile;
+        dataToMigrate.profiles.push(profile);
+      }
+    }
+    return dataToMigrate;
   },
   async saveSetting(name: string, value: number) {
     await AsyncStorage.setItem(name, JSON.stringify({ value }));
@@ -141,6 +156,17 @@ export const helpers = {
     const hours = Math.floor((time % (24 * 60 * 60)) / (60 * 60));
     const minutes = Math.floor((time % (60 * 60)) / 60);
     return `${days} days ${hours} hours ${minutes} minutes ago`;
+  },
+  profile: {
+    isVanity(vanity: string, profile: ISteamUser | null) {
+      if (!profile) {
+        return false;
+      }
+      let profileVanity = profile.profileurl.slice(0, profile.profileurl.length - 1);
+      const slashId = profileVanity.lastIndexOf('/');
+      profileVanity = profileVanity.slice(slashId + 1);
+      return profileVanity === vanity.toLowerCase();
+    },
   },
   inventory: {
     getRarity(tags: IInventoryResDescriptionTag[]) {

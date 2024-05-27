@@ -1,9 +1,10 @@
+import Input from '@/Input';
 import Loader from '@/Loader';
 import MusicKit from '@/MusicKit';
 import Text from '@/Text';
 import api from '@utils/api';
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Image, View } from 'react-native';
+import { FlatList } from 'react-native';
 import { global } from 'styles/global';
 import { IMusicKit } from 'types';
 
@@ -38,6 +39,12 @@ export default function KitsPage() {
   return (
     <>
       <Text style={global.title}>Music Kits</Text>
+      <Input
+        label='Search'
+        onChange={setInput}
+        icon={{ name: 'music-circle-outline', type: 'material-community' }}
+        value={input}
+      />
       {
         isLoading ? <Loader />
           : <FlatList

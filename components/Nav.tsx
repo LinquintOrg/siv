@@ -18,8 +18,8 @@ export default function Nav() {
   const path = usePathname();
 
   const isRouteActive = (href: string) => {
-    if (href === '/' && path === '/') {
-      return true;
+    if (href === '/') {
+      return path === '/';
     }
     return path.startsWith(href);
   };

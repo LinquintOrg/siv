@@ -29,3 +29,36 @@ export interface IMusicKitsRes {
   kits: IMusicKit[];
   count: number;
 }
+
+export interface IVanityRes {
+  response: {
+    steamid: string;
+    success: 0 | 1;
+  }
+}
+
+export interface ISteamUser {
+  steamid: string;
+  communityvisibilitystate: number;
+  profilestate: number;
+  personaname: string;
+  commentpermission: number;
+  profileurl: string;
+  avatar: string;
+  avatarmedium: string;
+  avatarfull: string;
+  avatarhash: string;
+  lastlogoff: number;
+  personastate: number;
+  realname: string;
+  primaryclanid: string;
+  timecreated: number;
+  personastateflags: number;
+  loccountrycode: string;
+}
+
+export interface ISteamUserRes {
+  response: {
+    players: ISteamUser[];
+  };
+}

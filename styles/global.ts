@@ -79,9 +79,7 @@ export const global = StyleSheet.create({
     alignSelf: 'center',
   },
   input: {
-    width: resize(400),
-    height: resize(40),
-    margin: resize(12),
+    height: resize(50),
     fontSize: resize(14),
     borderRadius: resize(12),
   },

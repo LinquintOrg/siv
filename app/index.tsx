@@ -1,39 +1,125 @@
-import { View } from 'react-native';
-import { Icon } from 'react-native-elements';
-import { TextInput } from 'react-native-paper';
+import Button from '@/Button';
+import Input from '@/Input';
+import Loader from '@/Loader';
+import Text from '@/Text';
+import api from '@utils/api';
+import { helpers } from '@utils/helpers';
+import { sql } from '@utils/sql';
+import { useEffect, useState } from 'react';
+import { Image, Pressable, View } from 'react-native';
 import { colors, global, variables } from 'styles/global';
+import styles from 'styles/pages/profile';
+import { ISteamProfile, ISteamUser } from 'types';
 
 export default function HomePage() {
+  const $api = new api();
+
+  const [ search, setSearch ] = useState('');
+  const [ searching, setSearching ] = useState(false);
+  const [ foundProfile, setFoundProfile ] = useState<ISteamUser | null>(null);
+  const [ savedProfiles, setSavedProfiles ] = useState<ISteamProfile[]>([]);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        const profiles = await sql.getAllProfiles();
+        setSavedProfiles(profiles);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    prepare();
+  });
+
+  async function onSubmitSearch() {
+    let idInput = search.trim();
+
+    try {
+      setSearching(true);
+      if (!helpers.isSteamIDValid(idInput)) {
+        if (helpers.profile.isVanity(idInput, foundProfile)) {
+          return;
+        }
+        const res = await $api.findSteamIdFromVanity(idInput);
+        if (!res) {
+          return;
+        }
+        idInput = res;
+      }
+
+      if (!helpers.isSteamIDValid(idInput)) {
+        return;
+      }
+
+      const profile = await $api.findSteamProfile(idInput);
+      setFoundProfile(profile);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  async function saveProfile() {
+    try {
+      if (foundProfile) {
+        const newProfile = {
+          id: foundProfile.steamid,
+          name: foundProfile.personaname,
+          url: foundProfile.avatarmedium,
+          public: foundProfile.communityvisibilitystate === 3,
+          state: foundProfile.personastate,
+        };
+        await sql.upsertProfile(newProfile);
+        setSavedProfiles(savedProfiles.concat(newProfile));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSearch('');
+      setFoundProfile(null);
+    }
+  }
+
   return (
     <>
-      <View style={global.inputView}>
-        <TextInput
-          style={ global.input }
-          placeholder='Enter SteamID64'
-          mode={'outlined'}
-          onChangeText={text => setSteamIDtyped(text)}
-          onSubmitEditing={() => void getProfileData()}
-          label={'Steam ID64'}
-          activeOutlineColor={ colors.primary }
-          left={
-            <TextInput.Icon
-              icon={() => (<Icon name={'at-sign'} type={'feather'} color={colors.primary} />)}
-              size={variables.iconSize}
-              style={ global.inputIcon }
-              forceTextInputFocus={false}
-            />
-          }
-          right={
-            <TextInput.Icon
-              icon={() => (<Icon name={'search'} type={'feather'} color={'#1F4690'} />)}
-              size={ variables.iconLarge }
-              style={ global.inputIcon }
-              onPress={() => void getProfileData() }
-              forceTextInputFocus={false}
-            />
-          }
-        />
-      </View>
+      <Input
+        icon={{ name: 'at-sign', type: 'feather' }}
+        label='Profile search'
+        value={search}
+        onChange={setSearch}
+        onSubmit={onSubmitSearch}
+      />
+
+      {
+        searching || foundProfile ?
+          <View style={styles.section}>
+            {
+              searching
+                ? <Loader text='Finding profile...' />
+                : !!foundProfile ?
+                  <View style={styles.flowRow}>
+                    <Image source={{ uri: foundProfile.avatarfull }} style={styles.image} />
+                    <View style={styles.flowDown}>
+                      <Text style={styles.profileName}>{ foundProfile.personaname }</Text>
+                      <Text bold style={styles.profileID}>{ foundProfile.steamid }</Text>
+                      <Button
+                        text='SAVE'
+                        textBold
+                        onPress={saveProfile}
+                      />
+                    </View>
+                  </View> : null
+            }
+          </View> : null
+      }
+
+      <Text bold style={global.title}>Saved Profiles</Text>
+      {
+        savedProfiles.map(profile => (
+          <Text>{ profile.id }</Text>
+        ))
+      }
     </>
   );
 }
