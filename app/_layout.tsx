@@ -7,15 +7,25 @@ import { View } from 'react-native';
 import { SafeAreaView, useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, variables } from 'styles/global';
 import { helpers } from 'utils/helpers';
+import * as Sentry from 'sentry-expo';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function Layout() {
+  Sentry.init({
+    dsn: 'https://755f445790cc440eb625404426d380d7@o1136798.ingest.sentry.io/6188926',
+    enableInExpoDevelopment: true,
+    // eslint-disable-next-line no-undef
+    debug: __DEV__, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending the event. Set it to `false` in production
+    tracesSampleRate: 1.0,
+  });
+
   const $api = new api();
   const height = useSafeAreaFrame().height;
   const { top } = useSafeAreaInsets();
 
-  const [ isLoading, setIsLoading ] = useState(true);
+  const [ loaded, setLoaded ] = useState(false);
+  const [ isLoading, setIsLoading ] = useState(false);
 
   const viewHeight = useMemo(
     () => Math.floor(height - top - helpers.resize(variables.iconSize + 16 * 2 + 8 * 2)),
@@ -25,11 +35,14 @@ export default function Layout() {
   useEffect(() => {
     async function prepare() {
       try {
+        setIsLoading(true);
         const extraMigrationsNeeded = await sql.migrateDbIfNeeded();
-        const rates = await sql.getRates();
-        const inventoryGames = await sql.getInventoryGames();
+        const rates = await $api.getRates();
+        const inventoryGames = await $api.getInventoryGames();
 
-        await sql.updateRates(rates, extraMigrationsNeeded);
+        console.log(rates.slice(0, 20));
+
+        await sql.updateRates(rates);
         await sql.updateInventoryGames(inventoryGames);
 
         if (extraMigrationsNeeded) {
@@ -39,6 +52,8 @@ export default function Layout() {
           }
           if (dataToMigrate.currency) {
             await sql.setSetting('currency', rates[dataToMigrate.currency].code);
+          } else {
+            await sql.setSetting('currency', 'EUR');
           }
         }
 
@@ -58,20 +73,26 @@ export default function Layout() {
       } catch (err) {
         console.error(err);
       } finally {
+        setLoaded(true);
         setIsLoading(false);
       }
     }
 
-    prepare();
+    if (!loaded && !isLoading) {
+
+      console.log('layout prepared');
+
+      prepare();
+    }
   });
 
   const onLayoutRootView = useCallback(async () => {
-    if (!isLoading) {
+    if (loaded && !isLoading) {
       await SplashScreen.hideAsync();
     }
-  }, [ isLoading ]);
+  }, [ isLoading, loaded ]);
 
-  if (isLoading) {
+  if (!loaded || isLoading) {
     return null;
   }
 

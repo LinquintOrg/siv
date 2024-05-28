@@ -3,17 +3,21 @@ import Loader from '@/Loader';
 import MusicKit from '@/MusicKit';
 import Text from '@/Text';
 import api from '@utils/api';
+import { sql } from '@utils/sql';
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList } from 'react-native';
 import { global } from 'styles/global';
-import { IMusicKit } from 'types';
+import { IExchangeRate, IMusicKit } from 'types';
 
 export default function KitsPage() {
   const $api = new api();
 
-  const [ isLoading, setIsLoading ] = useState(true);
+  const [ isLoading, setIsLoading ] = useState(false);
   const [ musicKits, setMusicKits ] = useState<IMusicKit[]>([]);
   const [ input, setInput ] = useState('');
+  const [ rate, setRate ] = useState<IExchangeRate>({ code: 'USD', rate: 1 });
+
+  // TODO: rates listener
 
   const renderedKits = useMemo(
     () => musicKits.filter(mk => mk.artist.toLowerCase().includes(input.toLowerCase()) || mk.title.toLowerCase().includes(input.toLowerCase())),
@@ -23,17 +27,23 @@ export default function KitsPage() {
   useEffect(() => {
     async function prepare() {
       try {
-        if (!musicKits.length) {
-          const kitsRes = await $api.getMusicKits();
-          setMusicKits(kitsRes.kits);
+        setIsLoading(true);
+        const r = await sql.getOneRate();
+        if (r) {
+          setRate(r);
         }
+        const kitsRes = await $api.getMusicKits();
+        setMusicKits(kitsRes.kits);
       } catch (err) {
         console.error(err);
       } finally {
         setIsLoading(false);
       }
     }
-    prepare();
+
+    if (!musicKits.length && !isLoading) {
+      prepare();
+    }
   });
 
   return (
@@ -49,7 +59,15 @@ export default function KitsPage() {
         isLoading ? <Loader />
           : <FlatList
             data={renderedKits}
-            renderItem={({ item }) => <MusicKit artist={item.artist} title={item.title} image={item.image} price={item.price} statPrice={item.statPrice} />}
+            renderItem={({ item }) =>
+              <MusicKit
+                artist={item.artist}
+                title={item.title}
+                image={item.image}
+                price={(item.price || 0) * rate.rate}
+                statPrice={(item.statPrice || 0) * rate.rate}
+                code={rate.code}
+              />}
             keyExtractor={({ artist, title }) => `${artist}-${title}`.replaceAll(' ', '_')}
           />
       }

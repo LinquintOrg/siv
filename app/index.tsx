@@ -118,7 +118,7 @@ export default function HomePage() {
       <Text bold style={global.title}>Saved Profiles</Text>
       {
         savedProfiles.map(profile => (
-          <Profile profile={profile} />
+          <Profile profile={profile} key={profile.id} />
         ))
       }
     </>

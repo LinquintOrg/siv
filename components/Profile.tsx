@@ -11,11 +11,6 @@ interface IPropsProfile {
   profile: ISteamProfile;
 }
 
-// { (item.state === 0) && <Icon name={'circle'} type={'font-awesome'} color={'#f00'} size={helpers.resize(12)} /> }
-//                 { (item.state === 1) && <Icon name={'circle'} type={'font-awesome'} color={'#0a0'} size={helpers.resize(12)} /> }
-//                 { (item.state === 2) && <Icon name={'do-not-disturb'} color={'#fa0'} size={helpers.resize(12)} /> }
-//                 { (item.state === 3) && <Icon name={'sleep'} type={'material-community'} color={'#44f'} size={helpers.resize(12)}/>}
-
 export default function Profile(props: IPropsProfile) {
   const profileState = useMemo(() => {
     switch (props.profile.state) {

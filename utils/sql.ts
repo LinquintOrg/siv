@@ -6,8 +6,9 @@ export abstract class sql {
 
   // ! Settings
 
-  public static async getSetting(option: string): Promise<string | undefined> {
-    return await this.db?.getFirstAsync(`SELECT * FROM Settings WHERE option = ${option};`) as string | undefined;
+  public static async getSetting(option: string): Promise<string | null> {
+    const setting = await this.db?.getFirstAsync<{ option: string; value: string }>('SELECT * FROM Settings WHERE option = $option;', { $option: option });
+    return setting?.value || null;
   }
 
   public static async setSetting(option: string, value: string) {
@@ -17,9 +18,15 @@ export abstract class sql {
     const processed = value.trim().slice(0, 256);
     const existing = await sql.getSetting(option);
     const stmt = !existing
-      ? await this.db.prepareAsync('INSERT INTO Settings (option, value) VALUES ($option, $value);')
+      ? await this.db.prepareAsync('INSERT INTO Settings VALUES ($option, $value);')
       : await this.db.prepareAsync('UPDATE Settings SET value = $value WHERE option = $option;');
-    await stmt.executeAsync({ $option: option, $value: processed });
+    try {
+      await stmt.executeAsync({ $option: option, $value: processed });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      await stmt.finalizeAsync();
+    }
   }
 
   // ! Profiles
@@ -49,6 +56,7 @@ export abstract class sql {
       ? await this.db.prepareAsync('INSERT INTO SavedProfiles VALUES ($id, $name, $url, $public, $state);')
       : await this.db.prepareAsync('UPDATE SavedProfiles SET name = $name, url = $url, public = $public, state = $state WHERE id = $id;');
     await stmt.executeAsync({ $id: profile.id, $name: profile.name, $url: profile.url, $public: profile.public, $state: profile.state });
+    await stmt.finalizeAsync();
   }
 
   // ! Exchange rates
@@ -68,19 +76,27 @@ export abstract class sql {
     return (allRows || []) as IExchangeRate[];
   }
 
-  public static async updateRates(newRates: IExchangeRate[], insert: boolean) {
+  public static async updateRates(newRates: IExchangeRate[]) {
     if (!this.db) {
       return;
     }
 
-    const stmt = insert ? await this.db.prepareAsync('INSERT INTO Exchange (code, rate) VALUES ($code, $rate);')
-      : await this.db.prepareAsync('UPDATE Exchange SET rate = $rate WHERE code = $code;');
+    const insertStmt = await this.db.prepareAsync('INSERT INTO Exchange VALUES ($code, $rate);');
+    const updateStmt = await this.db.prepareAsync('UPDATE Exchange SET rate = $rate WHERE code = $code;');
     try {
       for (const { code, rate } of newRates) {
-        await stmt.executeAsync({ $code: code, $rate: rate });
+        const exists = await this.db.getFirstAsync<IExchangeRate>('SELECT * FROM Exchange WHERE code = $code', { $code: code });
+        if (exists) {
+          await updateStmt.executeAsync({ $code: code, $rate: rate });
+        } else {
+          await insertStmt.executeAsync({ $code: code, $rate: rate });
+        }
       }
+    } catch (err) {
+      console.error(err);
     } finally {
-      await stmt.finalizeAsync();
+      await insertStmt.finalizeAsync();
+      await updateStmt.finalizeAsync();
     }
   }
 
@@ -119,6 +135,9 @@ export abstract class sql {
     let { user_version: currentDbVersion } = await this.db.getFirstAsync<{ user_version: number }>(
       'PRAGMA user_version',
     ) || { user_version: 0 };
+
+    console.log('user version', currentDbVersion);
+
     if (currentDbVersion >= DATABASE_VERSION) {
       return extraMigrationsNeeded;
     }
