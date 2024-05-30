@@ -34,6 +34,9 @@ export default function HomePage() {
 
   async function onSubmitSearch() {
     let idInput = search.trim();
+    if (!idInput.length || searching) {
+      return;
+    }
 
     try {
       setSearching(true);
