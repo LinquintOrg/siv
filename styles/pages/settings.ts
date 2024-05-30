@@ -9,9 +9,9 @@ const settingsPageStyles = StyleSheet.create({
   },
   optionWrapper: {
     paddingHorizontal: helpers.resize(12),
-    paddingVertical: helpers.resize(16),
+    paddingVertical: helpers.resize(8),
     marginVertical: helpers.resize(8),
-    borderRadius: helpers.resize(12),
+    borderRadius: helpers.resize(8),
     backgroundColor: colors.secondary,
   },
   optionValue: {

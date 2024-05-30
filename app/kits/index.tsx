@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FlatList } from 'react-native';
 import { global } from 'styles/global';
 import { IExchangeRate, IMusicKit } from 'types';
+import * as SQLite from 'expo-sqlite';
 
 export default function KitsPage() {
   const $api = new api();
@@ -17,7 +18,12 @@ export default function KitsPage() {
   const [ input, setInput ] = useState('');
   const [ rate, setRate ] = useState<IExchangeRate>({ code: 'USD', rate: 1 });
 
-  // TODO: rates listener
+  SQLite.addDatabaseChangeListener(async newSql => {
+    if (newSql.tableName === 'Settings') {
+      const newRate = await sql.getOneRate();
+      setRate(newRate);
+    }
+  });
 
   const renderedKits = useMemo(
     () => musicKits.filter(mk => mk.artist.toLowerCase().includes(input.toLowerCase()) || mk.title.toLowerCase().includes(input.toLowerCase())),

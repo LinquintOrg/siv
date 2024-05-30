@@ -22,6 +22,12 @@ export const helpers = {
       }
     });
   },
+  clone<T>(obj: T): T {
+    if (!obj) {
+      return obj;
+    }
+    return JSON.parse(JSON.stringify(obj));
+  },
   isSteamIDValid(steamID: string) {
     return !(steamID === '' || /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/? ]+/.test(steamID) || /[a-zA-Z]/.test(steamID) || steamID.length === 0)
       && steamID.length === 17 && /^[0-9]+$/.test(steamID);

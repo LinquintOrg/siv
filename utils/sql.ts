@@ -103,7 +103,7 @@ export abstract class sql {
   // ! INVENTORY GAMES
 
   public static async getInventoryGames(): Promise<IInventoryGame[]> {
-    const allRows = await this.db?.getAllAsync('SELECT * FROM InventoryGames');
+    const allRows = await this.db?.getAllAsync('SELECT * FROM InventoryGames ORDER BY name ASC');
     return (allRows || []) as IInventoryGame[];
   }
 
@@ -129,15 +129,13 @@ export abstract class sql {
   public static async migrateDbIfNeeded(): Promise<boolean> {
     let extraMigrationsNeeded = false;
     if (!this.db) {
-      this.db = await SQLite.openDatabaseAsync('appData');
+      this.db = await SQLite.openDatabaseAsync('appData', { enableChangeListener: true });
     }
+
     const DATABASE_VERSION = 1;
     let { user_version: currentDbVersion } = await this.db.getFirstAsync<{ user_version: number }>(
       'PRAGMA user_version',
     ) || { user_version: 0 };
-
-    console.log('user version', currentDbVersion);
-
     if (currentDbVersion >= DATABASE_VERSION) {
       return extraMigrationsNeeded;
     }
@@ -150,7 +148,8 @@ export abstract class sql {
         CREATE TABLE InventoryGames (
           appid INTEGER PRIMARY KEY NOT NULL,
           img VARCHAR(128) NOT NULL,
-          name VARCHAR(128) NOT NULL);
+          name VARCHAR(128) NOT NULL
+        );
       `);
       // Create Currency exchanges table
       await this.db.execAsync(`

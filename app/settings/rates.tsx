@@ -1,11 +1,11 @@
 import Input from '@/Input';
 import Text from '@/Text';
-import { helpers } from '@utils/helpers';
 import { sql } from '@utils/sql';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import { FlatList, Pressable } from 'react-native';
 import { IExchangeRate } from 'types';
+import styles from 'styles/pages/settings';
 
 export default function SettingsRatesPage() {
   const [ rates, setRates ] = useState<IExchangeRate[]>([]);
@@ -36,13 +36,15 @@ export default function SettingsRatesPage() {
   );
 
   async function selectRate(selected: IExchangeRate) {
+    setSearch('');
     await sql.setSetting('currency', selected.code);
     router.replace('/settings');
   }
 
   const RenderableItem = (item: IExchangeRate) => (
-    <Pressable style={{ marginVertical: helpers.resize(12) }} onPress={() => selectRate(item)}>
-      <Text bold>{ item.code }</Text>
+    <Pressable style={styles.optionWrapper} onPress={() => selectRate(item)}>
+      <Text bold style={styles.optionValue}>{ item.code }</Text>
+      <Text style={styles.optionValue}>Currency name</Text>
     </Pressable>
   );
 

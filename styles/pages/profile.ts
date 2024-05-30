@@ -25,6 +25,12 @@ const profilePageStyles = StyleSheet.create({
     marginEnd: helpers.resize(8),
     aspectRatio: 1.0,
   },
+  imageSmall: {
+    width: helpers.resize(60),
+    borderRadius: helpers.resize(8),
+    marginEnd: helpers.resize(8),
+    aspectRatio: 1.0,
+  },
   profileName: {
     fontSize: helpers.resize(18),
     color: colors.text,
@@ -36,6 +42,11 @@ const profilePageStyles = StyleSheet.create({
   flowDown: {
     ...templates.column,
     width: helpers.resize(284),
+    justifyContent: 'center',
+  },
+  flowDownSmall: {
+    ...templates.column,
+    width: helpers.resize(304),
     justifyContent: 'center',
   },
   flowRow: {

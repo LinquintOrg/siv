@@ -40,8 +40,6 @@ export default function Layout() {
         const rates = await $api.getRates();
         const inventoryGames = await $api.getInventoryGames();
 
-        console.log(rates.slice(0, 20));
-
         await sql.updateRates(rates);
         await sql.updateInventoryGames(inventoryGames);
 
@@ -79,9 +77,6 @@ export default function Layout() {
     }
 
     if (!loaded && !isLoading) {
-
-      console.log('layout prepared');
-
       prepare();
     }
   });
