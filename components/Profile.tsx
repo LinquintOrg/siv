@@ -6,15 +6,12 @@ import Text from './Text';
 import { helpers } from '@utils/helpers';
 import { useMemo } from 'react';
 import { Icon } from 'react-native-elements';
+import { router } from 'expo-router';
 
 interface IPropsProfile {
   profile: ISteamProfile;
+  nonClickable?: boolean;
 }
-
-// { (item.state === 0) && <Icon name={'circle'} type={'font-awesome'} color={'#f00'} size={helpers.resize(12)} /> }
-//                 { (item.state === 1) && <Icon name={'circle'} type={'font-awesome'} color={'#0a0'} size={helpers.resize(12)} /> }
-//                 { (item.state === 2) && <Icon name={'do-not-disturb'} color={'#fa0'} size={helpers.resize(12)} /> }
-//                 { (item.state === 3) && <Icon name={'sleep'} type={'material-community'} color={'#44f'} size={helpers.resize(12)}/>}
 
 export default function Profile(props: IPropsProfile) {
   const profileState = useMemo(() => {
@@ -26,16 +23,31 @@ export default function Profile(props: IPropsProfile) {
     }
   }, [ props ]);
 
+  async function navigateToGames() {
+    if (props.nonClickable) {
+      return;
+    }
+    const { id } = props.profile;
+    router.push(`/inventory/games/${id}`);
+  }
+
   return (
-    <Pressable style={[ styles.flowRow, { marginBottom: helpers.resize(12) } ]}>
-      <Image source={{ uri: props.profile.url }} style={styles.image} />
-      <View style={styles.flowDown}>
-        <View style={[ global.row, { gap: helpers.resize(2), alignItems: 'center' } ]}>
-          <Icon name={profileState.icon.name} type='material-community' color={profileState.icon.color} size={helpers.resize(12)} />
-          <Text bold style={{ color: (props.profile.public) ? colors.primary : colors.error }}>
-            { props.profile.public ? profileState.text : 'Profile is set to PRIVATE' }
-          </Text>
-        </View>
+    <Pressable style={[ styles.flowRow, { marginBottom: props.nonClickable ? 0 : helpers.resize(12) } ]} onPress={navigateToGames}>
+      <Image source={{ uri: props.profile.url }} style={props.nonClickable ? styles.imageSmall : styles.image} />
+      <View style={props.nonClickable ? styles.flowDownSmall : styles.flowDown}>
+        { !props.nonClickable &&
+          <View style={[ global.row, { gap: helpers.resize(2), alignItems: 'center' } ]}>
+            <Icon
+              name={profileState.icon.name}
+              type='material-community'
+              color={profileState.icon.color}
+              size={helpers.resize(12)}
+            />
+            <Text bold style={{ color: (props.profile.public) ? colors.primary : colors.error }}>
+              { props.profile.public ? profileState.text : 'Profile is set to PRIVATE' }
+            </Text>
+          </View>
+        }
         <Text bold style={styles.profileName}>{ props.profile.name }</Text>
         <Text style={styles.profileID}>{ props.profile.id }</Text>
       </View>

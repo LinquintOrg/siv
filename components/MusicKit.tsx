@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, TouchableOpacity, View } from 'react-native';
 import Text from '../components/Text';
 import { helpers } from '../utils/helpers';
 import { IMusicKit } from 'types';
 import musicKitStyles from 'styles/components/musicKit';
 
-export default function MusicKit(props: IMusicKit) {
-  const { artist, title, image, price, statPrice } = props;
+interface IMusicKitWithRate extends IMusicKit {
+  code: string;
+}
+
+export default function MusicKit(props: IMusicKitWithRate) {
+  const { artist, title, image, price, statPrice, code } = props;
   const imgNotFound = 'https://inventory.linquint.dev/api/Files/img/no-photo.png';
   const styles = musicKitStyles;
-
-  // TODO rates
 
   return (
     <View style={styles.item}>
@@ -19,8 +21,8 @@ export default function MusicKit(props: IMusicKit) {
         <Text style={styles.album}>{ title }</Text>
         <Text style={styles.artist}>{ artist }</Text>
         <View style={styles.priceRow}>
-          { !!price && <Text style={[ styles.price, styles.priceNormal ]}>{ helpers.price('USD', 1 * price) }</Text> }
-          { !!statPrice && <Text style={[ styles.price, styles.priceStat ]}>{ helpers.price('USD', 1 * statPrice) }</Text> }
+          { !!price && <Text style={[ styles.price, styles.priceNormal ]}>{ helpers.price(code, price) }</Text> }
+          { !!statPrice && <Text style={[ styles.price, styles.priceStat ]}>{ helpers.price(code, statPrice) }</Text> }
         </View>
       </View>
     </View>

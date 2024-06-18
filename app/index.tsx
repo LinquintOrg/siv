@@ -34,6 +34,9 @@ export default function HomePage() {
 
   async function onSubmitSearch() {
     let idInput = search.trim();
+    if (!idInput.length || searching) {
+      return;
+    }
 
     try {
       setSearching(true);
@@ -118,7 +121,7 @@ export default function HomePage() {
       <Text bold style={global.title}>Saved Profiles</Text>
       {
         savedProfiles.map(profile => (
-          <Profile profile={profile} />
+          <Profile profile={profile} key={profile.id} />
         ))
       }
     </>

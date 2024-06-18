@@ -89,8 +89,11 @@ export const global = StyleSheet.create({
   },
   title: {
     fontSize: resize(32),
-    fontWeight: 'bold',
     marginVertical: resize(16),
+  },
+  titleSmall: {
+    fontSize: resize(24),
+    marginVertical: resize(8),
   },
   subtitle: {
     textAlign: 'center',
