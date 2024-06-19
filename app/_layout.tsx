@@ -8,6 +8,8 @@ import { SafeAreaView, useSafeAreaFrame, useSafeAreaInsets } from 'react-native-
 import { colors, variables } from 'styles/global';
 import { helpers } from 'utils/helpers';
 import * as Sentry from 'sentry-expo';
+import { SnackbarProvider } from 'hooks/useSnackbar';
+import GlobalErrorHandler from '@/GlobalErrorHandler';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -68,8 +70,6 @@ export default function Layout() {
             });
           }
         }
-      } catch (err) {
-        console.error(err);
       } finally {
         setLoaded(true);
         setIsLoading(false);
@@ -93,18 +93,21 @@ export default function Layout() {
 
   return (
     <SafeAreaView style={{ height: '100%' }} onLayout={onLayoutRootView}>
-      <View style={{ maxHeight: viewHeight, minHeight: viewHeight, paddingHorizontal: helpers.resize(8) }}>
-        <Tabs
-          screenOptions={() => ({
-            headerShown: false,
-            tabBarStyle: {
-              display: 'none',
-            },
-          })}
-          sceneContainerStyle={{ backgroundColor: colors.background }}
-        />
-      </View>
-      <Nav />
+      <SnackbarProvider>
+        <GlobalErrorHandler />
+        <View style={{ maxHeight: viewHeight, minHeight: viewHeight, paddingHorizontal: helpers.resize(8) }}>
+          <Tabs
+            screenOptions={() => ({
+              headerShown: false,
+              tabBarStyle: {
+                display: 'none',
+              },
+            })}
+            sceneContainerStyle={{ backgroundColor: colors.background }}
+          />
+        </View>
+        <Nav />
+      </SnackbarProvider>
     </SafeAreaView>
   );
 }
