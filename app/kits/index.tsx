@@ -70,9 +70,9 @@ export default function KitsPage() {
                 artist={item.artist}
                 title={item.title}
                 image={item.image}
-                price={(item.price || 0) * rate.rate}
-                statPrice={(item.statPrice || 0) * rate.rate}
-                code={rate.code}
+                price={(item.price || 0)}
+                statPrice={(item.statPrice || 0)}
+                rate={rate}
               />}
             keyExtractor={({ artist, title }) => `${artist}-${title}`.replaceAll(' ', '_')}
           />
