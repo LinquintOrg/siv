@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IInventory, IInventoryGame, IInventoryItem, IInventoryResAsset, IInventoryResDescriptionDescription, IInventoryResDescriptionTag,
   ISticker } from './types';
 import { Dimensions } from 'react-native';
-import { ISteamProfile, ISteamUser } from 'types';
+import { IExchangeRate, IItem, ISteamInventoryAsset, ISteamProfile, ISteamUser } from 'types';
 
 /**
  * ! Helper functions should not be used with states store
@@ -37,6 +37,43 @@ export const helpers = {
       setTimeout(resolve, milliseconds);
     });
   },
+  resize(size: number) {
+    const scale = Dimensions.get('window').width / 423;
+    return Math.ceil(size * scale);
+  },
+  // ! Extend String
+  capitalize(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  },
+  price(currency: IExchangeRate, cost: number, count: number = 1): string {
+    const unitPrice = +(cost * currency.rate).toFixed(2);
+    return new Intl.NumberFormat('en-UK', { style: 'currency', currency: currency.code }).format(unitPrice * count);
+  },
+
+  // * --- INVENTORY HELPERS --- *
+  inv: {
+    itemCount(assets: ISteamInventoryAsset[], classid: string, instanceid: string): number {
+      return assets.filter(asset => asset.classid === classid && asset.instanceid === instanceid).length;
+    },
+    itemType(item: IItem): string {
+      if (item.appid === 232090) {
+        return 'None';
+      }
+      if (item.tags) {
+        return item.tags[0].localized_tag_name;
+      }
+      if (item.type) {
+        return item.type;
+      }
+      return 'None';
+    },
+    priceDiff(item: IItem) {
+      return (item.price.price - item.price.p24ago) / item.price.p24ago * 100;
+    },
+  },
+
+  // * --- OLD HELPER FUNCTIONS THAT ARE REQUIRED TO MIGRATE SAVES --- *
+
   async saveProfile(profile: ISteamProfile) {
     const exists = await AsyncStorage.getItem(profile.id);
     if (exists) {
@@ -65,16 +102,9 @@ export const helpers = {
   async saveSetting(name: string, value: number) {
     await AsyncStorage.setItem(name, JSON.stringify({ value }));
   },
-  resize(size: number) {
-    const scale = Dimensions.get('window').width / 423;
-    return Math.ceil(size * scale);
-  },
-  capitalize(str: string) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  },
-  price(currency: string, num: number): string {
-    return new Intl.NumberFormat('en-UK', { style: 'currency', currency }).format(num);
-  },
+
+  // * --- OLD HELPER FUNCTIONS --- *
+
   async loadPreviousGames(id: string): Promise<IInventoryGame[]> {
     const savedKeys = await AsyncStorage.getAllKeys();
     const savedGamesKey = savedKeys.find(key => key === `prevGames${id}`);

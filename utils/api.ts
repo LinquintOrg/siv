@@ -1,5 +1,6 @@
+/* eslint-disable max-len */
 import axios, { AxiosInstance } from 'axios';
-import { IExchangeRate, IInventoryGame, IMusicKitsRes, ISteamUser, ISteamUserRes, IVanityRes } from 'types';
+import { IExchangeRate, IInventoryGame, IMusicKitsRes, IPricesReq, IPricesRes, ISteamInventoryRes, ISteamUser, ISteamUserRes, IVanityRes } from 'types';
 
 export default class api {
   private axiosInstance: AxiosInstance;
@@ -41,7 +42,6 @@ export default class api {
 
     console.log('calling findSteamIdFromVanity');
 
-    // eslint-disable-next-line max-len
     const vanityRes = await this.axiosInstance.get<IVanityRes>(`https://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=${process.env.EXPO_PUBLIC_STEAM_KEY}&vanityurl=${str}`);
     if (vanityRes.data.response.success) {
       return vanityRes.data.response.steamid;
@@ -53,7 +53,6 @@ export default class api {
 
     console.log('calling findSteamProfile');
 
-    // eslint-disable-next-line max-len
     const profileRes = await this.axiosInstance.get<ISteamUserRes>(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${process.env.EXPO_PUBLIC_STEAM_KEY}&steamids=${str}`);
     if (profileRes.data.response.players.length > 0) {
       return profileRes.data.response.players[0];
@@ -65,8 +64,19 @@ export default class api {
 
     console.log('calling batchSteamProfiles');
 
-    // eslint-disable-next-line max-len
     const profilesRes = await this.axiosInstance.get<ISteamUserRes>(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${process.env.EXPO_PUBLIC_STEAM_KEY}&steamids=${ids.join(',')}`);
     return profilesRes.data.response.players;
+  }
+
+  public async getPrices(body: IPricesReq): Promise<IPricesRes> {
+    console.log('calling getPrices');
+    const pricesRes = await this.axiosInstance.post<IPricesRes>('https://linquint.dev/api/prices', body);
+    return pricesRes.data;
+  }
+
+  public async devInventory(): Promise<ISteamInventoryRes> {
+    console.log('calling devInventory');
+    const inventoryRes = await this.axiosInstance.get<ISteamInventoryRes>('https://inventory.linquint.dev/api/Steam/dev/inv730.php');
+    return inventoryRes.data;
   }
 }

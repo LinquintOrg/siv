@@ -1999,11 +1999,6 @@
     prompts "^2.4.2"
     semver "^7.5.2"
 
-"@react-native-community/clipboard@^1.5.1":
-  version "1.5.1"
-  resolved "https://registry.yarnpkg.com/@react-native-community/clipboard/-/clipboard-1.5.1.tgz#32abb3ea2eb91ee3f9c5fb1d32d5783253c9fabe"
-  integrity sha512-AHAmrkLEH5UtPaDiRqoULERHh3oNv7Dgs0bTC0hO5Z2GdNokAMPT5w8ci8aMcRemcwbtdHjxChgtjbeA38GBdA==
-
 "@react-native-community/netinfo@11.3.1":
   version "11.3.1"
   resolved "https://registry.yarnpkg.com/@react-native-community/netinfo/-/netinfo-11.3.1.tgz#4539371a2f4bd402d932031be82c2449ed63a1a5"

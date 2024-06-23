@@ -4,7 +4,7 @@ import Profile from '@/Profile';
 import Text from '@/Text';
 import { helpers } from '@utils/helpers';
 import { sql } from '@utils/sql';
-import { useFocusEffect, useGlobalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useGlobalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { global } from 'styles/global';
@@ -66,6 +66,10 @@ export default function InventoryGamesSelectPage() {
     }
   }
 
+  function selectGames() {
+    router.push(`/inventory/${id as string}?games=${selectedGames.join(',')}`);
+  }
+
   return (
     <>
       <Text bold style={global.titleSmall}>Selected Profile</Text>
@@ -90,7 +94,7 @@ export default function InventoryGamesSelectPage() {
           <Button
             text={`Select games (${selectedGames.length}/3)`}
             style={{ marginTop: helpers.resize(12) }}
-            onPress={() => {}}
+            onPress={() => selectGames()}
           />
         </>
       }
