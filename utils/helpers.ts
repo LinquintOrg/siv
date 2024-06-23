@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IInventory, IInventoryGame, IInventoryItem, IInventoryResAsset, IInventoryResDescriptionDescription, IInventoryResDescriptionTag,
   ISticker } from './types';
 import { Dimensions } from 'react-native';
-import { IExchangeRate, IItem, ISteamInventoryAsset, ISteamProfile, ISteamUser } from 'types';
+import { IExchangeRate, IItem, IItemPriceRes, ISteamInventoryAsset, ISteamProfile, ISteamUser } from 'types';
 
 /**
  * ! Helper functions should not be used with states store
@@ -67,8 +67,8 @@ export const helpers = {
       }
       return 'None';
     },
-    priceDiff(item: IItem) {
-      return (item.price.price - item.price.p24ago) / item.price.p24ago * 100;
+    priceDiff(item: IItemPriceRes) {
+      return (item.price - item.p24ago) / item.p24ago * 100;
     },
   },
 

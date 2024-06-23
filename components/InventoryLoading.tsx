@@ -46,10 +46,14 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
         const prices = pricesRes[appid];
         finalItems[appid] = [];
         for (const item of inv.descriptions) {
+          const price = prices[item.market_hash_name];
           finalItems[appid].push({
             ...item,
             amount: helpers.inv.itemCount(inv.assets, item.classid, item.instanceid),
-            price: prices[item.market_hash_name] || { found: false },
+            price: {
+              ...(price || { found: false }),
+              difference: price ? helpers.inv.priceDiff(price) : 0,
+            },
           });
         }
       }

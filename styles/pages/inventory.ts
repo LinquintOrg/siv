@@ -47,6 +47,18 @@ const inventoryPageStyles = StyleSheet.create({
   },
   itemPriceInfo: {
     fontSize: helpers.resize(14),
+    paddingHorizontal: helpers.resize(6),
+    paddingVertical: helpers.resize(2),
+    borderRadius: 50,
+  },
+  loss: {
+    backgroundColor: '#ff0000',
+  },
+  profit: {
+    backgroundColor: '#00ff00',
+  },
+  samePrice: {
+    backgroundColor: '#ffaaaa',
   },
 });
 

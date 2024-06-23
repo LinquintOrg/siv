@@ -150,8 +150,12 @@ export interface IPricesRes {
   };
 }
 
+export interface IItemPrice extends IItemPriceRes {
+  difference: number;
+}
+
 export interface IItem extends ISteamInventoryDescription {
-  price: IItemPriceRes;
+  price: IItemPrice;
   amount: number;
 }
 

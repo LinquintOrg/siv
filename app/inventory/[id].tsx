@@ -1,5 +1,4 @@
 import InventoryLoading from '@/InventoryLoading';
-import Profile from '@/Profile';
 import Text from '@/Text';
 import { helpers } from '@utils/helpers';
 import { sql } from '@utils/sql';
@@ -104,7 +103,7 @@ export default function InventoryOverviewPage() {
                     items.map(item => (
                       <View style={styles.item}>
                         <Image source={{ uri: `https://community.akamai.steamstatic.com/economy/image/${item.icon_url}` }} style={styles.itemImage} />
-                        <View style={[ templates.column, { width: helpers.resize(306), justifyContent: 'space-between', minHeight: helpers.resize(110) } ]}>
+                        <View style={[ templates.column, { width: helpers.resize(306), justifyContent: 'space-between', minHeight: helpers.resize(100) } ]}>
                           <View style={[ templates.column ]}>
                             <View style={global.wrapRow}>
                               {
@@ -124,13 +123,19 @@ export default function InventoryOverviewPage() {
                             <Text bold style={styles.itemTitle}>{ item.market_hash_name }</Text>
                           </View>
                           <View style={templates.row}>
-                            <View style={[ templates.column, { width: '50%', alignItems: 'center' } ]}>
-                              <Text style={styles.itemPriceInfo}>{ helpers.inv.priceDiff(item).toFixed(1) }%</Text>
+                            {
+                              item.amount > 1 && <View style={[ templates.column, { width: '50%', alignItems: 'flex-end' } ]}>
+                                <Text style={styles.itemPriceInfo}>{ item.amount } owned</Text>
+                                <Text bold style={styles.itemPrice}>{ helpers.price(rate, item.price.price || 0, item.amount) }</Text>
+                              </View>
+                            }
+                            <View style={[ templates.column, { width: item.amount > 1 ? '48%' : '98%', alignItems: 'flex-end' } ]}>
+                              <Text style={[
+                                styles.itemPriceInfo, item.price.difference < 0 ? styles.loss : item.price.difference > 0 ? styles.profit : styles.samePrice,
+                              ]}>
+                                { item.price.difference.toFixed(1) }%
+                              </Text>
                               <Text bold style={styles.itemPrice}>{ helpers.price(rate, item.price.price || 0) }</Text>
-                            </View>
-                            <View style={[ templates.column, { width: '50%', alignItems: 'flex-end' } ]}>
-                              <Text style={styles.itemPriceInfo}>{ item.amount } owned</Text>
-                              <Text bold style={styles.itemPrice}>{ helpers.price(rate, item.price.price || 0, item.amount) }</Text>
                             </View>
                           </View>
                         </View>
