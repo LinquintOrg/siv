@@ -13,6 +13,7 @@ module.exports = function(api) {
           alias: {
             '@': './components',
             '@utils': './utils',
+            '@styles': './styles',
             'types': './types/types.ts',
           },
           extensions: [
