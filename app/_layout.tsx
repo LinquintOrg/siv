@@ -1,9 +1,9 @@
 import api from '@utils/api';
 import { sql } from '@utils/sql';
 import Nav from 'components/Nav';
-import { SplashScreen, Tabs } from 'expo-router';
+import { SplashScreen, Tabs, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { BackHandler, View } from 'react-native';
 import { SafeAreaView, useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, variables } from 'styles/global';
 import { helpers } from 'utils/helpers';
@@ -11,6 +11,7 @@ import * as Sentry from 'sentry-expo';
 import { SnackbarProvider } from 'hooks/useSnackbar';
 import GlobalErrorHandler from '@/GlobalErrorHandler';
 import useStore from 'store';
+import { useBackButtonHandler } from 'hooks/useBackButtonHandler';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -90,6 +91,8 @@ export default function Layout() {
     }
   }, [ isLoading, loaded ]);
 
+  useBackButtonHandler();
+
   if (!loaded || isLoading) {
     return null;
   }
@@ -107,6 +110,7 @@ export default function Layout() {
               },
             })}
             sceneContainerStyle={{ backgroundColor: colors.background }}
+            backBehavior='history'
           />
         </View>
         <Nav />
