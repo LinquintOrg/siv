@@ -10,6 +10,7 @@ import { helpers } from 'utils/helpers';
 import * as Sentry from 'sentry-expo';
 import { SnackbarProvider } from 'hooks/useSnackbar';
 import GlobalErrorHandler from '@/GlobalErrorHandler';
+import useStore from 'store';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -23,6 +24,7 @@ export default function Layout() {
   });
 
   const $api = new api();
+  const store = useStore();
   const height = useSafeAreaFrame().height;
   const { top } = useSafeAreaInsets();
 
@@ -44,6 +46,7 @@ export default function Layout() {
 
         await sql.updateRates(rates);
         await sql.updateInventoryGames(inventoryGames);
+        store.setGames(inventoryGames);
 
         if (extraMigrationsNeeded) {
           const dataToMigrate = await helpers.loadDataForMigration();

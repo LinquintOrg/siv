@@ -6,7 +6,8 @@
     "paths": {
       "@/*": [ "./components/*" ],
       "@utils/*": [ "./utils/*" ],
-      "@styles/*": [ "./styles/components/*", "./styles/pages/*" ],
+      "@styles/*": [ "./styles/*" ],
+      "store": [ "zustand/store.ts" ],
       "types": [ "./types/types.ts" ],
     }
   },

@@ -14,6 +14,7 @@ module.exports = function(api) {
             '@': './components',
             '@utils': './utils',
             '@styles': './styles',
+            'store': './zustand/store.ts',
             'types': './types/types.ts',
           },
           extensions: [
