@@ -2,15 +2,17 @@ import InventoryLoading from '@/InventoryLoading';
 import Text from '@/Text';
 import { helpers } from '@utils/helpers';
 import { sql } from '@utils/sql';
-import { useFocusEffect, useGlobalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useGlobalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, ScrollView, View } from 'react-native';
-import { IExchangeRate, IInventories, IInventoryGame, ISteamProfile } from 'types';
-import styles from '@styles/inventory';
+import { Image, Pressable, ScrollView, View } from 'react-native';
+import { IExchangeRate, IInventories, IInventoryGame, IItem, ISteamProfile } from 'types';
+import styles from '@styles/pages/inventory';
 import { global, templates } from 'styles/global';
 import * as SQLite from 'expo-sqlite';
+import useStore from 'store';
 
 export default function InventoryOverviewPage() {
+  const store = useStore();
   const { id, games } = useGlobalSearchParams();
   const [ user, setUser ] = useState<ISteamProfile | string | null>(null);
   const [ pageInFocus, setPageInFocus ] = useState(false);
@@ -83,6 +85,11 @@ export default function InventoryOverviewPage() {
   function setInventory(inventory: IInventories) {
     setInv(inventory);
     setLoading(false);
+    store.setInventory(inventory);
+  }
+
+  function navigateToItem(item: IItem) {
+    router.push(`/inventory/item/${item.classid}-${item.instanceid}`);
   }
 
   return (
@@ -101,9 +108,9 @@ export default function InventoryOverviewPage() {
                   </View>
                   {
                     items.map(item => (
-                      <View style={styles.item}>
+                      <Pressable style={styles.item} onPress={() => navigateToItem(item)}>
                         <Image source={{ uri: `https://community.akamai.steamstatic.com/economy/image/${item.icon_url}` }} style={styles.itemImage} />
-                        <View style={[ templates.column, { width: helpers.resize(306), justifyContent: 'space-between', minHeight: helpers.resize(100) } ]}>
+                        <View style={[ templates.column, { width: helpers.resize(290), justifyContent: 'space-between', minHeight: helpers.resize(100) } ]}>
                           <View style={[ templates.column ]}>
                             <View style={global.wrapRow}>
                               {
@@ -123,23 +130,46 @@ export default function InventoryOverviewPage() {
                             <Text bold style={styles.itemTitle}>{ item.market_hash_name }</Text>
                           </View>
                           <View style={templates.row}>
+                            <View style={[
+                              item.amount > 1 ? templates.column : templates.row, {
+                                width: item.amount > 1 ? '38%' : '98%',
+                                justifyContent: item.amount > 1 ? 'center' : 'flex-end',
+                                gap: item.amount > 1 ? 1 : helpers.resize(8),
+                                alignItems: 'center',
+                              },
+                            ]}>
+                              {
+                                item.amount > 1
+                                  ? <Text style={styles.itemPriceInfo}>{ item.amount } owned</Text>
+                                  : <Text bold style={[
+                                    styles.itemPriceInfo, item.price.difference < 0 ? styles.loss : item.price.difference > 0 ? styles.profit:styles.samePrice,
+                                  ]}>
+                                    {item.price.difference > 0 ? '+' : ''}{ item.price.difference.toFixed(1) }%
+                                  </Text>
+                              }
+                              <Text bold style={styles.itemPrice}>{ helpers.price(rate, item.price.price || 0) }</Text>
+                            </View>
                             {
-                              item.amount > 1 && <View style={[ templates.column, { width: '50%', alignItems: 'flex-end' } ]}>
-                                <Text style={styles.itemPriceInfo}>{ item.amount } owned</Text>
+                              item.amount > 1 &&
+                              <View style={[
+                                templates.row, {
+                                  width: '60%',
+                                  justifyContent: 'flex-end',
+                                  alignItems: 'flex-end',
+                                  gap: helpers.resize(8),
+                                },
+                              ]}>
+                                <Text bold style={[
+                                  styles.itemPriceInfo, item.price.difference < 0 ? styles.loss : item.price.difference > 0 ? styles.profit : styles.samePrice,
+                                ]}>
+                                  {item.price.difference > 0 ? '+' : ''}{ item.price.difference.toFixed(1) }%
+                                </Text>
                                 <Text bold style={styles.itemPrice}>{ helpers.price(rate, item.price.price || 0, item.amount) }</Text>
                               </View>
                             }
-                            <View style={[ templates.column, { width: item.amount > 1 ? '48%' : '98%', alignItems: 'flex-end' } ]}>
-                              <Text style={[
-                                styles.itemPriceInfo, item.price.difference < 0 ? styles.loss : item.price.difference > 0 ? styles.profit : styles.samePrice,
-                              ]}>
-                                { item.price.difference.toFixed(1) }%
-                              </Text>
-                              <Text bold style={styles.itemPrice}>{ helpers.price(rate, item.price.price || 0) }</Text>
-                            </View>
                           </View>
                         </View>
-                      </View>
+                      </Pressable>
                     ))
                   }
                 </>

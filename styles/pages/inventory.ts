@@ -7,12 +7,12 @@ const inventoryPageStyles = StyleSheet.create({
     ...templates.row,
     gap: helpers.resize(10),
     alignItems: 'center',
-    marginVertical: helpers.resize(8),
+    marginVertical: helpers.resize(12),
   },
   gameIcon: {
-    height: helpers.resize(36),
-    width: helpers.resize(36),
-    borderRadius: helpers.resize(4),
+    height: helpers.resize(48),
+    width: helpers.resize(48),
+    borderRadius: helpers.resize(6),
   },
   gameTitle: {
     fontSize: helpers.resize(24),
@@ -20,8 +20,11 @@ const inventoryPageStyles = StyleSheet.create({
   item: {
     ...templates.row,
     gap: helpers.resize(12),
-    marginVertical: helpers.resize(12),
+    marginVertical: helpers.resize(6),
     alignItems: 'center',
+    padding: helpers.resize(8),
+    backgroundColor: '#f0f0fa',
+    borderRadius: helpers.resize(8),
   },
   itemImage: {
     height: helpers.resize(84),
@@ -37,10 +40,10 @@ const inventoryPageStyles = StyleSheet.create({
     color: colors.textAccent,
     backgroundColor: colors.secondary,
     paddingHorizontal: helpers.resize(6),
-    paddingVertical: helpers.resize(2),
-    borderRadius: 50,
+    paddingVertical: helpers.resize(3),
+    borderRadius: helpers.resize(6),
     textAlign: 'center',
-    maxHeight: helpers.resize(20),
+    maxHeight: helpers.resize(24),
   },
   itemPrice: {
     fontSize: helpers.resize(18),
@@ -48,17 +51,21 @@ const inventoryPageStyles = StyleSheet.create({
   itemPriceInfo: {
     fontSize: helpers.resize(14),
     paddingHorizontal: helpers.resize(6),
-    paddingVertical: helpers.resize(2),
-    borderRadius: 50,
+    paddingVertical: helpers.resize(3),
+    borderRadius: helpers.resize(6),
+    maxHeight: helpers.resize(26),
   },
   loss: {
-    backgroundColor: '#ff0000',
+    color: '#660014',
+    backgroundColor: '#FF0A1B88',
   },
   profit: {
-    backgroundColor: '#00ff00',
+    color: '#246B43',
+    backgroundColor: '#66CC92CC',
   },
   samePrice: {
-    backgroundColor: '#ffaaaa',
+    color: '#664200',
+    backgroundColor: '#FFA90A',
   },
 });
 

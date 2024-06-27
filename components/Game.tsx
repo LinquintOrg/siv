@@ -7,7 +7,7 @@ import styles from 'styles/components/game';
 interface IPropsGame {
   game: IInventoryGame;
   isActive: boolean;
-  onClick: (arg: number) => void;
+  onClick: (arg: string) => void;
 }
 
 export default function Game(props: IPropsGame) {

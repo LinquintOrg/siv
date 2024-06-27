@@ -38,7 +38,7 @@ export default function SettingsRatesPage() {
   async function selectRate(selected: IExchangeRate) {
     setSearch('');
     await sql.setSetting('currency', selected.code);
-    router.replace('/settings');
+    router.push('/settings');
   }
 
   const RenderableItem = (item: IExchangeRate) => (

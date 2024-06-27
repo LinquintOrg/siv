@@ -7,14 +7,15 @@ import { sql } from '@utils/sql';
 import { router, useFocusEffect, useGlobalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, View } from 'react-native';
+import useStore from 'store';
 import { global } from 'styles/global';
-import { IInventoryGame, ISteamProfile } from 'types';
+import { ISteamProfile } from 'types';
 
 export default function InventoryGamesSelectPage() {
+  const store = useStore();
   const { id } = useGlobalSearchParams();
   const [ user, setUser ] = useState<ISteamProfile | string | null>(null);
-  const [ gamesList, setGamesList ] = useState<IInventoryGame[]>([]);
-  const [ selectedGames, setSelectedGames ] = useState<number[]>([]);
+  const [ selectedGames, setSelectedGames ] = useState<string[]>([]);
   const [ pageInFocus, setPageInFocus ] = useState(false);
 
   useFocusEffect(
@@ -34,9 +35,6 @@ export default function InventoryGamesSelectPage() {
       }
 
       try {
-        const list = await sql.getInventoryGames();
-        setGamesList(list);
-
         const userById = await sql.getOneProfile(id as string);
         if (userById) {
           setUser(userById);
@@ -52,7 +50,7 @@ export default function InventoryGamesSelectPage() {
     }
   }, [ pageInFocus, user, id ]);
 
-  function setGameActive(id: number) {
+  function setGameActive(id: string) {
     const existing = selectedGames.includes(id);
     if (selectedGames.length >= 3 && !existing) {
       return;
@@ -67,7 +65,7 @@ export default function InventoryGamesSelectPage() {
   }
 
   function selectGames() {
-    router.push(`/inventory/${id as string}?games=${selectedGames.join(',')}`);
+    router.replace(`/inventory/${id as string}?games=${selectedGames.join(',')}`);
   }
 
   return (
@@ -86,7 +84,7 @@ export default function InventoryGamesSelectPage() {
           <Text bold style={[ global.title, { marginBottom: helpers.resize(4) } ]}>Select Games</Text>
 
           <FlatList
-            data={gamesList}
+            data={store.games}
             renderItem={({ item }) => <Game game={item} isActive={selectedGames.includes(item.appid)} onClick={setGameActive} />}
             keyExtractor={item => `app-${item.appid}`}
           />

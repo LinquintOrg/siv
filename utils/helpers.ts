@@ -70,6 +70,12 @@ export const helpers = {
     priceDiff(item: IItemPriceRes) {
       return (item.price - item.p24ago) / item.p24ago * 100;
     },
+    nametag(item: IItem): string {
+      if (item.fraudwarnings && item.fraudwarnings.length > 0) {
+        return `"${item.fraudwarnings[0].replaceAll('Name Tag: ', '').replaceAll('\'', '')}"`;
+      }
+      return '';
+    },
   },
 
   // * --- OLD HELPER FUNCTIONS THAT ARE REQUIRED TO MIGRATE SAVES --- *

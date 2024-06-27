@@ -4,7 +4,7 @@ export interface IExchangeRate {
 }
 
 export interface IInventoryGame {
-  appid: number;
+  appid: string;
   img: string;
   name: string;
 }
@@ -112,6 +112,7 @@ export interface ISteamInventoryDescription {
     link: string;
     name: string;
   }[];
+  fraudwarnings?: string[];
 }
 
 export interface ISteamInventoryRes {
