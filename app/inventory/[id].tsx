@@ -70,16 +70,16 @@ export default function InventoryOverviewPage() {
   }, [ pageInFocus, user, id ]);
 
   const selectedGames = useMemo(
-    () => (games as string || '').split(',').map(app => gamesList.find(game => game.appid === +app)!),
+    () => (games as string || '').split(',').map(app => gamesList.find(game => game.appid === app)!),
     [ games, gamesList ],
   );
 
   const invMap = useMemo(
     () => Object.entries(inv).map(([ appid, inventory ]) => ({
-      game: gamesList.find(g => g.appid === +appid),
+      game: store.games.find(g => g.appid === appid),
       items: inventory.filter(i => filterOptions.nonMarketable || i.marketable),
     })),
-    [ inv, gamesList, filterOptions ],
+    [ inv, store, filterOptions ],
   );
 
   function setInventory(inventory: IInventories) {

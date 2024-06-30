@@ -142,6 +142,8 @@ export interface IItemPriceRes {
   p30ago: number;
   p90ago: number;
   p24ago: number;
+  yearAgo: number;
+  addedOn: string;
   found: boolean;
 }
 
@@ -155,9 +157,20 @@ export interface IItemPrice extends IItemPriceRes {
   difference: number;
 }
 
+export interface IItemStickers {
+  type: string;
+  count: number;
+  items: {
+    name: string;
+    img: string;
+    longName: string;
+  }[];
+}
+
 export interface IItem extends ISteamInventoryDescription {
   price: IItemPrice;
   amount: number;
+  stickers?: IItemStickers;
 }
 
 export interface IInventories {

@@ -3,7 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IInventory, IInventoryGame, IInventoryItem, IInventoryResAsset, IInventoryResDescriptionDescription, IInventoryResDescriptionTag,
   ISticker } from './types';
 import { Dimensions } from 'react-native';
-import { IExchangeRate, IItem, IItemPriceRes, ISteamInventoryAsset, ISteamProfile, ISteamUser } from 'types';
+import { IExchangeRate, IItem, IItemPriceRes, IItemStickers, ISteamInventoryAsset, ISteamInventoryDescriptionDescription, ISteamProfile,
+  ISteamUser } from 'types';
 
 /**
  * ! Helper functions should not be used with states store
@@ -75,6 +76,51 @@ export const helpers = {
         return `"${item.fraudwarnings[0].replaceAll('Name Tag: ', '').replaceAll('\'', '')}"`;
       }
       return '';
+    },
+    collection(item: IItem): string | null {
+      const collectionTag = item.tags.find(tag => [ 'Collection', 'Sticker Collection' ].includes(tag.localized_category_name));
+      if (collectionTag) {
+        return collectionTag.localized_tag_name;
+      }
+      return null;
+    },
+    findStickers(descriptions: ISteamInventoryDescriptionDescription[]): IItemStickers | undefined {
+      const htmlStickers = descriptions.find(d => d.value.includes('sticker_info'));
+      if (!htmlStickers) {
+        return undefined;
+      }
+
+      let html = htmlStickers.value;
+      const count = (html.match(/img/g) || []).length;
+      const type = (html.match('Sticker')) ? 'sticker' : 'patch';
+
+      if (count === 0) {
+        return undefined;
+      }
+
+      // eslint-disable-next-line max-len
+      html = html.replaceAll(`<br><div id="sticker_info" name="sticker_info" title="${helpers.capitalize(type)}" style="border: 2px solid rgb(102, 102, 102); border-radius: 6px; width=100; margin:4px; padding:8px;"><center>`, '');
+      html = html.replaceAll('</center></div>', '');
+      html = html.replaceAll('<img width=64 height=48 src="', '');
+      html = html.replaceAll(`<br>${helpers.capitalize(type)}: `, '');
+      html = html.replaceAll('">', ';');
+
+      let tmpArr = html.split(';');
+      const tmpNames = tmpArr[count].replaceAll(', Champion', '; Champion').split(', ');
+      tmpArr = tmpArr.splice(0, count);
+
+      const tmpStickers = [];
+      for (let j = 0; j < count; j++) {
+        const abb = (type === 'sticker') ? 'Sticker | ' : 'Patch | ';
+        const sticker = {
+          name: (tmpNames[j]).replace('; Champion', ', Champion'),
+          img: tmpArr[j],
+          longName: (abb + tmpNames[j]).replace('; Champion', ', Champion'),
+        };
+        tmpStickers.push(sticker);
+      }
+
+      return { type, count, items: tmpStickers };
     },
   },
 

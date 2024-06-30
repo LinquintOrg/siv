@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import useStore from 'store';
 import styles from '@styles/pages/item';
-import { templates } from '@styles/global';
+import { global, templates } from '@styles/global';
 
 export default function InventoryItemPage() {
   const store = useStore();
@@ -29,6 +29,23 @@ export default function InventoryItemPage() {
     [ store, item ],
   );
 
+  const collection = useMemo(() => {
+    if (item) {
+      return helpers.inv.collection(item);
+    }
+    return null;
+  }, [ item ]);
+
+  const itemImage = useMemo(() => {
+    if (!item) {
+      return undefined;
+    }
+    if (item.icon_url_large) {
+      return `https://community.akamai.steamstatic.com/economy/image/${item.icon_url_large}`;
+    }
+    return `https://community.akamai.steamstatic.com/economy/image/${item.icon_url}`;
+  }, [ item ]);
+
   return (
     <>
       <ScrollView>
@@ -39,7 +56,7 @@ export default function InventoryItemPage() {
               <Text bold style={styles.gameTitle}>{ game?.name }</Text>
             </View>
             <View style={[ templates.row, { justifyContent: 'center' } ]}>
-              <Image source={{ uri: `https://community.akamai.steamstatic.com/economy/image/${item?.icon_url}` }} style={styles.itemImage} />
+              <Image source={{ uri: itemImage }} style={styles.itemImage} />
             </View>
             <View style={[ templates.row, { gap: helpers.resize(8), alignItems: 'center' } ]}>
               {
@@ -57,11 +74,27 @@ export default function InventoryItemPage() {
               <Text bold style={[ styles.itemPill ]}>{ helpers.inv.itemType(item) }</Text>
               <Text bold style={{ fontSize: helpers.resize(16) }}>{ helpers.inv.nametag(item) }</Text>
             </View>
-            <Text bold style={styles.itemName}>{ item?.market_name }</Text>
+            <Text bold style={styles.itemName}>{ item.market_name }</Text>
+            { collection && <Text bold>{ collection }</Text> }
+            <View style={templates.row}>
+              <Text bold style={global.title}>Price</Text>
+              { item.price.found && <Text bold>{ helpers.price({ code: 'EUR', rate: 0.94 }, item.price.price) }</Text>}
+            </View>
+            { !item.price.found && <Text bold>Not found.</Text> }
+            {
+              item.price.found &&
+              <View>
+
+              </View>
+            }
           </View>
         }
+        <Text bold>GAME</Text>
         <Text>{ JSON.stringify(game || 'none', null, 2) }</Text>
+        <Text bold>ITEM</Text>
         <Text>{ JSON.stringify(item, null, 2) }</Text>
+        <Text bold>STICKER PRICES</Text>
+        <Text>{ JSON.stringify(store.stickerPrices, null, 2) }</Text>
       </ScrollView>
     </>
   );
