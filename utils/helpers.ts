@@ -3,7 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IInventory, IInventoryGame, IInventoryItem, IInventoryResAsset, IInventoryResDescriptionDescription, IInventoryResDescriptionTag,
   ISticker } from './types';
 import { Dimensions } from 'react-native';
-import { ISteamProfile, ISteamUser } from 'types';
+import { IExchangeRate, IItem, IItemPriceRes, IItemStickers, ISteamInventoryAsset, ISteamInventoryDescriptionDescription, ISteamProfile,
+  ISteamUser } from 'types';
 
 /**
  * ! Helper functions should not be used with states store
@@ -37,6 +38,94 @@ export const helpers = {
       setTimeout(resolve, milliseconds);
     });
   },
+  resize(size: number) {
+    const scale = Dimensions.get('window').width / 423;
+    return Math.ceil(size * scale);
+  },
+  // ! Extend String
+  capitalize(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  },
+  price(currency: IExchangeRate, cost: number, count: number = 1): string {
+    const unitPrice = +(cost * currency.rate).toFixed(2);
+    return new Intl.NumberFormat('en-UK', { style: 'currency', currency: currency.code }).format(unitPrice * count);
+  },
+
+  // * --- INVENTORY HELPERS --- *
+  inv: {
+    itemCount(assets: ISteamInventoryAsset[], classid: string, instanceid: string): number {
+      return assets.filter(asset => asset.classid === classid && asset.instanceid === instanceid).length;
+    },
+    itemType(item: IItem): string {
+      if (item.appid === 232090) {
+        return 'None';
+      }
+      if (item.tags) {
+        return item.tags[0].localized_tag_name;
+      }
+      if (item.type) {
+        return item.type;
+      }
+      return 'None';
+    },
+    priceDiff(item: IItemPriceRes) {
+      return (item.price - item.p24ago) / item.p24ago * 100;
+    },
+    nametag(item: IItem): string {
+      if (item.fraudwarnings && item.fraudwarnings.length > 0) {
+        return `"${item.fraudwarnings[0].replaceAll('Name Tag: ', '').replaceAll('\'', '')}"`;
+      }
+      return '';
+    },
+    collection(item: IItem): string | null {
+      const collectionTag = item.tags.find(tag => [ 'Collection', 'Sticker Collection' ].includes(tag.localized_category_name));
+      if (collectionTag) {
+        return collectionTag.localized_tag_name;
+      }
+      return null;
+    },
+    findStickers(descriptions: ISteamInventoryDescriptionDescription[]): IItemStickers | undefined {
+      const htmlStickers = descriptions.find(d => d.value.includes('sticker_info'));
+      if (!htmlStickers) {
+        return undefined;
+      }
+
+      let html = htmlStickers.value;
+      const count = (html.match(/img/g) || []).length;
+      const type = (html.match('Sticker')) ? 'sticker' : 'patch';
+
+      if (count === 0) {
+        return undefined;
+      }
+
+      // eslint-disable-next-line max-len
+      html = html.replaceAll(`<br><div id="sticker_info" name="sticker_info" title="${helpers.capitalize(type)}" style="border: 2px solid rgb(102, 102, 102); border-radius: 6px; width=100; margin:4px; padding:8px;"><center>`, '');
+      html = html.replaceAll('</center></div>', '');
+      html = html.replaceAll('<img width=64 height=48 src="', '');
+      html = html.replaceAll(`<br>${helpers.capitalize(type)}: `, '');
+      html = html.replaceAll('">', ';');
+
+      let tmpArr = html.split(';');
+      const tmpNames = tmpArr[count].replaceAll(', Champion', '; Champion').split(', ');
+      tmpArr = tmpArr.splice(0, count);
+
+      const tmpStickers = [];
+      for (let j = 0; j < count; j++) {
+        const abb = (type === 'sticker') ? 'Sticker | ' : 'Patch | ';
+        const sticker = {
+          name: (tmpNames[j]).replace('; Champion', ', Champion'),
+          img: tmpArr[j],
+          longName: (abb + tmpNames[j]).replace('; Champion', ', Champion'),
+        };
+        tmpStickers.push(sticker);
+      }
+
+      return { type, count, items: tmpStickers };
+    },
+  },
+
+  // * --- OLD HELPER FUNCTIONS THAT ARE REQUIRED TO MIGRATE SAVES --- *
+
   async saveProfile(profile: ISteamProfile) {
     const exists = await AsyncStorage.getItem(profile.id);
     if (exists) {
@@ -65,16 +154,9 @@ export const helpers = {
   async saveSetting(name: string, value: number) {
     await AsyncStorage.setItem(name, JSON.stringify({ value }));
   },
-  resize(size: number) {
-    const scale = Dimensions.get('window').width / 423;
-    return Math.ceil(size * scale);
-  },
-  capitalize(str: string) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  },
-  price(currency: string, num: number): string {
-    return new Intl.NumberFormat('en-UK', { style: 'currency', currency }).format(num);
-  },
+
+  // * --- OLD HELPER FUNCTIONS --- *
+
   async loadPreviousGames(id: string): Promise<IInventoryGame[]> {
     const savedKeys = await AsyncStorage.getAllKeys();
     const savedGamesKey = savedKeys.find(key => key === `prevGames${id}`);

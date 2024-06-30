@@ -1,5 +1,5 @@
 import { Image, Pressable, View } from 'react-native';
-import { colors, global, templates } from 'styles/global';
+import { colors, global } from 'styles/global';
 import { ISteamProfile } from 'types';
 import styles from 'styles/pages/profile';
 import Text from './Text';

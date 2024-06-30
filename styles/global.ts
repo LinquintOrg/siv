@@ -51,6 +51,18 @@ export const templates = StyleSheet.create({
     backgroundColor: colors.secondary,
     borderRadius: resize(16),
   },
+  alignCenter: {
+    alignItems: 'center',
+  },
+  justifyCenter: {
+    justifyContent: 'center',
+  },
+  fullHeight: {
+    height: '100%',
+  },
+  fullWidth: {
+    width: '100%',
+  },
 });
 
 export const global = StyleSheet.create({
@@ -465,6 +477,7 @@ export const styles = {
       justifyContent: 'space-around',
       alignSelf: 'center',
       marginVertical: resize(16),
+      alignItems: 'center',
     },
     text: {
       color: colors.text,

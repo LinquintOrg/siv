@@ -6,8 +6,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable } from 'react-native';
 import { IExchangeRate } from 'types';
 import styles from 'styles/pages/settings';
+import useStore from 'store';
 
 export default function SettingsRatesPage() {
+  const $store = useStore();
   const [ rates, setRates ] = useState<IExchangeRate[]>([]);
   const [ loaded, setLoaded ] = useState(false);
   const [ loading, setLoading ] = useState(false);
@@ -36,9 +38,10 @@ export default function SettingsRatesPage() {
   );
 
   async function selectRate(selected: IExchangeRate) {
-    setSearch('');
     await sql.setSetting('currency', selected.code);
-    router.replace('/settings');
+    $store.setCurrency(selected);
+    setSearch('');
+    router.push('/settings');
   }
 
   const RenderableItem = (item: IExchangeRate) => (
