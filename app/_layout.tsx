@@ -74,6 +74,9 @@ export default function Layout() {
             });
           }
         }
+
+        const currentCurrency = await sql.getOneRate();
+        store.setCurrency(currentCurrency);
       } finally {
         setLoaded(true);
         setIsLoading(false);
