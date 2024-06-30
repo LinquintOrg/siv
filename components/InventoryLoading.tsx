@@ -32,8 +32,9 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
       } else {
         for (const game of games) {
           setLoadingMsg(`Loading ${game.name} inventory`);
-          // TODO: call api
-          await helpers.sleep(1000);
+          const invRes = await $api.getInventory(profile.id, game.appid);
+          inventoryRes[+(game.appid)] = invRes;
+          await helpers.sleep(1500);
         }
       }
 
@@ -76,7 +77,7 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
       setInventory(finalItems);
     }
 
-    if (!loading) {
+    if (!loading && profile && games.length) {
       prepare();
     }
   });

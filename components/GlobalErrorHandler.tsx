@@ -22,6 +22,7 @@ const GlobalErrorHandler: React.FC = () => {
         } else if (typeof error === 'object') {
           showSnackbar(error.message);
         }
+        console.error(error);
       },
     });
   }, [ showSnackbar ]);

@@ -51,6 +51,12 @@ export default class api {
     return profilesRes.data.response.players;
   }
 
+  public async getInventory(steamId: string, appid: string) {
+    console.log('calling getInventory');
+    const inventoryRes = await this.axiosInstance.get<ISteamInventoryRes>(`https://steamcommunity.com/inventory/${steamId}/${appid}/2/?count=1000`);
+    return inventoryRes.data;
+  }
+
   public async getPrices(body: IPricesReq): Promise<IPricesRes> {
     console.log('calling getPrices');
     const pricesRes = await this.axiosInstance.post<IPricesRes>('https://linquint.dev/api/prices', body);

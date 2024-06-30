@@ -35,6 +35,36 @@ const itemPageStyles = StyleSheet.create({
   itemName: {
     fontSize: helpers.resize(20),
   },
+  stickerImage: {
+    width: helpers.resize(86),
+    height: helpers.resize(64),
+    objectFit: 'contain',
+  },
+  stickerName: {
+    fontSize: helpers.resize(16),
+  },
+  stickerPrice: {
+    fontSize: helpers.resize(18),
+  },
+  itemPriceInfo: {
+    fontSize: helpers.resize(14),
+    paddingHorizontal: helpers.resize(6),
+    paddingVertical: helpers.resize(3),
+    borderRadius: helpers.resize(6),
+    maxHeight: helpers.resize(26),
+  },
+  loss: {
+    color: '#660014',
+    backgroundColor: '#FF0A1B88',
+  },
+  profit: {
+    color: '#246B43',
+    backgroundColor: '#66CC92CC',
+  },
+  samePrice: {
+    color: '#664200',
+    backgroundColor: '#FFA90A',
+  },
 });
 
 export default itemPageStyles;

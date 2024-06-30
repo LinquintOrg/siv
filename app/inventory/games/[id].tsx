@@ -65,7 +65,11 @@ export default function InventoryGamesSelectPage() {
   }
 
   function selectGames() {
-    router.replace(`/inventory/${id as string}?games=${selectedGames.join(',')}`);
+    if (selectedGames.length > 0) {
+      router.replace(`/inventory/${id as string}?games=${selectedGames.join(',')}`);
+    } else {
+      throw new Error('Select at least one game.');
+    }
   }
 
   return (

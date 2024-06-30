@@ -5,19 +5,16 @@ import { sql } from '@utils/sql';
 import { router, useFocusEffect, useGlobalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
-import { IExchangeRate, IInventories, IInventoryGame, IItem, ISteamProfile } from 'types';
+import { IInventories, IItem, ISteamProfile } from 'types';
 import styles from '@styles/pages/inventory';
 import { global, templates } from 'styles/global';
-import * as SQLite from 'expo-sqlite';
 import useStore from 'store';
 
 export default function InventoryOverviewPage() {
-  const store = useStore();
+  const $store = useStore();
   const { id, games } = useGlobalSearchParams();
   const [ user, setUser ] = useState<ISteamProfile | string | null>(null);
   const [ pageInFocus, setPageInFocus ] = useState(false);
-  const [ gamesList, setGamesList ] = useState<IInventoryGame[]>([]);
-  const [ rate, setRate ] = useState<IExchangeRate>({ code: 'USD', rate: 1 });
   const [ loading, setLoading ] = useState(false);
   const [ inv, setInv ] = useState<IInventories>({});
   const [ filterOptions ] = useState({
@@ -33,36 +30,19 @@ export default function InventoryOverviewPage() {
     }, []),
   );
 
-  SQLite.addDatabaseChangeListener(async newSql => {
-    if (newSql.tableName === 'Settings') {
-      const newRate = await sql.getOneRate();
-      setRate(newRate);
-    }
-  });
-
   useEffect(() => {
     async function prepare() {
       if (!id) {
         return;
       }
 
-      try {
-        const list = await sql.getInventoryGames();
-        setGamesList(list);
-        const userById = await sql.getOneProfile(id as string);
-        if (userById) {
-          setUser(userById);
-        } else {
-          setUser(id as string);
-        }
-        const r = await sql.getOneRate();
-        if (r) {
-          setRate(r);
-        }
-        setLoading(true);
-      } catch (err) {
-        console.error(err);
+      const userById = await sql.getOneProfile(id as string);
+      if (userById) {
+        setUser(userById);
+      } else {
+        setUser(id as string);
       }
+      setLoading(true);
     }
     if (pageInFocus && !user) {
       prepare();
@@ -70,22 +50,22 @@ export default function InventoryOverviewPage() {
   }, [ pageInFocus, user, id ]);
 
   const selectedGames = useMemo(
-    () => (games as string || '').split(',').map(app => gamesList.find(game => game.appid === app)!),
-    [ games, gamesList ],
+    () => (games as string || '').split(',').map(app => $store.games.find(game => game.appid === app)!),
+    [ games, $store ],
   );
 
   const invMap = useMemo(
     () => Object.entries(inv).map(([ appid, inventory ]) => ({
-      game: store.games.find(g => g.appid === appid),
+      game: $store.games.find(g => g.appid === appid),
       items: inventory.filter(i => filterOptions.nonMarketable || i.marketable),
     })),
-    [ inv, store, filterOptions ],
+    [ inv, $store, filterOptions ],
   );
 
   function setInventory(inventory: IInventories) {
     setInv(inventory);
     setLoading(false);
-    store.setInventory(inventory);
+    $store.setInventory(inventory);
   }
 
   function navigateToItem(item: IItem) {
@@ -95,7 +75,10 @@ export default function InventoryOverviewPage() {
   return (
     <>
       <View>
-        { loading && user && typeof user !== 'string' && <InventoryLoading profile={user} games={selectedGames} setInventory={setInventory} /> }
+        {
+          loading && user && typeof user !== 'string' && selectedGames?.length
+            && <InventoryLoading profile={user} games={selectedGames} setInventory={setInventory}/>
+        }
         {
           !loading && !!Object.keys(inv).length &&
           <ScrollView>
@@ -147,7 +130,7 @@ export default function InventoryOverviewPage() {
                                     {item.price.difference > 0 ? '+' : ''}{ item.price.difference.toFixed(1) }%
                                   </Text>
                               }
-                              <Text bold style={styles.itemPrice}>{ helpers.price(rate, item.price.price || 0) }</Text>
+                              <Text bold style={styles.itemPrice}>{ helpers.price($store.currency, item.price.price || 0) }</Text>
                             </View>
                             {
                               item.amount > 1 &&
@@ -164,7 +147,7 @@ export default function InventoryOverviewPage() {
                                 ]}>
                                   {item.price.difference > 0 ? '+' : ''}{ item.price.difference.toFixed(1) }%
                                 </Text>
-                                <Text bold style={styles.itemPrice}>{ helpers.price(rate, item.price.price || 0, item.amount) }</Text>
+                                <Text bold style={styles.itemPrice}>{ helpers.price($store.currency, item.price.price || 0, item.amount) }</Text>
                               </View>
                             }
                           </View>
