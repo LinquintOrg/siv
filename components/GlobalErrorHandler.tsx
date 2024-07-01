@@ -7,7 +7,11 @@ const GlobalErrorHandler: React.FC = () => {
   useEffect(() => {
     const defaultHandler = ErrorUtils.getGlobalHandler && ErrorUtils.getGlobalHandler();
     ErrorUtils.setGlobalHandler(error => {
-      showSnackbar(`Unhandled error: ${error.message}`);
+      if (typeof error === 'string') {
+        showSnackbar(error);
+      } else if (typeof error === 'object' && !Array.isArray(error) && 'message' in error) {
+        showSnackbar(error.message);
+      }
       if (defaultHandler) {
         defaultHandler(error);
       }
@@ -19,7 +23,7 @@ const GlobalErrorHandler: React.FC = () => {
       onUnhandled: (_id: number, error: string | Error) => {
         if (typeof error === 'string') {
           showSnackbar(error);
-        } else if (typeof error === 'object') {
+        } else if (typeof error === 'object' && !Array.isArray(error) && 'message' in error) {
           showSnackbar(error.message);
         }
         console.error(error);

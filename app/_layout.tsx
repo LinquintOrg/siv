@@ -42,8 +42,10 @@ export default function Layout() {
       try {
         setIsLoading(true);
         const extraMigrationsNeeded = await sql.migrateDbIfNeeded();
-        const rates = await $api.getRates();
-        const inventoryGames = await $api.getInventoryGames();
+        const [ rates, inventoryGames ] = await Promise.all([
+          $api.getRates(),
+          $api.getInventoryGames(),
+        ]);
 
         await sql.updateRates(rates);
         await sql.updateInventoryGames(inventoryGames);
@@ -77,6 +79,8 @@ export default function Layout() {
 
         const currentCurrency = await sql.getOneRate();
         store.setCurrency(currentCurrency);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoaded(true);
         setIsLoading(false);

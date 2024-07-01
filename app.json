@@ -2,7 +2,7 @@
   "expo": {
     "name": "Steam Inventory Value",
     "slug": "siv",
-    "version": "3.3.0",
+    "version": "4.0.0",
     "orientation": "portrait",
     "icon": "./assets/icons/siv.png",
     "splash": {
@@ -28,7 +28,7 @@
       },
       "config": {},
       "package": "com.rsds.steaminventoryvalue",
-      "versionCode": 2010000176
+      "versionCode": 2010000177
     },
     "web": {
       "favicon": "./assets/favicon.png"

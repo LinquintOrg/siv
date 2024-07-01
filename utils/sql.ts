@@ -129,7 +129,7 @@ export abstract class sql {
   public static async migrateDbIfNeeded(): Promise<boolean> {
     let extraMigrationsNeeded = false;
     if (!this.db) {
-      this.db = await SQLite.openDatabaseAsync('appData', { enableChangeListener: true });
+      this.db = await SQLite.openDatabaseAsync('appData');
     }
 
     const DATABASE_VERSION = 1;
