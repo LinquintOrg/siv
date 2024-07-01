@@ -34,21 +34,16 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "sentry-expo",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "domr",
+          "project": "domr"
+        }
+      ],
       "expo-font",
       "expo-router"
     ],
-    "hooks": {
-      "postPublish": [
-        {
-          "file": "sentry-expo/upload-sourcemaps",
-          "config": {
-            "organization": "domr",
-            "project": "domr"
-          }
-        }
-      ]
-    },
     "extra": {
       "eas": {
         "projectId": "9ee78a6c-9709-416e-baf5-905247436ac4"

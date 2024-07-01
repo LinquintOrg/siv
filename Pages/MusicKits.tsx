@@ -8,7 +8,6 @@ import Text from '../components/Text';
 import { TextInput } from 'react-native-paper';
 import { IMusicKit, IMusicKitPrice } from '../utils/types';
 import MusicKit from '../components/MusicKit';
-import * as Sentry from 'sentry-expo';
 import { global, variables, colors } from '../styles/global';
 import { helpers } from '../utils/helpers';
 import Loader from '../components/Loader';
@@ -57,7 +56,6 @@ export default function MusicKits() {
       } catch (err) {
         setErrorText((err as Error).message);
         setErrorSnack(true);
-        Sentry.React.captureException(err);
       } finally {
         setLoading(false);
       }
@@ -93,7 +91,6 @@ export default function MusicKits() {
       } catch (err) {
         setErrorText((err as Error).message);
         setErrorSnack(true);
-        Sentry.React.captureException(err);
       } finally {
         setPlaybackTimeout(false);
       }

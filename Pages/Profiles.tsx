@@ -8,7 +8,6 @@ import { helpers } from '../utils/helpers';
 import Text from '../components/Text';
 import Modal from 'react-native-modal';
 import NetInfo from '@react-native-community/netinfo';
-import * as Sentry from 'sentry-expo';
 import { IPlayerSummariesResponse, IProfilesProps, IVanitySearchResponse } from '../utils/types';
 import Loader from '../components/Loader';
 // import Clipboard from '@react-native-community/clipboard';
@@ -60,7 +59,6 @@ export default function StackProfilesMain(props: IProfilesProps) {
       } catch (err) {
         setSnackError(true);
         setErrorText((err as Error).message);
-        Sentry.React.captureException(err);
         return;
       }
     } else {
@@ -95,7 +93,6 @@ export default function StackProfilesMain(props: IProfilesProps) {
         }
         setSnackError(true);
         setErrorText((err as Error).message);
-        Sentry.React.captureException(err);
       } finally {
         setLoading(false);
         setProfile(p);
@@ -153,7 +150,6 @@ export default function StackProfilesMain(props: IProfilesProps) {
     } catch (err) {
       setSnackError(true);
       setErrorText((err as Error).message);
-      Sentry.React.captureException(err);
     }
   }
 
@@ -164,7 +160,6 @@ export default function StackProfilesMain(props: IProfilesProps) {
     } catch (err) {
       setSnackError(true);
       setErrorText((err as Error).message);
-      Sentry.React.captureException(err);
     }
   }
 

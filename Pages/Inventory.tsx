@@ -15,7 +15,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { IGameExtended, IGameStatistic, IInventory, IInventoryBase, IInventoryGame, IInventoryItem, IInventoryOmittedItem, IInventoryOmittedItemAmount,
   IInventoryPageProps, IInventoryResponse, IInventoryStats, IPrice, IPricesResponse } from '../utils/types';
 import { useProfilesState, useRateState, useRatesState } from '../utils/store';
-import * as Sentry from 'sentry-expo';
 import { helpers } from '../utils/helpers';
 import Loader from '../components/Loader';
 import { colors, global, styles, variables } from '../styles/global';
@@ -134,7 +133,6 @@ export default function Inventory(props: IInventoryPageProps) {
       } catch (err) {
         setErrorText((err as Error).message);
         setErrorSnack(true);
-        Sentry.React.captureException(err);
       } finally {
         setLoading(false);
       }

@@ -1,28 +1,36 @@
 import api from '@utils/api';
 import { sql } from '@utils/sql';
 import Nav from 'components/Nav';
-import { SplashScreen, Tabs, useNavigation } from 'expo-router';
+import { SplashScreen, Tabs, useNavigation, useNavigationContainerRef } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BackHandler, View } from 'react-native';
 import { SafeAreaView, useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, variables } from 'styles/global';
 import { helpers } from 'utils/helpers';
-import * as Sentry from 'sentry-expo';
+import * as Sentry from '@sentry/react-native';
 import { SnackbarProvider } from 'hooks/useSnackbar';
 import GlobalErrorHandler from '@/GlobalErrorHandler';
 import useStore from 'store';
 import { useBackButtonHandler } from 'hooks/useBackButtonHandler';
+import { isRunningInExpoGo } from 'expo';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function Layout() {
-  Sentry.init({
-    dsn: 'https://755f445790cc440eb625404426d380d7@o1136798.ingest.sentry.io/6188926',
-    enableInExpoDevelopment: true,
-    // eslint-disable-next-line no-undef
-    debug: __DEV__, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending the event. Set it to `false` in production
-    tracesSampleRate: 1.0,
-  });
+const routingInstrumentation = new Sentry.ReactNavigationInstrumentation();
+
+Sentry.init({
+  dsn: 'https://755f445790cc440eb625404426d380d7@o1136798.ingest.sentry.io/6188926',
+  debug: true,
+  tracesSampleRate: 1.0,
+  integrations: [
+    new Sentry.ReactNativeTracing({
+      routingInstrumentation,
+      enableNativeFramesTracking: !isRunningInExpoGo(),
+    }),
+  ],
+});
+
+function RootLayout() {
 
   const $api = new api();
   const store = useStore();
@@ -36,6 +44,14 @@ export default function Layout() {
     () => Math.floor(height - top - helpers.resize(variables.iconSize + 16 * 2 + 8 * 2)),
     [ height, top ],
   );
+
+  const ref = useNavigationContainerRef();
+
+  useEffect(() => {
+    if (ref) {
+      routingInstrumentation.registerNavigationContainer(ref);
+    }
+  }, [ ref ]);
 
   useEffect(() => {
     async function prepare() {
@@ -125,3 +141,5 @@ export default function Layout() {
     </SafeAreaView>
   );
 }
+
+export default Sentry.wrap(RootLayout);

@@ -11,7 +11,6 @@ import MusicKits from './Pages/MusicKits.tsx';
 import Settings from './components/Settings.tsx';
 import SteamMarket from './Pages/SteamMarket.tsx';
 import { CleanTabBar } from 'react-navigation-tabbar-collection';
-import * as Sentry from 'sentry-expo';
 import NetInfo from '@react-native-community/netinfo';
 // import { useFonts } from 'expo-font';
 import { enableScreens } from 'react-native-screens';
@@ -29,14 +28,6 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<TStackNavigationList>();
 
 function App() {
-  Sentry.init({
-    dsn: 'https://755f445790cc440eb625404426d380d7@o1136798.ingest.sentry.io/6188926',
-    enableInExpoDevelopment: true,
-    // eslint-disable-next-line no-undef
-    debug: __DEV__, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending the event. Set it to `false` in production
-    tracesSampleRate: 1.0,
-  });
-
   useStore();
   const profiles = useProfilesState();
   const rates = useRatesState();
@@ -210,5 +201,3 @@ const resize = (size: number) => {
   const scale = Dimensions.get('window').width / 423;
   return Math.ceil(size * scale);
 };
-
-export default Sentry.Native.wrap(App);

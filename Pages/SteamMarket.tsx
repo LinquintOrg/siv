@@ -10,7 +10,6 @@ import Modal from 'react-native-modal';
 import { useRateState, useRatesState } from '../utils/store';
 import { helpers } from '../utils/helpers';
 import { colors, global, variables } from '../styles/global';
-import * as Sentry from 'sentry-expo';
 import { IDropdownItem, ISteamMarketResponse, ISteamMarketSearchResult } from '../utils/types';
 import Loader from '../components/Loader';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -89,7 +88,6 @@ export default function () {
       } catch (err) {
         setErrorText((err as Error).message);
         setErrorSnack(true);
-        Sentry.React.captureException(err);
       } finally {
         setLoading(false);
       }
@@ -121,7 +119,6 @@ export default function () {
     } catch (err) {
       setErrorText((err as Error).message);
       setErrorSnack(true);
-      Sentry.React.captureException(err);
     } finally {
       setLoadingResults(false);
     }
