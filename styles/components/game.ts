@@ -18,11 +18,11 @@ const gameStyles = StyleSheet.create({
   },
   gameTitle: {
     fontSize: helpers.resize(18),
-    color: '#333',
+    color: colors.text,
   },
   gameId: {
     fontSize: helpers.resize(14),
-    color: '#555',
+    color: colors.textAccent,
   },
   active: {
     backgroundColor: colors.secondary,

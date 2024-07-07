@@ -13,6 +13,7 @@ import GlobalErrorHandler from '@/GlobalErrorHandler';
 import useStore from 'store';
 import { useBackButtonHandler } from 'hooks/useBackButtonHandler';
 import { isRunningInExpoGo } from 'expo';
+import { StatusBar } from 'expo-status-bar';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -121,7 +122,7 @@ function RootLayout() {
   }
 
   return (
-    <SafeAreaView style={{ height: '100%' }} onLayout={onLayoutRootView}>
+    <SafeAreaView style={{ height: '100%', backgroundColor: colors.background }} onLayout={onLayoutRootView}>
       <SnackbarProvider>
         <GlobalErrorHandler />
         <View style={{ maxHeight: viewHeight, minHeight: viewHeight, paddingHorizontal: helpers.resize(8) }}>
@@ -138,6 +139,7 @@ function RootLayout() {
         </View>
         <Nav />
       </SnackbarProvider>
+      <StatusBar style='light' />
     </SafeAreaView>
   );
 }

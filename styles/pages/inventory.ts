@@ -16,6 +16,7 @@ const inventoryPageStyles = StyleSheet.create({
   },
   gameTitle: {
     fontSize: helpers.resize(24),
+    color: colors.text,
   },
   item: {
     ...templates.row,
@@ -23,21 +24,23 @@ const inventoryPageStyles = StyleSheet.create({
     marginVertical: helpers.resize(6),
     alignItems: 'center',
     padding: helpers.resize(8),
-    backgroundColor: '#f0f0fa',
     borderRadius: helpers.resize(8),
   },
   itemImage: {
-    height: helpers.resize(84),
-    width: helpers.resize(84),
+    height: helpers.resize(96),
+    width: helpers.resize(96),
     objectFit: 'contain',
     marginVertical: helpers.resize(4),
+    backgroundColor: colors.secondary,
+    borderRadius: helpers.resize(8),
   },
   itemTitle: {
     fontSize: helpers.resize(16),
+    color: colors.text,
   },
   itemPill: {
     fontSize: helpers.resize(12),
-    color: colors.textAccent,
+    color: colors.text,
     backgroundColor: colors.secondary,
     paddingHorizontal: helpers.resize(6),
     paddingVertical: helpers.resize(3),
@@ -47,6 +50,7 @@ const inventoryPageStyles = StyleSheet.create({
   },
   itemPrice: {
     fontSize: helpers.resize(18),
+    color: colors.text,
   },
   itemPriceInfo: {
     fontSize: helpers.resize(14),
@@ -57,11 +61,11 @@ const inventoryPageStyles = StyleSheet.create({
   },
   loss: {
     color: '#660014',
-    backgroundColor: '#FF0A1B88',
+    backgroundColor: '#F04C57',
   },
   profit: {
     color: '#246B43',
-    backgroundColor: '#66CC92CC',
+    backgroundColor: '#66CC92',
   },
   samePrice: {
     color: '#664200',

@@ -5,7 +5,6 @@ import { helpers } from 'utils/helpers';
 const navStyles = StyleSheet.create({
   container: {
     width: '100%',
-    borderRadius: helpers.resize(16),
     backgroundColor: colors.white,
     paddingVertical: helpers.resize(16),
     paddingHorizontal: helpers.resize(32),

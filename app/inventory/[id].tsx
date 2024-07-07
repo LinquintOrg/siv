@@ -93,7 +93,7 @@ export default function InventoryOverviewPage() {
                     items.map(item => (
                       <Pressable style={styles.item} onPress={() => navigateToItem(item)}>
                         <Image source={{ uri: `https://community.akamai.steamstatic.com/economy/image/${item.icon_url}` }} style={styles.itemImage} />
-                        <View style={[ templates.column, { width: helpers.resize(290), justifyContent: 'space-between', minHeight: helpers.resize(100) } ]}>
+                        <View style={[ templates.column, { width: helpers.resize(280), justifyContent: 'space-between', minHeight: helpers.resize(100) } ]}>
                           <View style={[ templates.column ]}>
                             <View style={global.wrapRow}>
                               {

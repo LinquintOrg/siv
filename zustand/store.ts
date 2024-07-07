@@ -4,7 +4,7 @@ import { create } from 'zustand';
 interface IStore {
   games: IInventoryGame[];
   inventory: IInventories;
-  stickerPrices: { [hash: string]: number }
+  stickerPrices: { [hash: string]: number };
   currency: IExchangeRate;
   setGames: (games: IInventoryGame[]) => void;
   setInventory: (inv: IInventories) => void;
