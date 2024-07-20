@@ -14,6 +14,7 @@ import useStore from 'store';
 import { useBackButtonHandler } from 'hooks/useBackButtonHandler';
 import { isRunningInExpoGo } from 'expo';
 import { StatusBar } from 'expo-status-bar';
+import { PaperProvider } from 'react-native-paper';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -123,22 +124,24 @@ function RootLayout() {
 
   return (
     <SafeAreaView style={{ height: '100%', backgroundColor: colors.background }} onLayout={onLayoutRootView}>
-      <SnackbarProvider>
-        <GlobalErrorHandler />
-        <View style={{ maxHeight: viewHeight, minHeight: viewHeight, paddingHorizontal: helpers.resize(8) }}>
-          <Tabs
-            screenOptions={() => ({
-              headerShown: false,
-              tabBarStyle: {
-                display: 'none',
-              },
-            })}
-            sceneContainerStyle={{ backgroundColor: colors.background }}
-            backBehavior='history'
-          />
-        </View>
-        <Nav />
-      </SnackbarProvider>
+      <PaperProvider>
+        <SnackbarProvider>
+          <GlobalErrorHandler />
+          <View style={{ maxHeight: viewHeight, minHeight: viewHeight, paddingHorizontal: helpers.resize(8) }}>
+            <Tabs
+              screenOptions={() => ({
+                headerShown: false,
+                tabBarStyle: {
+                  display: 'none',
+                },
+              })}
+              sceneContainerStyle={{ backgroundColor: colors.background }}
+              backBehavior='history'
+            />
+          </View>
+          <Nav />
+        </SnackbarProvider>
+      </PaperProvider>
       <StatusBar style='light' />
     </SafeAreaView>
   );

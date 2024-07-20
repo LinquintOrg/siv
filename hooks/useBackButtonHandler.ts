@@ -8,7 +8,7 @@ export function useBackButtonHandler() {
 
   useEffect(() => {
     const backAction = () => {
-      if (path.startsWith('/inventory/') && !path.startsWith('/inventory/item')) {
+      if (!path.startsWith('/inventory/item') && !path.startsWith('/inventory/summary') && path.startsWith('/inventory/')) {
         router.replace('/');
         return true;
       } else if (!navRoutes.find(r => r.href === path) && router.canGoBack()) {

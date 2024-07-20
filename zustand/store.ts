@@ -1,4 +1,4 @@
-import { IExchangeRate, IInventories, IInventoryGame, ISteamProfile, ISteamUser, ISummary } from 'types';
+import { IExchangeRate, IInventories, IInventoryGame, ISteamProfile, ISummary } from 'types';
 import { create } from 'zustand';
 
 interface IStore {
