@@ -9,11 +9,12 @@ export default StyleSheet.create({
     marginTop: helpers.resize(12),
   },
   summaryTitle: {
-    fontSize: helpers.resize(15),
+    fontSize: helpers.resize(16),
     color: colors.text,
+    marginBottom: helpers.resize(2),
   },
   summaryValue: {
-    fontSize: helpers.resize(16),
+    fontSize: helpers.resize(14),
     color: colors.text,
   },
   game: {
@@ -33,5 +34,24 @@ export default StyleSheet.create({
   gameTitle: {
     fontSize: helpers.resize(20),
     color: colors.text,
+  },
+  itemPriceInfo: {
+    fontSize: helpers.resize(12),
+    paddingHorizontal: helpers.resize(6),
+    paddingVertical: helpers.resize(3),
+    borderRadius: helpers.resize(6),
+    maxHeight: helpers.resize(26),
+  },
+  loss: {
+    color: '#660014',
+    backgroundColor: '#F04C57',
+  },
+  profit: {
+    color: '#246B43',
+    backgroundColor: '#66CC92',
+  },
+  samePrice: {
+    color: '#664200',
+    backgroundColor: '#FFA90A',
   },
 });
