@@ -18,7 +18,7 @@ export default function Loader(props: ILoaderProps) {
         size={props.size ? props.size : 'small'}
         color={ colors.primary }
       />
-      { props.text && <Text style={ styles.loader.text }>{ props.text }</Text> }
+      { !!props.text && <Text style={ styles.loader.text }>{ props.text }</Text> }
     </View>
   );
 }

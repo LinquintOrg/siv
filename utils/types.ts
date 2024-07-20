@@ -121,7 +121,7 @@ export type TStackNavigationList = {
 
 export interface IInventoryGame {
   name: string;
-  appid: number;
+  appid: string;
   classid: number;
   url: string;
 }

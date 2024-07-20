@@ -158,7 +158,7 @@ export interface IItemPrice extends IItemPriceRes {
 }
 
 export interface IItemStickers {
-  type: string;
+  type: 'sticker' | 'patch';
   count: number;
   items: {
     name: string;
@@ -175,4 +175,32 @@ export interface IItem extends ISteamInventoryDescription {
 
 export interface IInventories {
   [appid: string]: IItem[];
+}
+
+export interface ISummaryBase {
+  totalValue: number;
+  itemCount: number;
+  sellableItems: number;
+  avg24: number;
+  avg7: number;
+  avg30: number;
+  p24ago: number;
+  p30ago: number;
+  p90ago: number;
+  yearAgo: number;
+}
+
+export interface IGameSummary extends ISummaryBase {
+  game: IInventoryGame;
+  withNameTag?: number;
+  withStickers?: number;
+  withPatches?: number;
+  stickerValue?: number;
+  patchValue?: number;
+}
+
+export interface ISummary extends ISummaryBase {
+  profile: ISteamProfile;
+  games: IGameSummary[];
+  currency: IExchangeRate;
 }

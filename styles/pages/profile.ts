@@ -53,6 +53,27 @@ const profilePageStyles = StyleSheet.create({
     ...templates.row,
     justifyContent: 'space-evenly',
   },
+  inventoryLoadingWrapper: {
+    ...templates.column,
+    backgroundColor: colors.secondary,
+    borderRadius: helpers.resize(12),
+    padding: helpers.resize(8),
+  },
+  gameWrapper: {
+    ...templates.row,
+    alignItems: 'center',
+    gap: helpers.resize(4),
+    marginTop: helpers.resize(4),
+  },
+  gameIcon: {
+    height: helpers.resize(24),
+    width: helpers.resize(24),
+    borderRadius: helpers.resize(4),
+  },
+  gameName: {
+    color: colors.text,
+    fontSize: helpers.resize(14),
+  },
 });
 
 export default profilePageStyles;

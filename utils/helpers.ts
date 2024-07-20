@@ -1,10 +1,11 @@
 import { colors } from './../styles/global';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { IInventory, IInventoryGame, IInventoryItem, IInventoryResAsset, IInventoryResDescriptionDescription, IInventoryResDescriptionTag,
+import { IInventory, IInventoryItem, IInventoryResAsset, IInventoryResDescriptionDescription, IInventoryResDescriptionTag,
   ISticker } from './types';
 import { Dimensions } from 'react-native';
-import { IExchangeRate, IItem, IItemPriceRes, IItemStickers, ISteamInventoryAsset, ISteamInventoryDescriptionDescription, ISteamProfile,
-  ISteamUser } from 'types';
+import { IExchangeRate, IGameSummary, IInventories, IItem, IItemPriceRes, IItemStickers, ISteamInventoryAsset, ISteamInventoryDescriptionDescription,
+  ISteamProfile, ISteamUser, ISummary, IInventoryGame } from 'types';
+import { emptyBaseSummary } from './objects';
 
 /**
  * ! Helper functions should not be used with states store
@@ -47,8 +48,18 @@ export const helpers = {
     return str.charAt(0).toUpperCase() + str.slice(1);
   },
   price(currency: IExchangeRate, cost: number, count: number = 1): string {
+    if (!cost) {
+      cost = 0;
+    }
     const unitPrice = +(cost * currency.rate).toFixed(2);
     return new Intl.NumberFormat('en-UK', { style: 'currency', currency: currency.code }).format(unitPrice * count);
+  },
+  priceAsNum(currency: IExchangeRate, cost: number, count: number = 1): number {
+    if (!cost) {
+      return 0;
+    }
+    const unitPrice = +(cost * currency.rate).toFixed(2);
+    return unitPrice * count;
   },
 
   // * --- INVENTORY HELPERS --- *
@@ -121,6 +132,63 @@ export const helpers = {
       }
 
       return { type, count, items: tmpStickers };
+    },
+    stickersTotal(prices: { [hash: string]: number }, stickers: IItemStickers, currency: IExchangeRate) {
+      return stickers.items.reduce<number>((val, { longName }) => val += helpers.priceAsNum(currency, prices[longName]), 0);
+    },
+    // eslint-disable-next-line max-len
+    generateSummary(profile: ISteamProfile, inventory: IInventories, gamesList: IInventoryGame[], currency: IExchangeRate, stickerPrices: { [hash: string]: number }): ISummary {
+      const games: IGameSummary[] = [];
+
+      Object.entries(inventory).map(([ appid, items ]) => {
+        const gameSummary: IGameSummary = {
+          ...helpers.clone(emptyBaseSummary),
+          game: gamesList.find(g => g.appid === appid)!,
+          withNameTag: appid === '730' ? 0 : undefined,
+          withStickers: appid === '730' ? 0 : undefined,
+          withPatches: appid === '730' ? 0 : undefined,
+          stickerValue: appid === '730' ? 0 : undefined,
+          patchValue: appid === '730' ? 0 : undefined,
+        };
+
+        for (const item of items) {
+          gameSummary.totalValue += helpers.priceAsNum(currency, item.price.price, item.amount);
+          gameSummary.itemCount += item.amount;
+          gameSummary.sellableItems += item.marketable ? item.amount : 0;
+          gameSummary.avg24 += helpers.priceAsNum(currency, item.price.avg24, item.amount);
+          gameSummary.avg7 += helpers.priceAsNum(currency, item.price.avg7, item.amount);
+          gameSummary.avg30 += helpers.priceAsNum(currency, item.price.avg30, item.amount);
+          gameSummary.p24ago += helpers.priceAsNum(currency, item.price.p24ago, item.amount);
+          gameSummary.p30ago += helpers.priceAsNum(currency, item.price.p30ago, item.amount);
+          gameSummary.p90ago += helpers.priceAsNum(currency, item.price.p90ago, item.amount);
+          gameSummary.yearAgo += helpers.priceAsNum(currency, item.price.yearAgo, item.amount);
+          if (item.appid === 730) {
+            const stickers = item.stickers;
+            gameSummary.withNameTag! += !!this.nametag(item) ? 1 : 0;
+            gameSummary.withStickers! += stickers?.type === 'sticker' && stickers.count ? 1 : 0;
+            gameSummary.withPatches! += stickers?.type === 'patch' && stickers.count ? 1 : 0;
+            gameSummary.stickerValue! += stickers?.type === 'sticker' && stickers.count ? this.stickersTotal(stickerPrices, stickers, currency) : 0;
+            gameSummary.patchValue! += stickers?.type === 'patch' && stickers.count ? this.stickersTotal(stickerPrices, stickers, currency) : 0;
+          }
+        }
+        games.push(gameSummary);
+      });
+
+      return {
+        games,
+        profile,
+        currency,
+        totalValue: games.reduce<number>((val, game) => val += game.totalValue, 0),
+        itemCount: games.reduce<number>((val, game) => val += game.itemCount, 0),
+        sellableItems: games.reduce<number>((val, game) => val += game.sellableItems, 0),
+        avg24: games.reduce<number>((val, game) => val += game.avg24, 0),
+        avg7: games.reduce<number>((val, game) => val += game.avg7, 0),
+        avg30: games.reduce<number>((val, game) => val += game.avg30, 0),
+        p24ago: games.reduce<number>((val, game) => val += game.p24ago, 0),
+        p30ago: games.reduce<number>((val, game) => val += game.p30ago, 0),
+        p90ago: games.reduce<number>((val, game) => val += game.p90ago, 0),
+        yearAgo: games.reduce<number>((val, game) => val += game.yearAgo, 0),
+      };
     },
   },
 

@@ -22,9 +22,15 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
   const [ loading, setLoading ] = useState(false);
   const [ inventoryRes ] = useState<{ [appid: number]: ISteamInventoryRes }>({});
 
+  function setInvLoading(isLoading: boolean) {
+    setLoading(isLoading);
+    $store.setIsInventoryLoading(isLoading);
+  }
+
   useEffect(() => {
     async function prepare() {
-      setLoading(true);
+      $store.setCurrentProfile(profile);
+      setInvLoading(true);
       if (__DEV__) {
         setLoadingMsg('Loading Counter Strike 2 inventory');
         const invRes = await $api.devInventory();
@@ -75,6 +81,9 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
         Object.entries(stickerPricesRes).map(([ name, { price } ]) => $store.stickerPrices[name] = price);
       }
       setInventory(finalItems);
+      const summary = helpers.inv.generateSummary(profile, finalItems, games, $store.currency, $store.stickerPrices);
+      $store.setSummary(summary);
+      setInvLoading(false);
     }
 
     if (!loading && profile && games.length) {

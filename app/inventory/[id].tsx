@@ -21,13 +21,9 @@ export default function InventoryOverviewPage() {
     nonMarketable: false,
   });
 
-  useFocusEffect(
-    useCallback(() => {
-      setPageInFocus(true);
-      return () => {
-        setPageInFocus(false);
-      };
-    }, []),
+  const selectedGames = useMemo(
+    () => (games as string || '').split(',').map(app => $store.games.find(game => game.appid === app)!),
+    [ games, $store ],
   );
 
   useEffect(() => {
@@ -44,15 +40,23 @@ export default function InventoryOverviewPage() {
       }
       setLoading(true);
     }
-    if (pageInFocus && !user) {
-      prepare();
-    }
-  }, [ pageInFocus, user, id ]);
 
-  const selectedGames = useMemo(
-    () => (games as string || '').split(',').map(app => $store.games.find(game => game.appid === app)!),
-    [ games, $store ],
-  );
+    if (pageInFocus) {
+      const invGames = Object.keys(inv);
+      const haveGamesChanged = invGames.some(id => selectedGames.findIndex(sg => sg.appid === id) === -1);
+
+      console.log('invGames', invGames.length, JSON.stringify(invGames));
+      console.log('selectedGames', selectedGames.length, JSON.stringify(selectedGames));
+      console.log(invGames.some(id => selectedGames.findIndex(sg => sg.appid === id) === -1));
+
+      if (!user || (!loading && (invGames.length !== selectedGames.length || haveGamesChanged))) {
+
+        console.warn('PREPARE CALLED');
+
+        prepare();
+      }
+    }
+  }, [ pageInFocus, user, id, selectedGames, inv, loading ]);
 
   const invMap = useMemo(
     () => Object.entries(inv).map(([ appid, inventory ]) => ({
@@ -72,6 +76,19 @@ export default function InventoryOverviewPage() {
     router.push(`/inventory/item/${item.classid}-${item.instanceid}`);
   }
 
+  useFocusEffect(
+    useCallback(() => {
+      setPageInFocus(true);
+      if ($store.currency.code !== $store.summary?.currency.code) {
+        const summary = helpers.inv.generateSummary(user as ISteamProfile, inv, selectedGames, $store.currency, $store.stickerPrices);
+        $store.setSummary(summary);
+      }
+      return () => {
+        setPageInFocus(false);
+      };
+    }, [ $store, inv, user, selectedGames ]),
+  );
+
   return (
     <>
       <View>
@@ -82,6 +99,7 @@ export default function InventoryOverviewPage() {
         {
           !loading && !!Object.keys(inv).length &&
           <ScrollView>
+            <Text style={{ fontSize: helpers.resize(10), color: '#fff' }}>{ JSON.stringify($store.summary, null, 2) }</Text>
             {
               invMap.map(({ game, items }) => (
                 <>
