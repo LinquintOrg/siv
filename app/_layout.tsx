@@ -142,7 +142,7 @@ function RootLayout() {
           <Nav />
         </SnackbarProvider>
       </PaperProvider>
-      <StatusBar style='light' />
+      <StatusBar style='dark' />
     </SafeAreaView>
   );
 }

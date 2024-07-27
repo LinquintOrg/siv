@@ -33,11 +33,11 @@ const profilePageStyles = StyleSheet.create({
   },
   profileName: {
     fontSize: helpers.resize(18),
-    color: colors.text,
+    color: colors.primary,
   },
   profileID: {
-    fontSize: helpers.resize(16),
-    color: colors.textAccent,
+    fontSize: helpers.resize(14),
+    color: colors.text,
   },
   flowDown: {
     ...templates.column,

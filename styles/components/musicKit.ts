@@ -1,3 +1,4 @@
+import { colors } from '@styles/global';
 import { helpers } from '@utils/helpers';
 import { StyleSheet } from 'react-native';
 
@@ -7,24 +8,24 @@ const musicKitStyles = StyleSheet.create({
     gap: helpers.resize(10),
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: helpers.resize(4),
+    marginVertical: helpers.resize(6),
     alignContent: 'center',
   },
   musicKitArtwork: {
-    width: helpers.resize(80),
+    width: helpers.resize(100),
     height: helpers.resize(80),
     objectFit: 'contain',
   },
   artist: {
-    fontSize: helpers.resize(15),
+    fontSize: helpers.resize(16),
     fontWeight: 'bold',
-    color: '#666',
+    color: colors.accent,
     marginBottom: helpers.resize(4),
   },
   album: {
     fontSize: helpers.resize(18),
     fontWeight: 'bold',
-    color: '#444',
+    color: colors.primary,
   },
   price: {
     paddingVertical: helpers.resize(2),
@@ -34,8 +35,8 @@ const musicKitStyles = StyleSheet.create({
     fontSize: helpers.resize(16),
   },
   priceNormal: {
-    backgroundColor: '#aaa',
-    color: '#222',
+    backgroundColor: colors.primary,
+    color: colors.white,
   },
   priceStat: {
     backgroundColor: '#fb5',

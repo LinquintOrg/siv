@@ -28,7 +28,7 @@ export default function Nav() {
                 name={route.icon}
                 type={route.type || 'material-community'}
                 size={helpers.resize(variables.iconSize)}
-                color={isRouteActive(route.href) ? colors.white : colors.text}
+                color={isRouteActive(route.href) ? colors.white : colors.primary}
                 style={[ styles.navIcon, isRouteActive(route.href) ? styles.activeIcon : null ]}
               />
             </Pressable>

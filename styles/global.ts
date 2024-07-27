@@ -12,15 +12,15 @@ const transparentize = (color: string, opacity: number) => {
 };
 
 export const colors = {
-  text: '#FFF',
-  textAccent: '#DDD',
-  background: '#232C2F',
-  primary: '#0193F4',
-  secondary: '#66768F',
-  accent: '#ee3082',
+  text: '#090d12',
+  textAccent: '#444',
+  background: '#f0f3fc',
+  primary: '#355bd5',
+  secondary: '#91a7e9',
+  accent: '#577be4',
   success: '#9AD797',
   error: '#eb5855',
-  white: '#1A2123',
+  white: '#FFF',
 };
 
 export const variables = {
