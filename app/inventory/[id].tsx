@@ -104,8 +104,8 @@ export default function InventoryOverviewPage() {
                       <Text bold style={styles.gameTitle}>{ game?.name || 'Game Title' }</Text>
                     </View>
                     {
-                      items.map(item => (
-                        <Pressable style={styles.item} onPress={() => navigateToItem(item)}>
+                      items.map((item, idx) => (
+                        <Pressable style={[ styles.item, idx % 2 === 0 ? styles.itemEven : null ]} onPress={() => navigateToItem(item)}>
                           <Image source={{ uri: `https://community.akamai.steamstatic.com/economy/image/${item.icon_url}` }} style={styles.itemImage} />
                           <View style={[ templates.column, { width: helpers.resize(280), justifyContent: 'space-between', minHeight: helpers.resize(100) } ]}>
                             <View style={[ templates.column ]}>

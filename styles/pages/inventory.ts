@@ -26,12 +26,14 @@ const inventoryPageStyles = StyleSheet.create({
     padding: helpers.resize(8),
     borderRadius: helpers.resize(8),
   },
+  itemEven: {
+    backgroundColor: `${colors.primary}22`,
+  },
   itemImage: {
     height: helpers.resize(96),
     width: helpers.resize(96),
     objectFit: 'contain',
     marginVertical: helpers.resize(4),
-    backgroundColor: colors.secondary,
     borderRadius: helpers.resize(8),
   },
   itemTitle: {

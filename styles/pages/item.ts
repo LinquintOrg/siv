@@ -22,7 +22,6 @@ const itemPageStyles = StyleSheet.create({
     width: helpers.resize(320),
     height: helpers.resize(240),
     objectFit: 'contain',
-    backgroundColor: colors.secondary,
     borderRadius: helpers.resize(8),
   },
   itemPill: {
