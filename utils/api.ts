@@ -59,13 +59,13 @@ export default class api {
 
   public async getPrices(body: IPricesReq): Promise<IPricesRes> {
     console.log('calling getPrices');
-    const pricesRes = await this.axiosInstance.post<IPricesRes>('https://linquint.dev/api/prices', body);
+    const pricesRes = await this.axiosInstance.post<IPricesRes>('/prices', body);
     return pricesRes.data;
   }
 
   public async getStickerPrices(stickers: string[]): Promise<{ [hash: string]: { price: number } }> {
     console.log('calling getStickerPrices');
-    const pricesRes = await this.axiosInstance.post<{ [hash: string]: { price: number } }>('https://linquint.dev/api/stickers', stickers);
+    const pricesRes = await this.axiosInstance.post<{ [hash: string]: { price: number } }>('/stickers', stickers);
     return pricesRes.data;
   }
 

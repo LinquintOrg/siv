@@ -72,9 +72,9 @@ export default function InventoryItemPage() {
   function priceDiff(prc: IItemPrice, key: keyof IItemPrice) {
     const currentPrice = prc.price;
     const comparedPrice = prc[key] as number;
-    const percent = (comparedPrice - currentPrice) / currentPrice * 100;
+    const percent = (currentPrice - comparedPrice) / comparedPrice * 100;
     return {
-      difference: comparedPrice - currentPrice,
+      difference: currentPrice - comparedPrice,
       percent: (percent > 0 ? '+' : '') + percent.toFixed(1) + '%',
       theme: percent < 0 ? styles.loss : percent > 0 ? styles.profit : styles.samePrice,
     };

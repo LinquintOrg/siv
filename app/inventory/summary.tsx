@@ -39,9 +39,9 @@ export default function InventorySummaryPage() {
   function priceDiff(prc: ISummaryBase, key: keyof ISummaryBase) {
     const currentPrice = prc.totalValue;
     const comparedPrice = prc[key] as number;
-    const percent = (comparedPrice - currentPrice) / currentPrice * 100;
+    const percent = (currentPrice - comparedPrice) / comparedPrice * 100;
     return {
-      difference: comparedPrice - currentPrice,
+      difference: currentPrice - comparedPrice,
       percent: (percent > 0 ? '+' : '') + percent.toFixed(1) + '%',
       theme: percent < 0 ? style.loss : percent > 0 ? style.profit : style.samePrice,
     };
@@ -96,7 +96,7 @@ export default function InventorySummaryPage() {
                 <View style={style.column}>
                   {
                     Object.entries(game).map(([ key, val ]) => {
-                      if (key in summaryKeyTitle) {
+                      if (key in summaryKeyTitle && typeof val !== 'undefined') {
                         return (
                           <View>
                             <Text style={style.summaryTitle}>{ summaryKeyTitle[key].title }</Text>
