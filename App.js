@@ -20,7 +20,7 @@ import Settings from "./components/Settings";
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import SteamMarket from "./components/SteamMarket";
 import {CleanTabBar} from "react-navigation-tabbar-collection";
-import * as Sentry from 'sentry-expo';
+import * as Sentry from '@sentry/react-native';
 import {Snackbar, TextInput} from "react-native-paper";
 import * as SplashScreen from 'expo-splash-screen';
 import NetInfo from '@react-native-community/netinfo';
@@ -29,22 +29,25 @@ import {useFonts} from "expo-font";
 import Modal from "react-native-modal";
 import * as Clipboard from 'expo-clipboard';
 import { enableScreens } from 'react-native-screens';
+import { registerRootComponent } from 'expo';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+registerRootComponent(App);
+
 function App() {
+    
     Sentry.init({
-        dsn: 'https://755f445790cc440eb625404426d380d7@o1136798.ingest.sentry.io/6188926',
-        enableInExpoDevelopment: true,
-        debug: __DEV__, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending the event. Set it to `false` in production
-        tracesSampleRate: 1.0,
+      dsn: 'https://755f445790cc440eb625404426d380d7@o1136798.ingest.sentry.io/6188926',
+      debug: true,
+      tracesSampleRate: 1.0,
     });
 
-    useFonts({
-        Nunito: require('./assets/fonts/Nunito-Regular.ttf'),
-        NunitoBold: require('./assets/fonts/Nunito-Bold.ttf'),
-    });
+    // useFonts({
+    //     Nunito: require('./assets/fonts/Nunito-Regular.ttf'),
+    //     NunitoBold: require('./assets/fonts/Nunito-Bold.ttf'),
+    // });
 
     const [scale] = useState(Dimensions.get('window').width / 423);
     const resize = (size) => {
@@ -699,4 +702,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default Sentry.Native.wrap(App);
+export default Sentry.wrap(App);

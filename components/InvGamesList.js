@@ -83,41 +83,41 @@ export default function InvGamesList(props) {
 
             <Text bold style={styles.title}>Previously used games</Text>
             {
-                (prevGames.length === 0) ? <Text style={styles.previousGamesSubtitle}>You haven't used this profile previously</Text> :
-                    <View style={{width: '95%', alignSelf: 'center', flexDirection: 'row', display: 'flex', justifyContent: 'center',}}>
-                        <TouchableOpacity style={styles.previousGames} onPress={() => {
-                            props.setPrevState(prevGames[0]?.val)
-                        }}>
-                            <ScrollView style={{width: '100%', display: 'flex', flexDirection: 'row', flexWrap: 'wrap',}} horizontal showsHorizontalScrollIndicator={false}>
-                            {
-                                prevGames[0]?.val.map((item) => (
-                                    <Image style={{ height: resize(48), width: resize(48), borderRadius: 8, marginRight: 8 }} source={{uri: getGameImage(item)}} />
-                                ))
-                            }
-                            </ScrollView>
-                        </TouchableOpacity>
+                // (prevGames.length === 0) ? <Text style={styles.previousGamesSubtitle}>You haven't used this profile previously</Text> :
+                //     <View style={{width: '95%', alignSelf: 'center', flexDirection: 'row', display: 'flex', justifyContent: 'center',}}>
+                //         <TouchableOpacity style={styles.previousGames} onPress={() => {
+                //             props.setPrevState(prevGames[0]?.val)
+                //         }}>
+                //             <ScrollView style={{width: '100%', display: 'flex', flexDirection: 'row', flexWrap: 'wrap',}} horizontal showsHorizontalScrollIndicator={false}>
+                //             {
+                //                 prevGames[0]?.val.map((item) => (
+                //                     <Image style={{ height: resize(48), width: resize(48), borderRadius: 8, marginRight: 8 }} source={{uri: getGameImage(item)}} />
+                //                 ))
+                //             }
+                //             </ScrollView>
+                //         </TouchableOpacity>
 
-                        <TouchableOpacity style={{
-                                backgroundColor: '#12428D',
-                                borderTopRightRadius: 16,
-                                borderBottomRightRadius: 16,
-                                flexDirection: 'row',
-                                display: 'flex',
-                                width: '30%',
-                                justifyContent: 'space-between',
-                                elevation: 3,
-                                marginBottom: resize(8),
-                                paddingTop: resize(16),
-                                paddingHorizontal: resize(8),
-                            }}
-                            onPress={async () => {
-                                props.proceed(prevGames[0]?.val)
-                            }}
-                            >
-                                <Text bold style={styles.buttonMediumText}>Select</Text>
-                                <Icon type={'font-awesome-5'} name={'angle-double-right'} size={resize(24)} color={'#F2FAFD'} />
-                        </TouchableOpacity>
-                    </View>
+                //         <TouchableOpacity style={{
+                //                 backgroundColor: '#12428D',
+                //                 borderTopRightRadius: 16,
+                //                 borderBottomRightRadius: 16,
+                //                 flexDirection: 'row',
+                //                 display: 'flex',
+                //                 width: '30%',
+                //                 justifyContent: 'space-between',
+                //                 elevation: 3,
+                //                 marginBottom: resize(8),
+                //                 paddingTop: resize(16),
+                //                 paddingHorizontal: resize(8),
+                //             }}
+                //             onPress={async () => {
+                //                 props.proceed(prevGames[0]?.val)
+                //             }}
+                //             >
+                //                 <Text bold style={styles.buttonMediumText}>Select</Text>
+                //                 <Icon type={'font-awesome-5'} name={'angle-double-right'} size={resize(24)} color={'#F2FAFD'} />
+                //         </TouchableOpacity>
+                //     </View>
             }
 
             <TouchableOpacity style={styles.buttonProceed} onPress={() => {

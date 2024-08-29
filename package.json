@@ -1,5 +1,5 @@
 {
-  "main": "./node_modules/expo/AppEntry.js",
+  "main": "./App.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -48,8 +48,7 @@
     "react-native-size-matters": "^0.4.0",
     "react-native-vector-icons": ">7.0.0",
     "react-native-web": "~0.19.6",
-    "react-navigation-tabbar-collection": "^1.0.0",
-    "sentry-expo": "~7.0.0"
+    "react-navigation-tabbar-collection": "^1.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
