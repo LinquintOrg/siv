@@ -26,9 +26,7 @@
         "foregroundImage": "./assets/icons/siv-foreground.png",
         "backgroundColor": "#FFFFFF"
       },
-      "config": {
-        
-      },
+      "config": {},
       "package": "com.rsds.steaminventoryvalue",
       "versionCode": 2010000164
     },
@@ -36,7 +34,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "sentry-expo"
+      "sentry-expo",
+      "expo-font"
     ],
     "hooks": {
       "postPublish": [
