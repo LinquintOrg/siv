@@ -2,7 +2,7 @@
   "expo": {
     "name": "Steam Inventory Value",
     "slug": "siv",
-    "version": "3.2.1",
+    "version": "4.0.0",
     "orientation": "portrait",
     "icon": "./assets/icons/siv.png",
     "splash": {
@@ -34,12 +34,21 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "domr",
+          "project": "domr"
+        }
+      ],
+      "expo-font",
+      "expo-router"
     ],
     "extra": {
       "eas": {
         "projectId": "9ee78a6c-9709-416e-baf5-905247436ac4"
       }
-    }
+    },
+    "scheme": "siv-scheme"
   }
 }

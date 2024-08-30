@@ -1,4 +1,11 @@
 # Steam Inventory Value
-Steam Inventory Value application for android made with React Native + Expo
 
-Current version that is available to download on Google Play store is made using Java.
+## 🚧 Currently moving to TypeScript
+
+Steam Inventory Value application for android made with React Native + Expo 49
+
+Current version on Play store uses Expo 46.
+
+## How to run?
+
+After cloning the repository, first run ```npm install```, then ```npx expo start```.
