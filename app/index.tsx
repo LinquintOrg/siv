@@ -7,7 +7,7 @@ import api from '@utils/api';
 import { helpers } from '@utils/helpers';
 import { sql } from '@utils/sql';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, View } from 'react-native';
+import { Image, Pressable, ScrollView, View } from 'react-native';
 import { global } from 'styles/global';
 import styles from 'styles/pages/profile';
 import { IInventoryGame, ISteamProfile, ISteamUser } from 'types';
@@ -143,6 +143,15 @@ export default function HomePage() {
           </View>
       }
 
+      <Text style={global.title}>Saved Profiles</Text>
+      <ScrollView>
+        {
+          savedProfiles.map(profile => (
+            <Profile profile={profile} key={profile.id} />
+          ))
+        }
+      </ScrollView>
+
       {
         (pageInFocus && ($store.isInventoryLoading || $store.inventory) && $store.currentProfile?.name) &&
         <>
@@ -172,13 +181,6 @@ export default function HomePage() {
             </View>
           </Pressable>
         </>
-      }
-
-      <Text style={global.title}>Saved Profiles</Text>
-      {
-        savedProfiles.map(profile => (
-          <Profile profile={profile} key={profile.id} />
-        ))
       }
     </>
   );

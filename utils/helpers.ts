@@ -89,7 +89,7 @@ export const helpers = {
       return '';
     },
     collection(item: IItem): string | null {
-      const collectionTag = item.tags.find(tag => [ 'Collection', 'Sticker Collection' ].includes(tag.localized_category_name));
+      const collectionTag = item.tags?.find(tag => [ 'Collection', 'Sticker Collection' ].includes(tag.localized_category_name));
       if (collectionTag) {
         return collectionTag.localized_tag_name;
       }
@@ -326,10 +326,10 @@ export const helpers = {
   },
   inventory: {
     getRarity(tags: IInventoryResDescriptionTag[]) {
-      return tags.find(tag => tag.category.toLowerCase() === 'rarity')?.localized_tag_name;
+      return tags?.find(tag => tag.category.toLowerCase() === 'rarity')?.localized_tag_name;
     },
     getRarityColor(tags: IInventoryResDescriptionTag[]) {
-      return tags.find(tag => tag.category.toLowerCase() === 'rarity')?.color || colors.textAccent;
+      return tags?.find(tag => tag.category.toLowerCase() === 'rarity')?.color || colors.textAccent;
     },
     isEmpty(inventory: IInventory) {
       let len = 0;

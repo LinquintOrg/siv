@@ -33,7 +33,7 @@ export default StyleSheet.create({
   },
   gameTitle: {
     fontSize: helpers.resize(20),
-    color: colors.text,
+    color: colors.white,
   },
   itemPriceInfo: {
     fontSize: helpers.resize(12),

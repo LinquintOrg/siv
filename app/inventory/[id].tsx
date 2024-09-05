@@ -54,7 +54,7 @@ export default function InventoryOverviewPage() {
   const invMap = useMemo(
     () => Object.entries(inv).map(([ appid, inventory ]) => ({
       game: $store.games.find(g => g.appid === appid),
-      items: inventory.filter(i => filterOptions.nonMarketable || i.marketable),
+      items: (inventory || []).filter(i => filterOptions.nonMarketable || i.marketable),
     })),
     [ inv, $store, filterOptions ],
   );

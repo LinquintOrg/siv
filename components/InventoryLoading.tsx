@@ -22,6 +22,19 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
   const [ loading, setLoading ] = useState(false);
   const [ inventoryRes ] = useState<{ [appid: number]: ISteamInventoryRes }>({});
 
+  const getTimeoutLength = () => {
+    if (games.length < 3) {
+      return 1500;
+    }
+    if (games.length < 4) {
+      return 7500;
+    }
+    if (games.length < 5) {
+      return 12500;
+    }
+    return 16000;
+  };
+
   function setInvLoading(isLoading: boolean) {
     setLoading(isLoading);
     $store.setIsInventoryLoading(isLoading);
@@ -31,7 +44,7 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
     async function prepare() {
       $store.setCurrentProfile(profile);
       setInvLoading(true);
-      if (__DEV__) {
+      if (!__DEV__) {
         setLoadingMsg('Loading Counter Strike 2 inventory');
         const invRes = await $api.devInventory();
         inventoryRes[730] = invRes;
@@ -40,14 +53,15 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
           setLoadingMsg(`Loading ${game.name} inventory`);
           const invRes = await $api.getInventory(profile.id, game.appid);
           inventoryRes[+(game.appid)] = invRes;
-          await helpers.sleep(1500);
+          const timeoutLen = getTimeoutLength();
+          await helpers.sleep(timeoutLen);
         }
       }
 
       setLoadingMsg('Loading prices');
       const data = Object.entries(inventoryRes).map<{ appid: number; items: string[] }>(([ appid, inv ]) => ({
         appid: +appid,
-        items: inv.descriptions.filter(desc => desc.marketable).map(desc => desc.market_hash_name),
+        items: (inv.descriptions || []).filter(desc => desc.marketable).map(desc => desc.market_hash_name),
       }));
       const stickersToLoad: string[] = [];
       const pricesRes = await $api.getPrices({ data });
@@ -55,7 +69,7 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
       for (const [ appid, inv ] of Object.entries(inventoryRes)) {
         const prices = pricesRes[appid];
         finalItems[appid] = [];
-        for (const item of inv.descriptions) {
+        for (const item of (inv.descriptions || [])) {
           const price = prices[item.market_hash_name];
           const stickers: IItemStickers | undefined = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions);
           stickers?.items.forEach(sticker => {

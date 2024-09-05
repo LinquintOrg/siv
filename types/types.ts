@@ -18,16 +18,19 @@ export interface ISteamProfile {
 }
 
 export interface IMusicKit {
+  id: number;
   artist: string;
   title: string;
-  image?: string;
-  price?: number;
-  statPrice?: number;
+  image: string;
+  folder: string;
+  price: {
+    normal: number;
+    stattrak: number;
+  };
 }
 
 export interface IMusicKitsRes {
   kits: IMusicKit[];
-  count: number;
 }
 
 export interface IVanityRes {
