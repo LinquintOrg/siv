@@ -7,7 +7,8 @@ const inventoryPageStyles = StyleSheet.create({
     ...templates.row,
     gap: helpers.resize(10),
     alignItems: 'center',
-    marginVertical: helpers.resize(12),
+    paddingVertical: helpers.resize(12),
+    backgroundColor: colors.background,
   },
   gameIcon: {
     height: helpers.resize(48),

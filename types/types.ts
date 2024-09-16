@@ -207,3 +207,7 @@ export interface ISummary extends ISummaryBase {
   games: IGameSummary[];
   currency: IExchangeRate;
 }
+
+export interface IFilterOptions {
+  nonMarketable: boolean;
+}

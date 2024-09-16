@@ -3,14 +3,15 @@ import Text from '@/Text';
 import { helpers } from '@utils/helpers';
 import { sql } from '@utils/sql';
 import { router, useFocusEffect, useGlobalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, ScrollView, View } from 'react-native';
-import { IInventories, IItem, ISteamProfile } from 'types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Image, Pressable, View } from 'react-native';
+import { IFilterOptions, IInventories, IInventoryGame, IItem, ISteamProfile } from 'types';
 import styles from '@styles/pages/inventory';
 import useStore from 'store';
 import InventoryFabGroup from '@/InventoryFabGroup';
 import Input from '@/Input';
 import InventoryItem from '@/InventoryItem';
+import { FlashList } from '@shopify/flash-list';
 
 export default function InventoryOverviewPage() {
   const $store = useStore();
@@ -20,10 +21,10 @@ export default function InventoryOverviewPage() {
   const [ loading, setLoading ] = useState(false);
   const [ inv, setInv ] = useState<IInventories>({});
   const [ searchQuery, setSearchQuery ] = useState('');
-  const [ filterOptions ] = useState({
-    search: '',
+  const [ filterOptions ] = useState<IFilterOptions>({
     nonMarketable: false,
   });
+  const flashList = useRef<FlashList<IInvMap> | null>(null);
 
   const selectedGames = useMemo(
     () => (games as string || '').split(',').map(app => $store.games.find(game => game.appid === app)!),
@@ -54,12 +55,25 @@ export default function InventoryOverviewPage() {
     }
   }, [ pageInFocus, user, id, selectedGames, inv, loading ]);
 
-  const invMap = useMemo(
-    () => Object.entries(inv).map(([ appid, inventory ]) => ({
-      game: $store.games.find(g => g.appid === appid),
-      items: (inventory || []).filter(i => (filterOptions.nonMarketable || i.marketable) && helpers.search(i.market_hash_name, searchQuery)),
-    })),
-    [ inv, $store, filterOptions, searchQuery ],
+  type IInvMap = (({ element: 'header' } & IInventoryGame) | ({ element: 'item' } & IItem));
+
+  const invMap = useMemo<IInvMap[]>(() => {
+    const mappedData: IInvMap[] = [];
+    Object.entries(inv).forEach(([ appid, inventory ]) => {
+      const game = $store.games.find(g => g.appid === appid)!;
+      mappedData.push({ element: 'header', ...game });
+      for (const item of inventory) {
+        if (helpers.inv.isVisible(item, searchQuery, filterOptions)) {
+          mappedData.push({ element: 'item', ...item });
+        }
+      }
+    });
+    return mappedData;
+  }, [ $store.games, filterOptions, inv, searchQuery ]);
+
+  const stickyHeaderIndices = useMemo(
+    () => invMap.map(({ element }, id) => element === 'header' ? id : null).filter(id => id !== null),
+    [ invMap ],
   );
 
   function setInventory(inventory: IInventories) {
@@ -70,6 +84,12 @@ export default function InventoryOverviewPage() {
 
   function navigateToItem(item: IItem) {
     router.push(`/inventory/item/${item.classid}-${item.instanceid}`);
+  }
+
+  function scrollToIndex(index: number) {
+    if (flashList?.current) {
+      flashList.current.scrollToIndex({ index, animated: true });
+    }
   }
 
   useFocusEffect(
@@ -89,32 +109,35 @@ export default function InventoryOverviewPage() {
     <>
       {
         loading && user && typeof user !== 'string' && selectedGames?.length
-            && <InventoryLoading profile={user} games={selectedGames} setInventory={setInventory}/>
+          && <InventoryLoading profile={user} games={selectedGames} setInventory={setInventory} />
       }
       {
         !loading && !!Object.keys(inv).length &&
           <>
             {
               pageInFocus && <InventoryFabGroup />
-                && <Input label='Search' onChange={setSearchQuery} value={searchQuery} icon={{ name: 'search', type: 'feather' }} />
             }
-            <ScrollView>
-              {
-                invMap.map(({ game, items }) => (
-                  <>
-                    <View style={styles.game}>
-                      <Image source={{ uri: game!.img }} style={styles.gameIcon} />
-                      <Text bold style={styles.gameTitle}>{ game?.name || 'Game Title' }</Text>
-                    </View>
-                    {
-                      items.map((item, idx) => (
-                        <InventoryItem item={item} idx={idx} navigateToItem={navigateToItem} key={`item-${idx}`} />
-                      ))
-                    }
-                  </>
-                ))
-              }
-            </ScrollView>
+            {
+              pageInFocus && <Input label='Search' onChange={setSearchQuery} value={searchQuery} icon={{ name: 'search', type: 'feather' }} />
+            }
+            <FlashList
+              ref={flashList}
+              data={invMap}
+              renderItem={({ item, index }) => {
+                if (item.element === 'header') {
+                  return (
+                    <Pressable style={styles.game} onPress={() => scrollToIndex(index)}>
+                      <Image source={{ uri: item!.img }} style={styles.gameIcon} />
+                      <Text bold style={styles.gameTitle}>{ item?.name || 'Game Title' }</Text>
+                    </Pressable>
+                  );
+                }
+                const { element, ...restData } = item;
+                return <InventoryItem item={restData} idx={index} navigateToItem={navigateToItem} />;
+              }}
+              stickyHeaderIndices={stickyHeaderIndices}
+              estimatedItemSize={helpers.resize(120)}
+            />
           </>
       }
     </>

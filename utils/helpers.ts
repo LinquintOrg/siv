@@ -4,7 +4,7 @@ import { IInventory, IInventoryItem, IInventoryResAsset, IInventoryResDescriptio
   ISticker } from './types';
 import { Dimensions } from 'react-native';
 import { IExchangeRate, IGameSummary, IInventories, IItem, IItemPriceRes, IItemStickers, ISteamInventoryAsset, ISteamInventoryDescriptionDescription,
-  ISteamProfile, ISteamUser, ISummary, IInventoryGame } from 'types';
+  ISteamProfile, ISteamUser, ISummary, IInventoryGame, IFilterOptions } from 'types';
 import { emptyBaseSummary } from './objects';
 
 /**
@@ -196,6 +196,9 @@ export const helpers = {
         p90ago: games.reduce<number>((val, game) => val += game.p90ago, 0),
         yearAgo: games.reduce<number>((val, game) => val += game.yearAgo, 0),
       };
+    },
+    isVisible(item: IItem, search: string, options: IFilterOptions): boolean {
+      return (options.nonMarketable || !!item.marketable) && helpers.search(item.market_hash_name, search);
     },
   },
 

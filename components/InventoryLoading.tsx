@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react';
 import api from '@utils/api';
 import { helpers } from '@utils/helpers';
 import useStore from 'store';
+import Text from './Text';
+import Button from './Button';
 
 interface IInventoryLoadingProps {
   profile: ISteamProfile;
@@ -21,6 +23,7 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
   const [ loadingMsg, setLoadingMsg ] = useState('');
   const [ loading, setLoading ] = useState(false);
   const [ inventoryRes ] = useState<{ [appid: number]: ISteamInventoryRes }>({});
+  const [ errored, setErrored ] = useState(false);
 
   const getTimeoutLength = () => {
     if (games.length < 3) {
@@ -40,8 +43,8 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
     $store.setIsInventoryLoading(isLoading);
   }
 
-  useEffect(() => {
-    async function prepare() {
+  async function prepare() {
+    try {
       $store.setCurrentProfile(profile);
       setInvLoading(true);
       if (!__DEV__) {
@@ -98,17 +101,34 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
       const summary = helpers.inv.generateSummary(profile, finalItems, games, $store.currency, $store.stickerPrices);
       $store.setSummary(summary);
       setInvLoading(false);
+    } catch (err: any) {
+      setErrored(true);
+      throw new Error(err.message);
     }
+  }
 
-    if (!loading && profile && games.length) {
+  useEffect(() => {
+    if (!loading && profile && games.length && !errored) {
       prepare();
     }
   });
 
+  function retryLoading() {
+    setErrored(false);
+    prepare();
+  }
+
   return (
     <View style={[ templates.column, templates.fullHeight, templates.justifyCenter ]}>
       <Profile profile={profile} nonClickable />
-      <Loader text={loadingMsg} size={'large'} />
+      { !errored && <Loader text={loadingMsg} size={'large'} /> }
+      {
+        errored &&
+          <View style={[ templates.column ]}>
+            <Text bold>Error occurred!</Text>
+            <Button onPress={retryLoading} text='Retry' />
+          </View>
+      }
     </View>
   );
 }

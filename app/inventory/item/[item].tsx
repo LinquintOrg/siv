@@ -136,13 +136,13 @@ export default function InventoryItemPage() {
             }
 
             <View style={[ templates.row, { alignItems: 'center', justifyContent: 'space-between' } ]}>
-              <Text bold style={global.title}>Price</Text>
+              <Text bold style={[ global.title, { marginVertical: helpers.resize(0) } ]}>Price</Text>
               {
                 item.price.found &&
-              <View style={[ templates.column, { alignItems: 'center' } ]}>
-                <Text bold style={{ fontSize: helpers.resize(24) }}>{ helpers.price($store.currency, item.price.price) }</Text>
-                <Text style={{ fontSize: helpers.resize(16) }}>{ item.price.listed } listed</Text>
-              </View>
+                  <View style={[ templates.column, { alignItems: 'center' } ]}>
+                    <Text bold style={{ fontSize: helpers.resize(24) }}>{ helpers.price($store.currency, item.price.price) }</Text>
+                    <Text style={{ fontSize: helpers.resize(16) }}>{ item.price.listed } listed</Text>
+                  </View>
               }
             </View>
             { !item.price.found && <Text bold>Not found.</Text> }

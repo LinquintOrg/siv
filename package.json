@@ -19,6 +19,7 @@
     "@react-navigation/bottom-tabs": "^6.0.9",
     "@react-navigation/native-stack": "^6.2.4",
     "@sentry/react-native": "~5.22.0",
+    "@shopify/flash-list": "1.6.4",
     "axios": "^1.7.2",
     "expo": "~51.0.31",
     "expo-application": "~5.9.1",
