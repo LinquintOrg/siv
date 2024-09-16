@@ -61,6 +61,13 @@ export const helpers = {
     const unitPrice = +(cost * currency.rate).toFixed(2);
     return unitPrice * count;
   },
+  search(subject: string, query: string): boolean {
+    if (!subject || !query) {
+      return true;
+    }
+    const normalized = subject.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, ' ').toLowerCase();
+    return normalized.includes(query.toLowerCase());
+  },
 
   // * --- INVENTORY HELPERS --- *
   inv: {

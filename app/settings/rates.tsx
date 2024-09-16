@@ -55,7 +55,7 @@ export default function SettingsRatesPage() {
     <>
       <Input
         label='Find currency'
-        icon={{ name: 'search', type: 'material-community' }}
+        icon={{ name: 'search', type: 'feather' }}
         value={search}
         onChange={setSearch}
       />

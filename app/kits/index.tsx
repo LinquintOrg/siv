@@ -46,13 +46,12 @@ export default function KitsPage() {
   });
 
   async function playMVP(kit: IMusicKit) {
-    console.log('Loading sound:', kit.folder);
     if (mvpSound) {
       mvpSound.unloadAsync();
       setMvpSound(null);
     }
     const { sound } = await Audio.Sound.createAsync(
-      { uri: `https://linquint.dev/music/${kit.folder}/roundmvpanthem_01.vsnd_c` },
+      { uri: `https://linquint.dev/music/${kit.folder}/roundmvpanthem_01.mp3` },
       { shouldPlay: false },
       undefined,
       true,
