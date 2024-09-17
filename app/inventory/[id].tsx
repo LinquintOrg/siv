@@ -4,8 +4,8 @@ import { helpers } from '@utils/helpers';
 import { sql } from '@utils/sql';
 import { router, useFocusEffect, useGlobalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, View } from 'react-native';
-import { IFilterOptions, IInventories, IInventoryGame, IItem, ISteamProfile } from 'types';
+import { Image, Pressable } from 'react-native';
+import { IFilterOptions, IInventories, IInventoryGame, IItem, ISortOptions, ISteamProfile } from 'types';
 import styles from '@styles/pages/inventory';
 import useStore from 'store';
 import InventoryFabGroup from '@/InventoryFabGroup';
@@ -15,6 +15,8 @@ import { FlashList } from '@shopify/flash-list';
 
 export default function InventoryOverviewPage() {
   const $store = useStore();
+  const flashList = useRef<FlashList<IInvMap> | null>(null);
+
   const { id, games } = useGlobalSearchParams();
   const [ user, setUser ] = useState<ISteamProfile | string | null>(null);
   const [ pageInFocus, setPageInFocus ] = useState(false);
@@ -24,7 +26,12 @@ export default function InventoryOverviewPage() {
   const [ filterOptions ] = useState<IFilterOptions>({
     nonMarketable: false,
   });
-  const flashList = useRef<FlashList<IInvMap> | null>(null);
+  const [ sortOptions ] = useState<ISortOptions>({
+    by: 'default',
+    order: 'desc',
+    period: 'day',
+  });
+
 
   const selectedGames = useMemo(
     () => (games as string || '').split(',').map(app => $store.games.find(game => game.appid === app)!),

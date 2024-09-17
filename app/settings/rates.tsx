@@ -7,6 +7,8 @@ import { FlatList, Pressable } from 'react-native';
 import { IExchangeRate } from 'types';
 import styles from 'styles/pages/settings';
 import useStore from 'store';
+import { FlashList } from '@shopify/flash-list';
+import { helpers } from '@utils/helpers';
 
 export default function SettingsRatesPage() {
   const $store = useStore();
@@ -59,10 +61,10 @@ export default function SettingsRatesPage() {
         value={search}
         onChange={setSearch}
       />
-      <FlatList
+      <FlashList
         data={ratesToRender}
         renderItem={({ item }) => <RenderableItem code={item.code} rate={item.rate} />}
-        keyExtractor={item => item.code}
+        estimatedItemSize={helpers.resize(70)}
       />
     </>
   );

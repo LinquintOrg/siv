@@ -211,3 +211,9 @@ export interface ISummary extends ISummaryBase {
 export interface IFilterOptions {
   nonMarketable: boolean;
 }
+
+export interface ISortOptions {
+  by: 'default' | 'name' | 'price' | 'profit';
+  order: 'desc' | 'asc';
+  period: 'day' | 'week' | 'month' | '3months' | 'year';
+}
