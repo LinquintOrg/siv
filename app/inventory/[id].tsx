@@ -12,6 +12,7 @@ import InventoryFabGroup from '@/InventoryFabGroup';
 import Input from '@/Input';
 import InventoryItem from '@/InventoryItem';
 import { FlashList } from '@shopify/flash-list';
+import SortFilterSheet from '@/SortFilterSheet';
 
 export default function InventoryOverviewPage() {
   const $store = useStore();
@@ -23,6 +24,7 @@ export default function InventoryOverviewPage() {
   const [ loading, setLoading ] = useState(false);
   const [ inv, setInv ] = useState<IInventories>({});
   const [ searchQuery, setSearchQuery ] = useState('');
+  const [ showOptions, setShowOptions ] = useState(false);
   const [ filterOptions ] = useState<IFilterOptions>({
     nonMarketable: false,
   });
@@ -99,6 +101,10 @@ export default function InventoryOverviewPage() {
     }
   }
 
+  function setOptions(newFilter: IFilterOptions, newSort: ISortOptions) {
+
+  }
+
   useFocusEffect(
     useCallback(() => {
       setPageInFocus(true);
@@ -122,10 +128,19 @@ export default function InventoryOverviewPage() {
         !loading && !!Object.keys(inv).length &&
           <>
             {
-              pageInFocus && <InventoryFabGroup />
+              pageInFocus && <InventoryFabGroup expand={() => setShowOptions(true)} />
             }
             {
               pageInFocus && <Input label='Search' onChange={setSearchQuery} value={searchQuery} icon={{ name: 'search', type: 'feather' }} />
+            }
+            {
+              pageInFocus && showOptions &&
+                <SortFilterSheet
+                  filter={filterOptions}
+                  sort={sortOptions}
+                  setOptions={setOptions}
+                  close={() => setShowOptions(false)}
+                />
             }
             <FlashList
               ref={flashList}
