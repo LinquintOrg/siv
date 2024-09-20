@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { FAB, Portal } from 'react-native-paper';
 
-export default function InventoryFabGroup() {
+export default function InventoryFabGroup(props: { expand: () => void }) {
   const [ state, setState ] = useState({ open: false });
   const onStateChange = ({ open }: { open: boolean }) => setState({ open });
   const { open } = state;
@@ -36,7 +36,7 @@ export default function InventoryFabGroup() {
             color: colors.primary,
             labelTextColor: colors.text,
             containerStyle: { backgroundColor: colors.primary },
-            onPress: () => console.log('Pressed add'),
+            onPress: () => props.expand(),
           },
           {
             icon: 'information-outline',
