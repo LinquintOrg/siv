@@ -20,6 +20,13 @@
     # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
     extensions = [
       # "vscodevim.vim"
+      "aaron-bond.better-comments"
+      "dbaeumer.vscode-eslint"
+      "formulahendry.auto-rename-tag"
+      "jeff-hykin.xd-theme"
+      "rvest.vs-code-prettier-eslint"
+      "syler.sass-indented"
+      "vincaslt.highlight-matching-tag"
     ];
 
     # Enable previews
