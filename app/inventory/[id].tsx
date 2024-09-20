@@ -25,10 +25,11 @@ export default function InventoryOverviewPage() {
   const [ inv, setInv ] = useState<IInventories>({});
   const [ searchQuery, setSearchQuery ] = useState('');
   const [ showOptions, setShowOptions ] = useState(false);
-  const [ filterOptions ] = useState<IFilterOptions>({
+  const [ filterOptions, setFilterOptions ] = useState<IFilterOptions>({
     nonMarketable: false,
+    nonTradable: false,
   });
-  const [ sortOptions ] = useState<ISortOptions>({
+  const [ sortOptions, setSortOptions ] = useState<ISortOptions>({
     by: 'default',
     order: 'desc',
     period: 'day',
@@ -81,7 +82,7 @@ export default function InventoryOverviewPage() {
   }, [ $store.games, filterOptions, inv, searchQuery ]);
 
   const stickyHeaderIndices = useMemo(
-    () => invMap.map(({ element }, id) => element === 'header' ? id : null).filter(id => id !== null),
+    () => invMap.map(({ element }, id) => element === 'header' ? id : null).filter(id => typeof id === 'number') as number[],
     [ invMap ],
   );
 
@@ -102,7 +103,9 @@ export default function InventoryOverviewPage() {
   }
 
   function setOptions(newFilter: IFilterOptions, newSort: ISortOptions) {
-
+    setFilterOptions(newFilter);
+    setSortOptions(newSort);
+    setShowOptions(false);
   }
 
   useFocusEffect(
@@ -140,6 +143,7 @@ export default function InventoryOverviewPage() {
                   sort={sortOptions}
                   setOptions={setOptions}
                   close={() => setShowOptions(false)}
+                  hasCS={selectedGames.findIndex(g => g.appid === '730') !== -1}
                 />
             }
             <FlashList

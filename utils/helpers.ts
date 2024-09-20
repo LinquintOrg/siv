@@ -198,7 +198,9 @@ export const helpers = {
       };
     },
     isVisible(item: IItem, search: string, options: IFilterOptions): boolean {
-      return (options.nonMarketable || !!item.marketable) && helpers.search(item.market_hash_name, search);
+      return ((options.nonMarketable || !!item.marketable)
+        || (options.nonTradable || !!item.tradable))
+        && helpers.search(item.market_hash_name, search);
     },
   },
 

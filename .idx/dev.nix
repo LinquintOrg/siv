@@ -67,6 +67,7 @@
       # Runs when the workspace is (re)started
       onStart = {
         yarn-install = "yarn";
+        expo-doctor = "yarn doctor";
         # Example: start a background task to watch and re-build backend code
         # watch-backend = "npm run watch-backend";
       };
