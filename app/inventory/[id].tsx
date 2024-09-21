@@ -30,7 +30,7 @@ export default function InventoryOverviewPage() {
     nonTradable: false,
   });
   const [ sortOptions, setSortOptions ] = useState<ISortOptions>({
-    by: 'default',
+    by: 0,
     order: 'desc',
     period: 'day',
   });

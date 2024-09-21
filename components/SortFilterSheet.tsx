@@ -26,6 +26,13 @@ const sortOptionsList = [
   'Loss first',
 ];
 
+const timePointList = [
+  '24-hours ago',
+  '30-days ago',
+  '90-days ago',
+  'Year ago',
+];
+
 export default function SortFilterSheet(props: ISortFilterSheetProps) {
   const [ filterOptions, setFilterOptions ] = useState({ ...helpers.clone(props.filter) });
   const [ sortOptions, setSortOptions ] = useState({ ...helpers.clone(props.sort) });
@@ -38,9 +45,32 @@ export default function SortFilterSheet(props: ISortFilterSheetProps) {
     });
   }
 
+  function changeSortOptions(idx: number) {
+    switch (idx) {
+    case 1: setSortOptions({ ...sortOptions, by: 1, order: 'asc' }); break;
+    case 2: setSortOptions({ ...sortOptions, by: 1, order: 'desc' }); break;
+    case 3: setSortOptions({ ...sortOptions, by: 2, order: 'asc' }); break;
+    case 4: setSortOptions({ ...sortOptions, by: 2, order: 'desc' }); break;
+    case 5: setSortOptions({ ...sortOptions, by: 3, order: 'asc' }); break;
+    case 6: setSortOptions({ ...sortOptions, by: 3, order: 'desc' }); break;
+    default: setSortOptions({ ...sortOptions, by: 0, order: 'asc' });
+    }
+    setOpenSelector(-1);
+  }
+
+  function changeTimepointOption(idx: number) {
+    switch (idx) {
+    case 1: setSortOptions({ ...sortOptions, period: 'month' }); break;
+    case 2: setSortOptions({ ...sortOptions, period: '3months' }); break;
+    case 3: setSortOptions({ ...sortOptions, period: 'year' }); break;
+    default: setSortOptions({ ...sortOptions, period: 'day' });
+    }
+    setOpenSelector(-1);
+  }
+
   function applyOptions() {
     setTimeout(() => {
-      props.setOptions({ ...filterOptions }, { ...props.sort });
+      props.setOptions({ ...filterOptions }, { ...sortOptions });
     }, 25);
   }
 
@@ -96,10 +126,30 @@ export default function SortFilterSheet(props: ISortFilterSheetProps) {
                   content='Select how the items should be sorted'
                   list={sortOptionsList}
                   close={() => setOpenSelector(-1)}
-                  select={() => setOpenSelector(-1)}
+                  select={(sortListId: number) => changeSortOptions(sortListId)}
                 />
             }
           </View>
+
+          {
+            sortOptions.by >= 2 &&
+              <View style={styles.optionAsColumn}>
+                <Text bold style={styles.optionTitle}>Sort by</Text>
+                <Pressable style={styles.optionValueBtn} onPress={() => setOpenSelector(1)}>
+                  <Text style={styles.optionTitle}>{ sortOptions.period }</Text>
+                </Pressable>
+                {
+                  openSelector === 1 &&
+                    <DialogPicker
+                      title='Price time point'
+                      content='Select the time point for the price'
+                      list={timePointList}
+                      close={() => setOpenSelector(-1)}
+                      select={(timeListId: number) => changeTimepointOption(timeListId)}
+                    />
+                }
+              </View>
+          }
 
           <Button
             text='Apply'

@@ -1,4 +1,124 @@
 {
-    "IDX.aI.enableInlineCompletion": true,
-    "IDX.aI.enableCodebaseIndexing": true
+  "IDX.aI.enableInlineCompletion": true,
+  "IDX.aI.enableCodebaseIndexing": true,
+  "json.schemas": [],
+  "git.autofetch": true,
+  "git.suggestSmartCommit": false,
+  "editor.fontSize": 12,
+  "editor.letterSpacing": 0.5,
+  "editor.fontFamily": "Cascadia Code",
+  "editor.inlayHints.fontFamily": "Cascadia Code",
+  "editor.fontWeight": "500",
+  "editor.fontLigatures": true,
+  "editor.cursorBlinking": "expand",
+  "editor.cursorWidth": 2,
+  "editor.cursorStyle": "line",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.minimap.renderCharacters": false,
+  "editor.minimap.maxColumn": 120,
+  "editor.minimap.showSlider": "always",
+  "editor.minimap.side": "right",
+  "editor.minimap.scale": 1,
+  "editor.minimap.size": "fit",
+  "editor.renderWhitespace": "boundary",
+  "editor.renderControlCharacters": true,
+  "editor.wordWrap": "on",
+  "[javascript]": {
+    // "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[vue]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  },
+  "[css]": {
+    "editor.tabSize": 2,
+  },
+  "[astro]": {
+    "editor.tabSize": 2,
+  },
+  "[html]": {
+    "editor.tabSize": 2,
+  },
+  "[js]": {
+    "editor.tabSize": 2,
+    "editor.indentSize": "tabSize",
+    "editor.autoIndent": "full",
+  },
+  "[typescript]": {
+    "editor.tabSize": 2,
+    "editor.indentSize": "tabSize",
+    "editor.autoIndent": "full",
+    // "editor.defaultFormatter": "Vue.volar",
+  },
+  "[svelte]": {
+    "editor.tabSize": 2,
+    "editor.indentSize": "tabSize",
+    "editor.autoIndent": "full",
+  },
+  "[typescriptreact]": {
+    "editor.tabSize": 2,
+    "editor.indentSize": "tabSize",
+    "editor.insertSpaces": true,
+    // "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+  "[go]": {
+    "editor.insertSpaces": false,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    },
+    "editor.suggest.snippetsPreventQuickSuggestions": false
+  },
+  "files.associations": {
+    "*.go": "go"
+  },
+  "[c]": {
+    "editor.wordBasedSuggestions": "off",
+    "editor.suggest.insertMode": "replace",
+    "editor.semanticHighlighting.enabled": true
+  },
+  "[csharp]": {
+    "editor.maxTokenizationLineLength": 2500,
+    "editor.inlineSuggest.suppressSuggestions": false,
+    "editor.tabSize": 4,
+  },
+  "terminal.integrated.fontFamily": "monospace",
+  "[javascriptreact]": {
+    "editor.tabSize": 2,
+    "editor.quickSuggestions": {
+      "other": "on",
+      "comments": "off",
+      "strings": "on"
+    },
+  },
+  "[python]": {
+    "editor.formatOnType": true
+  },
+  "editor.accessibilitySupport": "off",
+  "terminal.integrated.env.linux": {},
+  "terminal.integrated.env.windows": {},
+  "editor.detectIndentation": false,
+  "editor.tabSize": 2,
+  "editor.indentSize": "tabSize",
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "html",
+    "typescriptreact",
+    "typescript",
+    "vue"
+  ],
+  "eslint.enable": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "terminal.integrated.fontSize": 12,
+  "terminal.integrated.defaultProfile.windows": "Command Prompt",
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "git.confirmSync": false,
+  "editor.formatOnSave": true,
+  "files.autoSave": "off"
 }

@@ -214,7 +214,7 @@ export interface IFilterOptions {
 }
 
 export interface ISortOptions {
-  by: 'default' | 'name' | 'price' | 'profit';
+  by: number; // 0 - default, 1 - Name, 2 - Price, 3 - Profit/Loss
   order: 'desc' | 'asc';
-  period: 'day' | 'week' | 'month' | '3months' | 'year';
+  period: 'day' | 'month' | '3months' | 'year';
 }
