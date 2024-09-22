@@ -4,7 +4,8 @@ import { IInventory, IInventoryItem, IInventoryResAsset, IInventoryResDescriptio
   ISticker } from './types';
 import { Dimensions } from 'react-native';
 import { IExchangeRate, IGameSummary, IInventories, IItem, IItemPriceRes, IItemStickers, ISteamInventoryAsset, ISteamInventoryDescriptionDescription,
-  ISteamProfile, ISteamUser, ISummary, IInventoryGame, IFilterOptions } from 'types';
+  ISteamProfile, ISteamUser, ISummary, IInventoryGame, IFilterOptions,
+  ISortOptions } from 'types';
 import { emptyBaseSummary } from './objects';
 
 /**
@@ -201,6 +202,46 @@ export const helpers = {
       return ((options.nonMarketable || !!item.marketable)
         || (options.nonTradable || !!item.tradable))
         && helpers.search(item.market_hash_name, search);
+    },
+    sortInventory(inventory: IItem[], options: ISortOptions): IItem[] {
+      return inventory.sort((a, b) => {
+        switch (options.by) {
+        case 0: {
+          return 0;
+        };
+        case 1: {
+          if (options.order === 'asc') {
+            return a.market_hash_name < b.market_hash_name ? -1 : 1;
+          }
+          return a.market_hash_name < b.market_hash_name ? 1 : -1;
+        }
+        case 2: {
+          if (!a.price.found) {
+            return 1;
+          }
+          if (!b.price.found) {
+            return -1;
+          }
+          if (options.order === 'asc') {
+            return a.price.price - b.price.price;
+          }
+          return b.price.price - a.price.price;
+        }
+        case 3: {
+          if (!a.price.found) {
+            return 1;
+          }
+          if (!b.price.found) {
+            return -1;
+          }
+          if (options.order === 'asc') {
+            return b.price.difference - a.price.difference;
+          }
+          return a.price.difference - b.price.difference;
+        }
+        }
+        return 0;
+      });
     },
   },
 

@@ -47,7 +47,7 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
     try {
       $store.setCurrentProfile(profile);
       setInvLoading(true);
-      if (!__DEV__) {
+      if (__DEV__) {
         setLoadingMsg('Loading Counter Strike 2 inventory');
         const invRes = await $api.devInventory();
         inventoryRes[730] = invRes;

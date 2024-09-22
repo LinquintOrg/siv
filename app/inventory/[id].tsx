@@ -72,7 +72,8 @@ export default function InventoryOverviewPage() {
     Object.entries(inv).forEach(([ appid, inventory ]) => {
       const game = $store.games.find(g => g.appid === appid)!;
       mappedData.push({ element: 'header', ...game });
-      for (const item of inventory) {
+      const sortedInv = helpers.inv.sortInventory(inventory, sortOptions);
+      for (const item of sortedInv) {
         if (helpers.inv.isVisible(item, searchQuery, filterOptions)) {
           mappedData.push({ element: 'item', ...item });
         }
