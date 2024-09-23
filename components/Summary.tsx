@@ -4,7 +4,7 @@ import { View, Image } from 'react-native';
 import { Divider } from 'react-native-elements';
 import Text from './Text.tsx';
 import { useProfilesState, useRateState, useRatesState } from '../utils/store';
-import { helpers } from '../utils/helpers';
+import { helpers } from '@utils/helpers';
 import { colors, global, styles } from '../styles/global';
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types';
 import { IInventoryStats } from '../utils/types.ts';

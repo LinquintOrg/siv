@@ -8,7 +8,7 @@
   "editor.letterSpacing": 0.5,
   "editor.fontFamily": "Cascadia Code",
   "editor.inlayHints.fontFamily": "Cascadia Code",
-  "editor.fontWeight": "500",
+  "editor.fontWeight": "300",
   "editor.fontLigatures": true,
   "editor.cursorBlinking": "expand",
   "editor.cursorWidth": 2,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, Pressable, View } from 'react-native';
 import Text from '../components/Text';
-import { helpers } from '../utils/helpers';
+import { helpers } from '@utils/helpers';
 import { IExchangeRate, IMusicKit } from 'types';
 import musicKitStyles from 'styles/components/musicKit';
 

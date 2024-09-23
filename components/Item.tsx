@@ -3,7 +3,7 @@ import { Image, SafeAreaView, View } from 'react-native';
 import { colors, global, styles, variables } from '../styles/global';
 import { IDisplayItemProps } from '../utils/types';
 import Text from './Text';
-import { helpers } from '../utils/helpers';
+import { helpers } from '@utils/helpers';
 import { Icon } from 'react-native-elements';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useRateState, useRatesState } from '../utils/store';

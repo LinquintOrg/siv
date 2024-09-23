@@ -19,7 +19,7 @@ import Profiles from './Pages/Profiles.tsx';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Store from './components/Store.tsx';
 import ChooseGames from './Pages/ChooseGames.tsx';
-import { helpers } from './utils/helpers.ts';
+import { helpers } from '@utils/helpers.ts';
 import { colors } from './styles/global.ts';
 import { BottomTabDescriptorMap } from 'react-navigation-tabbar-collection/lib/typescript/types';
 // import { STEAM_API } from '@env';

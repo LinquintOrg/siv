@@ -1,12 +1,8 @@
-import { Pressable, View } from 'react-native';
-import navStyles from 'styles/components/nav';
-import { Link, usePathname } from 'expo-router';
-import { Icon } from 'react-native-elements';
-import { colors, variables } from 'styles/global';
-import { helpers } from 'utils/helpers';
+import { View } from 'react-native';
+import { usePathname } from 'expo-router';
+import styles from 'styles/components/nav';
 import { navRoutes } from '@utils/objects';
-
-const styles = navStyles;
+import NavItem from './NavItem';
 
 export default function Nav() {
   const path = usePathname();
@@ -22,17 +18,11 @@ export default function Nav() {
     <View style={styles.container}>
       {
         navRoutes.map((route, idx) => (
-          <Link asChild href={route.href} key={`nav-link-${idx}`}>
-            <Pressable style={styles.navButton}>
-              <Icon
-                name={route.icon}
-                type={route.type || 'material-community'}
-                size={helpers.resize(variables.iconSize)}
-                color={isRouteActive(route.href) ? colors.white : colors.primary}
-                style={[ styles.navIcon, isRouteActive(route.href) ? styles.activeIcon : null ]}
-              />
-            </Pressable>
-          </Link>
+          <NavItem
+            key={`nav-link-${idx}`}
+            route={route}
+            isActive={isRouteActive(route.href)}
+          />
         ))
       }
     </View>

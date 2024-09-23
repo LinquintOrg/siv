@@ -4,7 +4,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { Divider } from 'react-native-elements';
 import Text from './Text';
 import { useRateState, useRatesState } from '../utils/store';
-import { helpers } from '../utils/helpers';
+import { helpers } from '@utils/helpers';
 // import Clipboard from '@react-native-community/clipboard';
 
 // TODO: [Settings.tsx]: When clicking on copy link, an error is thrown (Cannot read property 'setString' of null)

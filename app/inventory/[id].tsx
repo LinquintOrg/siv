@@ -80,7 +80,7 @@ export default function InventoryOverviewPage() {
       }
     });
     return mappedData;
-  }, [ $store.games, filterOptions, inv, searchQuery ]);
+  }, [ $store.games, filterOptions, inv, searchQuery, sortOptions ]);
 
   const stickyHeaderIndices = useMemo(
     () => invMap.map(({ element }, id) => element === 'header' ? id : null).filter(id => typeof id === 'number') as number[],

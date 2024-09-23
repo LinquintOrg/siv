@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BackHandler, View } from 'react-native';
 import { SafeAreaView, useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, variables } from 'styles/global';
-import { helpers } from 'utils/helpers';
+import { helpers } from '@utils/helpers';
 import * as Sentry from '@sentry/react-native';
 import { SnackbarProvider } from 'hooks/useSnackbar';
 import GlobalErrorHandler from '@/GlobalErrorHandler';

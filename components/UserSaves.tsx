@@ -6,7 +6,7 @@ import { IUserSavesProps } from '../utils/types';
 import { usePreloadedState, useProfilesState } from '../utils/store';
 import Loader from './Loader';
 import { colors, global, styles } from '../styles/global';
-import { helpers } from '../utils/helpers';
+import { helpers } from '@utils/helpers';
 
 export default function (props: IUserSavesProps) {
   const { navigation, displayErr, toggleModal } = props;
