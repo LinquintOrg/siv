@@ -160,7 +160,12 @@ export default function InventoryOverviewPage() {
                   );
                 }
                 const { element, ...restData } = item;
-                return <InventoryItem item={restData} idx={index} navigateToItem={navigateToItem} />;
+                return <InventoryItem
+                  item={restData}
+                  idx={index}
+                  navigateToItem={navigateToItem}
+                  sort={sortOptions}
+                />;
               }}
               stickyHeaderIndices={stickyHeaderIndices}
               estimatedItemSize={helpers.resize(120)}

@@ -4,17 +4,29 @@ import { global, templates } from '@styles/global';
 import { helpers } from '@utils/helpers';
 import Text from './Text';
 import useStore from 'store';
-import { IItem } from 'types';
+import { IItem, ISortOptions } from 'types';
+import { useMemo } from 'react';
 
 interface IInventoryItemProps {
   item: IItem;
   idx: number;
+  sort: ISortOptions;
   navigateToItem: (arg0: IItem) => void;
 }
 
 export default function InventoryItem(props: IInventoryItemProps) {
   const $store = useStore();
   const { item, idx, navigateToItem } = props;
+
+  const priceDiff = useMemo(() => {
+    if (!item.price.difference[props.sort.period]) {
+      return { percent: 0, amount: 0 };
+    }
+    return {
+      percent: item.price.difference[props.sort.period].percent,
+      amount: item.price.difference[props.sort.period].amount * item.amount,
+    };
+  }, [ item.price.difference, props.sort.period, item.amount ]);
 
   return (
     <Pressable style={[ styles.item, idx % 2 === 0 ? styles.itemEven : null ]} onPress={() => navigateToItem(item)}>
@@ -52,9 +64,9 @@ export default function InventoryItem(props: IInventoryItemProps) {
                 ? <Text style={styles.itemPriceInfo}>{ item.amount } owned</Text>
                 : <Text bold style={[
                   styles.itemPriceInfo,
-                  item.price.difference < 0 ? styles.loss : item.price.difference > 0 ? styles.profit:styles.samePrice,
+                  priceDiff.amount < 0 ? styles.loss : priceDiff.amount > 0 ? styles.profit : styles.samePrice,
                 ]}>
-                  {item.price.difference > 0 ? '+' : ''}{ item.price.difference.toFixed(1) }%
+                  { helpers.price($store.currency, priceDiff.amount) } ({priceDiff.amount > 0 ? '+' : ''}{ priceDiff.percent.toFixed(1) }%)
                 </Text>
             }
             <Text bold style={styles.itemPrice}>{ helpers.price($store.currency, item.price.price || 0) }</Text>
@@ -71,9 +83,9 @@ export default function InventoryItem(props: IInventoryItemProps) {
               ]}>
                 <Text bold style={[
                   styles.itemPriceInfo,
-                  item.price.difference < 0 ? styles.loss : item.price.difference > 0 ? styles.profit : styles.samePrice,
+                  priceDiff.amount < 0 ? styles.loss : priceDiff.amount > 0 ? styles.profit : styles.samePrice,
                 ]}>
-                  {item.price.difference > 0 ? '+' : ''}{ item.price.difference.toFixed(1) }%
+                  { helpers.price($store.currency, priceDiff.amount) } ({priceDiff.amount > 0 ? '+' : ''}{ priceDiff.percent.toFixed(1) }%)
                 </Text>
                 <Text bold style={styles.itemPrice}>{ helpers.price($store.currency, item.price.price || 0, item.amount) }</Text>
               </View>

@@ -85,7 +85,12 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
             amount: helpers.inv.itemCount(inv.assets, item.classid, item.instanceid),
             price: {
               ...(price || { found: false }),
-              difference: price ? helpers.inv.priceDiff(price) : 0,
+              difference: price ? helpers.inv.priceDiff(price) : {
+                day: { percent: 0, amount: 0 },
+                month: { percent: 0, amount: 0 },
+                threeMonths: { percent: 0, amount: 0 },
+                year: { percent: 0, amount: 0 },
+              },
             },
             stickers,
           });

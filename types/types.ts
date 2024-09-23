@@ -156,8 +156,15 @@ export interface IPricesRes {
   };
 }
 
+export interface IPriceDiff {
+  day: { percent: number; amount: number };
+  month: { percent: number; amount: number };
+  threeMonths: { percent: number; amount: number };
+  year: { percent: number; amount: number };
+}
+
 export interface IItemPrice extends IItemPriceRes {
-  difference: number;
+  difference: IPriceDiff;
 }
 
 export interface IItemStickers {
@@ -214,7 +221,7 @@ export interface IFilterOptions {
 }
 
 export interface ISortOptions {
-  by: number; // 0 - default, 1 - Name, 2 - Price, 3 - Profit/Loss
+  by: number; // 0 - default, 1 - Name, 2 - Price, 3 - Profit/Loss (Amount), 4 - Profit/Loss (Percent)
   order: 'desc' | 'asc';
-  period: 'day' | 'month' | '3months' | 'year';
+  period: 'day' | 'month' | 'threeMonths' | 'year';
 }

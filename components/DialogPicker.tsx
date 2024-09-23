@@ -48,7 +48,7 @@ export default function DialogPicker(props: IDialogPickerProps) {
         {
           content &&
             <Dialog.Content>
-              <Text style={{ fontSize: helpers.resize(14) }}>{ content } { selected }</Text>
+              <Text style={{ fontSize: helpers.resize(14) }}>{ content }</Text>
             </Dialog.Content>
         }
         <View style={styles.listArea}>

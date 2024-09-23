@@ -5,7 +5,7 @@ import { IInventory, IInventoryItem, IInventoryResAsset, IInventoryResDescriptio
 import { Dimensions } from 'react-native';
 import { IExchangeRate, IGameSummary, IInventories, IItem, IItemPriceRes, IItemStickers, ISteamInventoryAsset, ISteamInventoryDescriptionDescription,
   ISteamProfile, ISteamUser, ISummary, IInventoryGame, IFilterOptions,
-  ISortOptions } from 'types';
+  ISortOptions, IPriceDiff } from 'types';
 import { emptyBaseSummary } from './objects';
 
 /**
@@ -87,8 +87,33 @@ export const helpers = {
       }
       return 'None';
     },
-    priceDiff(item: IItemPriceRes) {
-      return (item.price - item.p24ago) / item.p24ago * 100;
+    priceDiff(item: IItemPriceRes): IPriceDiff {
+      if (!item.price) {
+        return {
+          day: { percent: 0, amount: 0 },
+          month: { percent: 0, amount: 0 },
+          threeMonths: { percent: 0, amount: 0 },
+          year: { percent: 0, amount: 0 },
+        };
+      }
+      return {
+        day: {
+          percent: item.p24ago > 0 ? (item.price - item.p24ago) / item.p24ago * 100 : 0,
+          amount: item.p24ago > 0 ? item.price - item.p24ago : 0,
+        },
+        month: {
+          percent: item.p30ago > 0 ? (item.price - item.p30ago) / item.p30ago * 100 : 0,
+          amount: item.p30ago > 0 ? item.price - item.p30ago : 0,
+        },
+        threeMonths: {
+          percent: item.p90ago > 0 ? (item.price - item.p90ago) / item.p90ago * 100 : 0,
+          amount: item.p90ago > 0 ? item.price - item.p90ago : 0,
+        },
+        year: {
+          percent: item.yearAgo > 0 ? (item.price - item.yearAgo) / item.yearAgo * 100 : 0,
+          amount: item.yearAgo > 0 ? item.price - item.yearAgo : 0,
+        },
+      };
     },
     nametag(item: IItem): string {
       if (item.fraudwarnings && item.fraudwarnings.length > 0) {
@@ -235,9 +260,41 @@ export const helpers = {
             return -1;
           }
           if (options.order === 'asc') {
-            return b.price.difference - a.price.difference;
+            switch (options.period) {
+            case 'day': return b.price.difference.day.amount - a.price.difference.day.amount;
+            case 'month': return b.price.difference.month.amount - a.price.difference.month.amount;
+            case 'threeMonths': return b.price.difference.threeMonths.amount - a.price.difference.threeMonths.amount;
+            case 'year': return b.price.difference.year.amount - a.price.difference.year.amount;
+            }
           }
-          return a.price.difference - b.price.difference;
+          switch (options.period) {
+          case 'day': return a.price.difference.day.amount - b.price.difference.day.amount;
+          case 'month': return a.price.difference.month.amount - b.price.difference.month.amount;
+          case 'threeMonths': return a.price.difference.threeMonths.amount - b.price.difference.threeMonths.amount;
+          case 'year': return a.price.difference.year.amount - b.price.difference.year.amount;
+          }
+        }
+        case 4: {
+          if (!a.price.found) {
+            return 1;
+          }
+          if (!b.price.found) {
+            return -1;
+          }
+          if (options.order === 'asc') {
+            switch (options.period) {
+            case 'day': return b.price.difference.day.percent - a.price.difference.day.percent;
+            case 'month': return b.price.difference.month.percent - a.price.difference.month.percent;
+            case 'threeMonths': return b.price.difference.threeMonths.percent - a.price.difference.threeMonths.percent;
+            case 'year': return b.price.difference.year.percent - a.price.difference.year.percent;
+            }
+          }
+          switch (options.period) {
+          case 'day': return a.price.difference.day.percent - b.price.difference.day.percent;
+          case 'month': return a.price.difference.month.percent - b.price.difference.month.percent;
+          case 'threeMonths': return a.price.difference.threeMonths.percent - b.price.difference.threeMonths.percent;
+          case 'year': return a.price.difference.year.percent - b.price.difference.year.percent;
+          }
         }
         }
         return 0;

@@ -4,7 +4,7 @@ import Text from './Text';
 import { colors, templates } from '@styles/global';
 import { Checkbox, Modal, Portal } from 'react-native-paper';
 import { helpers } from '@utils/helpers';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Button from './Button';
 import DialogPicker from './DialogPicker';
 
@@ -17,13 +17,15 @@ interface ISortFilterSheetProps {
 }
 
 const sortOptionsList = [
-  'Default',
+  'Default order',
   'Name: A-Z',
   'Name: Z-A',
   'Price: 0-9',
   'Price: 9-0',
-  'Profit first',
-  'Loss first',
+  'Profit first (Amount)',
+  'Profit first (Percent)',
+  'Loss first (Amount)',
+  'Loss first (Percent)',
 ];
 
 const timePointList = [
@@ -52,7 +54,9 @@ export default function SortFilterSheet(props: ISortFilterSheetProps) {
     case 3: setSortOptions({ ...sortOptions, by: 2, order: 'asc' }); break;
     case 4: setSortOptions({ ...sortOptions, by: 2, order: 'desc' }); break;
     case 5: setSortOptions({ ...sortOptions, by: 3, order: 'asc' }); break;
-    case 6: setSortOptions({ ...sortOptions, by: 3, order: 'desc' }); break;
+    case 6: setSortOptions({ ...sortOptions, by: 4, order: 'asc' }); break;
+    case 7: setSortOptions({ ...sortOptions, by: 3, order: 'desc' }); break;
+    case 8: setSortOptions({ ...sortOptions, by: 4, order: 'desc' }); break;
     default: setSortOptions({ ...sortOptions, by: 0, order: 'asc' });
     }
     setOpenSelector(-1);
@@ -61,7 +65,7 @@ export default function SortFilterSheet(props: ISortFilterSheetProps) {
   function changeTimepointOption(idx: number) {
     switch (idx) {
     case 1: setSortOptions({ ...sortOptions, period: 'month' }); break;
-    case 2: setSortOptions({ ...sortOptions, period: '3months' }); break;
+    case 2: setSortOptions({ ...sortOptions, period: 'threeMonths' }); break;
     case 3: setSortOptions({ ...sortOptions, period: 'year' }); break;
     default: setSortOptions({ ...sortOptions, period: 'day' });
     }
@@ -73,6 +77,25 @@ export default function SortFilterSheet(props: ISortFilterSheetProps) {
       props.setOptions({ ...filterOptions }, { ...sortOptions });
     }, 25);
   }
+
+  const selectedSort = useMemo(() => {
+    switch (sortOptions.by) {
+    case 1: return sortOptions.order === 'asc' ? sortOptionsList[1] : sortOptionsList[2];
+    case 2: return sortOptions.order === 'asc' ? sortOptionsList[3] : sortOptionsList[4];
+    case 3: return sortOptions.order === 'asc' ? sortOptionsList[5] : sortOptionsList[7];
+    case 4: return sortOptions.order === 'asc' ? sortOptionsList[6] : sortOptionsList[8];
+    }
+    return sortOptionsList[0];
+  }, [ sortOptions.order, sortOptions.by ]);
+
+  const selectedTimePoint = useMemo(() => {
+    switch (sortOptions.period) {
+    case 'month': return timePointList[1];
+    case 'threeMonths': return timePointList[2];
+    case 'year': return timePointList[3];
+    }
+    return timePointList[0];
+  }, [ sortOptions.period ]);
 
   return (
     <Portal>
@@ -117,7 +140,7 @@ export default function SortFilterSheet(props: ISortFilterSheetProps) {
           <View style={styles.optionAsColumn}>
             <Text bold style={styles.optionTitle}>Sort by</Text>
             <Pressable style={styles.optionValueBtn} onPress={() => setOpenSelector(0)}>
-              <Text style={styles.optionTitle}>{ sortOptions.by }</Text>
+              <Text style={styles.optionValue}>{ selectedSort }</Text>
             </Pressable>
             {
               openSelector === 0 &&
@@ -132,17 +155,17 @@ export default function SortFilterSheet(props: ISortFilterSheetProps) {
           </View>
 
           {
-            sortOptions.by >= 2 &&
+            sortOptions.by > 2 &&
               <View style={styles.optionAsColumn}>
-                <Text bold style={styles.optionTitle}>Sort by</Text>
+                <Text bold style={styles.optionTitle}>Price change compared to price</Text>
                 <Pressable style={styles.optionValueBtn} onPress={() => setOpenSelector(1)}>
-                  <Text style={styles.optionTitle}>{ sortOptions.period }</Text>
+                  <Text style={styles.optionValue}>{ selectedTimePoint }</Text>
                 </Pressable>
                 {
                   openSelector === 1 &&
                     <DialogPicker
                       title='Price time point'
-                      content='Select the time point for the price'
+                      content='Select the time point of the compared price'
                       list={timePointList}
                       close={() => setOpenSelector(-1)}
                       select={(timeListId: number) => changeTimepointOption(timeListId)}
@@ -191,10 +214,16 @@ const styles = StyleSheet.create({
   },
   optionAsColumn: {
     ...templates.column,
+    marginVertical: helpers.resize(8),
+  },
+  optionValue: {
+    color: colors.primary,
+    fontSize: helpers.resize(20),
   },
   optionValueBtn: {
     padding: helpers.resize(8),
-    borderRadius: helpers.resize(12),
-    backgroundColor: colors.secondary,
+    borderRadius: helpers.resize(8),
+    backgroundColor: `${colors.primary}44`,
+    marginTop: helpers.resize(4),
   },
 });

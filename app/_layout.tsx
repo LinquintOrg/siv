@@ -1,9 +1,9 @@
 import api from '@utils/api';
 import { sql } from '@utils/sql';
 import Nav from 'components/Nav';
-import { SplashScreen, Tabs, useNavigation, useNavigationContainerRef } from 'expo-router';
+import { SplashScreen, Tabs, useNavigationContainerRef } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { BackHandler, View } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView, useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, variables } from 'styles/global';
 import { helpers } from '@utils/helpers';
