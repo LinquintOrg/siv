@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { templates } from 'styles/global';
-import { IInventories, IInventoryGame, IItemStickers, ISteamInventoryRes, ISteamProfile } from 'types';
+import { IInventories, IInventoryGame, ISteamInventoryRes, ISteamProfile } from 'types';
 import Profile from './Profile';
 import Loader from './Loader';
 import { useEffect, useState } from 'react';
@@ -64,7 +64,7 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
       setLoadingMsg('Loading prices');
       const data = Object.entries(inventoryRes).map<{ appid: number; items: string[] }>(([ appid, inv ]) => ({
         appid: +appid,
-        items: (inv.descriptions || []).filter(desc => desc.marketable).map(desc => desc.market_hash_name),
+        items: (inv.descriptions || []).filter(desc => desc.marketable || desc.market_actions?.length).map(desc => desc.market_hash_name),
       }));
       const stickersToLoad: string[] = [];
       const pricesRes = await $api.getPrices({ data });
@@ -74,10 +74,13 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
         finalItems[appid] = [];
         for (const item of (inv.descriptions || [])) {
           const price = prices[item.market_hash_name];
-          const stickers: IItemStickers | undefined = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions);
-          stickers?.items.forEach(sticker => {
-            if (!stickersToLoad.includes(sticker.longName) && !(sticker.longName in $store.stickerPrices)) {
-              stickersToLoad.push(sticker.longName);
+          const stickers = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions, 'sticker');
+          const patches = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions, 'patch');
+          const charms = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions, 'charm');
+
+          [ ...stickers || [], ...patches || [], ...charms || [] ].forEach(({ longName }) => {
+            if (!stickersToLoad.includes(longName) && !(longName in $store.stickerPrices)) {
+              stickersToLoad.push(longName);
             }
           });
           finalItems[appid].push({
@@ -93,6 +96,8 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
               },
             },
             stickers,
+            patches,
+            charms,
           });
         }
       }

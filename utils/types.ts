@@ -1,6 +1,5 @@
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ReactNode } from 'react';
 import { ISteamProfile } from 'types';
 
 export interface ITextStyle {
@@ -9,12 +8,6 @@ export interface ITextStyle {
 
 export interface ITextStyleObject {
   [key: string]: ITextStyle;
-}
-
-export interface ITextProps {
-  bold?: boolean;
-  style?: ITextStyle | ITextStyleObject | ITextStyle[];
-  children: ReactNode;
 }
 
 export interface IMusicKitPricesProps {

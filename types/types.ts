@@ -167,20 +167,18 @@ export interface IItemPrice extends IItemPriceRes {
   difference: IPriceDiff;
 }
 
-export interface IItemStickers {
-  type: 'sticker' | 'patch';
-  count: number;
-  items: {
-    name: string;
-    img: string;
-    longName: string;
-  }[];
+export interface IItemSticker {
+  name: string;
+  img: string;
+  longName: string;
 }
 
 export interface IItem extends ISteamInventoryDescription {
   price: IItemPrice;
   amount: number;
-  stickers?: IItemStickers;
+  stickers?: IItemSticker[];
+  patches?: IItemSticker[];
+  charms?: IItemSticker[];
 }
 
 export interface IInventories {
@@ -205,8 +203,10 @@ export interface IGameSummary extends ISummaryBase {
   withNameTag?: number;
   withStickers?: number;
   withPatches?: number;
+  withCharms?: number;
   stickerValue?: number;
   patchValue?: number;
+  charmValue?: number;
 }
 
 export interface ISummary extends ISummaryBase {

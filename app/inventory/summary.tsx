@@ -34,6 +34,8 @@ export default function InventorySummaryPage() {
     stickerValue: { type: 'price', title: 'Applied stickers value' },
     withPatches: { type: 'simple', title: 'Agent skins with at least one patch' },
     patchValue: { type: 'price', title: 'Applied patches value' },
+    withCharms: { type: 'simple', title: 'Items with charms attached' },
+    charmValue: { type: 'price', title: 'Attached charms total value' },
   };
 
   function priceDiff(prc: ISummaryBase, key: keyof ISummaryBase) {

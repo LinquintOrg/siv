@@ -3,9 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IInventory, IInventoryItem, IInventoryResAsset, IInventoryResDescriptionDescription, IInventoryResDescriptionTag,
   ISticker } from './types';
 import { Dimensions } from 'react-native';
-import { IExchangeRate, IGameSummary, IInventories, IItem, IItemPriceRes, IItemStickers, ISteamInventoryAsset, ISteamInventoryDescriptionDescription,
+import { IExchangeRate, IGameSummary, IInventories, IItem, IItemPriceRes, ISteamInventoryAsset, ISteamInventoryDescriptionDescription,
   ISteamProfile, ISteamUser, ISummary, IInventoryGame, IFilterOptions,
-  ISortOptions, IPriceDiff } from 'types';
+  ISortOptions, IPriceDiff, IItemSticker } from 'types';
 import { emptyBaseSummary } from './objects';
 
 /**
@@ -132,46 +132,56 @@ export const helpers = {
       }
       return null;
     },
-    findStickers(descriptions: ISteamInventoryDescriptionDescription[]): IItemStickers | undefined {
-      const htmlStickers = descriptions.find(d => d.value.includes('sticker_info'));
-      if (!htmlStickers) {
+    findStickers(descriptions: ISteamInventoryDescriptionDescription[], searchType: 'sticker' | 'patch' | 'charm'): IItemSticker[] | undefined {
+      const appliedItems = descriptions.find(d => d.value.includes(`title="${helpers.capitalize(searchType)}"`));
+      if (!appliedItems) {
         return undefined;
       }
 
-      let html = htmlStickers.value;
+      let html = appliedItems.value;
       const count = (html.match(/img/g) || []).length;
-      const type = (html.match('Sticker')) ? 'sticker' : 'patch';
-
       if (count === 0) {
         return undefined;
       }
 
       // eslint-disable-next-line max-len
-      html = html.replaceAll(`<br><div id="sticker_info" name="sticker_info" title="${helpers.capitalize(type)}" style="border: 2px solid rgb(102, 102, 102); border-radius: 6px; width=100; margin:4px; padding:8px;"><center>`, '');
+      html = html.replaceAll(`<br><div id="sticker_info" name="sticker_info" title="${helpers.capitalize(searchType)}" style="border: 2px solid rgb(102, 102, 102); border-radius: 6px; width=100; margin:4px; padding:8px;"><center>`, '');
       html = html.replaceAll('</center></div>', '');
       html = html.replaceAll('<img width=64 height=48 src="', '');
-      html = html.replaceAll(`<br>${helpers.capitalize(type)}: `, '');
+      html = html.replaceAll(`<br>${helpers.capitalize(searchType)}: `, '');
       html = html.replaceAll('">', ';');
 
       let tmpArr = html.split(';');
+
+      // Manage exceptions
+      const exceptions = [ 'Rock, Paper, Scissors (Foil)' ];
+      tmpArr = tmpArr.map(itm => {
+        const included = exceptions.find(e => itm.includes(e));
+        if (included) {
+          const escapedName = included.replaceAll(',', ';');
+          return itm.replace(included, escapedName);
+        }
+        return itm;
+      });
+
       const tmpNames = tmpArr[count].replaceAll(', Champion', '; Champion').split(', ');
       tmpArr = tmpArr.splice(0, count);
 
       const tmpStickers = [];
       for (let j = 0; j < count; j++) {
-        const abb = (type === 'sticker') ? 'Sticker | ' : 'Patch | ';
+        const abbreviation = `${helpers.capitalize(searchType)} | `;
         const sticker = {
-          name: (tmpNames[j]).replace('; Champion', ', Champion'),
+          name: (tmpNames[j]).replace('; Champion', ', Champion').replaceAll(';', ','),
           img: tmpArr[j],
-          longName: (abb + tmpNames[j]).replace('; Champion', ', Champion'),
+          longName: (abbreviation + tmpNames[j]).replace('; Champion', ', Champion').replaceAll(';', ','),
         };
         tmpStickers.push(sticker);
       }
 
-      return { type, count, items: tmpStickers };
+      return tmpStickers;
     },
-    stickersTotal(prices: { [hash: string]: number }, stickers: IItemStickers, currency: IExchangeRate) {
-      return stickers.items.reduce<number>((val, { longName }) => val += helpers.priceAsNum(currency, prices[longName]), 0);
+    stickersTotal(prices: { [hash: string]: number }, stickers: IItemSticker[], currency: IExchangeRate) {
+      return stickers.reduce<number>((val, { longName }) => val += helpers.priceAsNum(currency, prices[longName]), 0);
     },
     // eslint-disable-next-line max-len
     generateSummary(profile: ISteamProfile, inventory: IInventories, gamesList: IInventoryGame[], currency: IExchangeRate, stickerPrices: { [hash: string]: number }): ISummary {
@@ -184,8 +194,10 @@ export const helpers = {
           withNameTag: appid === '730' ? 0 : undefined,
           withStickers: appid === '730' ? 0 : undefined,
           withPatches: appid === '730' ? 0 : undefined,
+          withCharms: appid === '730' ? 0 : undefined,
           stickerValue: appid === '730' ? 0 : undefined,
           patchValue: appid === '730' ? 0 : undefined,
+          charmValue: appid === '730' ? 0 : undefined,
         };
 
         for (const item of items) {
@@ -200,12 +212,13 @@ export const helpers = {
           gameSummary.p90ago += helpers.priceAsNum(currency, item.price.p90ago, item.amount);
           gameSummary.yearAgo += helpers.priceAsNum(currency, item.price.yearAgo, item.amount);
           if (item.appid === 730) {
-            const stickers = item.stickers;
             gameSummary.withNameTag! += !!this.nametag(item) ? 1 : 0;
-            gameSummary.withStickers! += stickers?.type === 'sticker' && stickers.count ? 1 : 0;
-            gameSummary.withPatches! += stickers?.type === 'patch' && stickers.count ? 1 : 0;
-            gameSummary.stickerValue! += stickers?.type === 'sticker' && stickers.count ? this.stickersTotal(stickerPrices, stickers, currency) : 0;
-            gameSummary.patchValue! += stickers?.type === 'patch' && stickers.count ? this.stickersTotal(stickerPrices, stickers, currency) : 0;
+            gameSummary.withStickers! += item.stickers?.length ? 1 : 0;
+            gameSummary.withPatches! += item.patches?.length ? 1 : 0;
+            gameSummary.withCharms! += item.charms?.length ? 1 : 0;
+            gameSummary.stickerValue! += item.stickers?.length ? this.stickersTotal(stickerPrices, item.stickers, currency) : 0;
+            gameSummary.patchValue! += item.patches?.length ? this.stickersTotal(stickerPrices, item.patches, currency) : 0;
+            gameSummary.charmValue! += item.charms?.length ? this.stickersTotal(stickerPrices, item.charms, currency) : 0;
           }
         }
         games.push(gameSummary);
