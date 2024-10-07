@@ -15,6 +15,7 @@ import { useBackButtonHandler } from 'hooks/useBackButtonHandler';
 import { isRunningInExpoGo } from 'expo';
 import { StatusBar } from 'expo-status-bar';
 import { PaperProvider } from 'react-native-paper';
+import currencyNames from '@utils/currency';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -68,6 +69,7 @@ function RootLayout() {
         await sql.updateRates(rates);
         await sql.updateInventoryGames(inventoryGames);
         store.setGames(inventoryGames);
+        store.setCurrencyNames(currencyNames);
 
         if (extraMigrationsNeeded) {
           const dataToMigrate = await helpers.loadDataForMigration();
@@ -98,6 +100,7 @@ function RootLayout() {
         const currentCurrency = await sql.getOneRate();
         store.setCurrency(currentCurrency);
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error(err);
       } finally {
         setLoaded(true);

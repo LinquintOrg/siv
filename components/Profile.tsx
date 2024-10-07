@@ -27,6 +27,9 @@ export default function Profile(props: IPropsProfile) {
     if (props.nonClickable) {
       return;
     }
+    if (!props.profile.public) {
+      throw new Error('Cannot load inventory of a PRIVATE profile.');
+    }
     const { id } = props.profile;
     router.push(`/inventory/games/${id}`);
   }

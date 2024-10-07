@@ -9,14 +9,23 @@ const settingsPageStyles = StyleSheet.create({
   },
   optionWrapper: {
     paddingHorizontal: helpers.resize(12),
-    paddingVertical: helpers.resize(8),
-    marginVertical: helpers.resize(8),
-    borderRadius: helpers.resize(8),
-    backgroundColor: colors.secondary,
+    paddingVertical: helpers.resize(12),
+    borderBottomColor: `${colors.textAccent}44`,
+    borderBottomWidth: 1,
   },
   optionValue: {
+    fontSize: helpers.resize(20),
+    color: colors.primary,
+  },
+  optionValueSub: {
     fontSize: helpers.resize(16),
     color: colors.primary,
+  },
+  activeSelection: {
+    backgroundColor: colors.primary,
+    borderRadius: helpers.resize(8),
+    paddingHorizontal: helpers.resize(12),
+    paddingVertical: helpers.resize(12),
   },
 });
 

@@ -13,7 +13,7 @@ const transparentize = (color: string, opacity: number) => {
 
 export const colors = {
   text: '#090d12',
-  textAccent: '#444',
+  textAccent: '#444444',
   background: '#f0f3fc',
   primary: '#355bd5',
   secondary: '#91a7e9',

@@ -3,16 +3,15 @@ import Game from '@/Game';
 import Profile from '@/Profile';
 import Text from '@/Text';
 import { helpers } from '@utils/helpers';
-import { sql } from '@utils/sql';
 import { router, useFocusEffect, useGlobalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import useStore from 'store';
-import { colors, global, styles, templates } from 'styles/global';
+import { colors, global, templates } from 'styles/global';
 import { ISteamProfile } from 'types';
 
 export default function InventoryGamesSelectPage() {
-  const store = useStore();
+  const $store = useStore();
   const { id } = useGlobalSearchParams();
   const [ user, setUser ] = useState<ISteamProfile | string | null>(null);
   const [ selectedGames, setSelectedGames ] = useState<string[]>([]);
@@ -34,21 +33,17 @@ export default function InventoryGamesSelectPage() {
         return;
       }
 
-      try {
-        const userById = await sql.getOneProfile(id as string);
-        if (userById) {
-          setUser(userById);
-        } else {
-          setUser(id as string);
-        }
-      } catch (err) {
-        console.error(err);
+      const userById = $store.currentProfile;
+      if (userById) {
+        setUser(userById);
+      } else {
+        setUser(id as string);
       }
     }
     if (pageInFocus && !user) {
       prepare();
     }
-  }, [ pageInFocus, user, id ]);
+  }, [ pageInFocus, user, id, $store.currentProfile ]);
 
   function setGameActive(id: string) {
     const existing = selectedGames.includes(id);
@@ -92,7 +87,7 @@ export default function InventoryGamesSelectPage() {
           </View>
 
           <FlatList
-            data={store.games}
+            data={$store.games}
             renderItem={({ item }) => <Game game={item} isActive={selectedGames.includes(item.appid)} onClick={setGameActive} />}
             keyExtractor={item => `app-${item.appid}`}
           />
