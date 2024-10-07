@@ -55,36 +55,38 @@ export default function InventorySummaryPage() {
           <Text style={global.title}>Inventory summary</Text>
           <Profile profile={summary.profile} nonClickable />
 
-          <View style={style.column}>
-            {
-              Object.entries(summary).map(([ key, val ]) => {
-                if (key in summaryKeyTitle) {
-                  return (
-                    <View>
-                      <Text style={style.summaryTitle}>{ summaryKeyTitle[key].title }</Text>
-                      <View style={[ templates.row, { gap: helpers.resize(8), alignItems: 'center' } ]}>
-                        <Text bold style={style.summaryValue}>
+          { summary.games.length > 1 &&
+            <View style={style.column}>
+              {
+                Object.entries(summary).map(([ key, val ]) => {
+                  if (key in summaryKeyTitle) {
+                    return (
+                      <View>
+                        <Text style={style.summaryTitle}>{ summaryKeyTitle[key].title }</Text>
+                        <View style={[ templates.row, { gap: helpers.resize(8), alignItems: 'center' } ]}>
+                          <Text bold style={style.summaryValue}>
+                            {
+                              summaryKeyTitle[key].type === 'simple'
+                                ? val as number
+                                : helpers.price({ code: summary.currency.code, rate: 1 }, val as number)
+                            }
+                          </Text>
                           {
-                            summaryKeyTitle[key].type === 'simple'
-                              ? val as number
-                              : helpers.price({ code: summary.currency.code, rate: 1 }, val as number)
-                          }
-                        </Text>
-                        {
-                          summaryKeyTitle[key].compare &&
+                            summaryKeyTitle[key].compare &&
                             <Text bold style={[ style.itemPriceInfo, priceDiff(summary, key as keyof ISummaryBase).theme ]}>
                               { helpers.price($store.currency, priceDiff(summary, key as keyof ISummaryBase).difference) }
                               &nbsp;/&nbsp;
                               { priceDiff(summary, key as keyof ISummaryBase).percent }
                             </Text>
-                        }
+                          }
+                        </View>
                       </View>
-                    </View>
-                  );
-                }
-              })
-            }
-          </View>
+                    );
+                  }
+                })
+              }
+            </View>
+          }
 
           {
             Object.values(summary.games).map(game => (

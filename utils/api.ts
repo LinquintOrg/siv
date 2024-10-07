@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable max-len */
 import axios, { AxiosInstance } from 'axios';
 import { IExchangeRate, IInventoryGame, IMusicKitsRes, IPricesReq, IPricesRes, ISteamInventoryRes, ISteamUser, ISteamUserRes, IVanityRes } from 'types';

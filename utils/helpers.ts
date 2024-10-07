@@ -119,6 +119,10 @@ export const helpers = {
       if (item.fraudwarnings && item.fraudwarnings.length > 0) {
         return `"${item.fraudwarnings[0].replaceAll('Name Tag: ', '').replaceAll('\'', '')}"`;
       }
+      const description = item.descriptions.find(d => d.value.includes('Name Tag: '));
+      if (description) {
+        return `"${description.value.replaceAll('Name Tag: ', '').replaceAll('\'', '')}"`;
+      }
       return '';
     },
     collection(item: IItem): string | null {
