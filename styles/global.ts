@@ -12,15 +12,15 @@ const transparentize = (color: string, opacity: number) => {
 };
 
 export const colors = {
-  text: '#000',
-  textAccent: '#444',
-  background: '#fff',
-  primary: '#1058a7',
-  secondary: '#D4EDE5',
-  accent: '#ee3082',
+  text: '#090d12',
+  textAccent: '#444444',
+  background: '#f0f3fc',
+  primary: '#355bd5',
+  secondary: '#91a7e9',
+  accent: '#577be4',
   success: '#9AD797',
   error: '#eb5855',
-  white: '#fff',
+  white: '#FFF',
 };
 
 export const variables = {
@@ -102,6 +102,7 @@ export const global = StyleSheet.create({
   title: {
     fontSize: resize(32),
     marginVertical: resize(16),
+    color: colors.text,
   },
   titleSmall: {
     fontSize: resize(24),

@@ -33,11 +33,11 @@ const profilePageStyles = StyleSheet.create({
   },
   profileName: {
     fontSize: helpers.resize(18),
-    color: colors.text,
+    color: colors.primary,
   },
   profileID: {
-    fontSize: helpers.resize(16),
-    color: colors.textAccent,
+    fontSize: helpers.resize(14),
+    color: colors.text,
   },
   flowDown: {
     ...templates.column,
@@ -52,6 +52,27 @@ const profilePageStyles = StyleSheet.create({
   flowRow: {
     ...templates.row,
     justifyContent: 'space-evenly',
+  },
+  inventoryLoadingWrapper: {
+    ...templates.column,
+    backgroundColor: colors.secondary,
+    borderRadius: helpers.resize(12),
+    padding: helpers.resize(8),
+  },
+  gameWrapper: {
+    ...templates.row,
+    alignItems: 'center',
+    gap: helpers.resize(4),
+    marginTop: helpers.resize(4),
+  },
+  gameIcon: {
+    height: helpers.resize(24),
+    width: helpers.resize(24),
+    borderRadius: helpers.resize(4),
+  },
+  gameName: {
+    color: colors.text,
+    fontSize: helpers.resize(14),
   },
 });
 

@@ -1,6 +1,12 @@
-import React from 'react';
-import { Text } from 'react-native';
-import { ITextProps } from '../utils/types';
+import React, { ReactNode } from 'react';
+import { StyleProp } from 'react-native';
+import { Text, TextStyle } from 'react-native';
+
+interface ITextProps {
+  bold?: boolean;
+  style?: StyleProp<TextStyle>;
+  children: ReactNode;
+}
 
 export default function (props: ITextProps) {
   // TODO: Until Nunito is imported, use the default font, then switch to NunitoBold based on 'bold' prop

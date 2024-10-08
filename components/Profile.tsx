@@ -27,6 +27,9 @@ export default function Profile(props: IPropsProfile) {
     if (props.nonClickable) {
       return;
     }
+    if (!props.profile.public) {
+      throw new Error('Cannot load inventory of a PRIVATE profile.');
+    }
     const { id } = props.profile;
     router.push(`/inventory/games/${id}`);
   }
@@ -49,7 +52,7 @@ export default function Profile(props: IPropsProfile) {
           </View>
         }
         <Text bold style={styles.profileName}>{ props.profile.name }</Text>
-        <Text style={styles.profileID}>{ props.profile.id }</Text>
+        <Text bold style={styles.profileID}>SteamID: { props.profile.id }</Text>
       </View>
     </Pressable>
   );

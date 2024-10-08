@@ -9,7 +9,7 @@ import { TextInput } from 'react-native-paper';
 import { IMusicKit, IMusicKitPrice } from '../utils/types';
 import MusicKit from '../components/MusicKit';
 import { global, variables, colors } from '../styles/global';
-import { helpers } from '../utils/helpers';
+import { helpers } from '@utils/helpers';
 import Loader from '../components/Loader';
 
 export default function MusicKits() {

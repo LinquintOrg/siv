@@ -16,15 +16,17 @@ const itemPageStyles = StyleSheet.create({
   },
   gameTitle: {
     fontSize: helpers.resize(20),
+    color: colors.text,
   },
   itemImage: {
     width: helpers.resize(320),
     height: helpers.resize(240),
     objectFit: 'contain',
+    borderRadius: helpers.resize(8),
   },
   itemPill: {
     fontSize: helpers.resize(16),
-    color: colors.textAccent,
+    color: colors.text,
     backgroundColor: colors.secondary,
     paddingHorizontal: helpers.resize(8),
     paddingVertical: helpers.resize(4),
@@ -34,6 +36,7 @@ const itemPageStyles = StyleSheet.create({
   },
   itemName: {
     fontSize: helpers.resize(20),
+    color: colors.text,
   },
   stickerImage: {
     width: helpers.resize(86),
@@ -42,9 +45,11 @@ const itemPageStyles = StyleSheet.create({
   },
   stickerName: {
     fontSize: helpers.resize(16),
+    color: colors.textAccent,
   },
   stickerPrice: {
     fontSize: helpers.resize(18),
+    color: colors.text,
   },
   itemPriceInfo: {
     fontSize: helpers.resize(14),
@@ -55,11 +60,11 @@ const itemPageStyles = StyleSheet.create({
   },
   loss: {
     color: '#660014',
-    backgroundColor: '#FF0A1B88',
+    backgroundColor: '#F04C57',
   },
   profit: {
     color: '#246B43',
-    backgroundColor: '#66CC92CC',
+    backgroundColor: '#66CC92',
   },
   samePrice: {
     color: '#664200',

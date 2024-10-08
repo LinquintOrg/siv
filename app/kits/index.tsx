@@ -4,17 +4,23 @@ import MusicKit from '@/MusicKit';
 import Text from '@/Text';
 import api from '@utils/api';
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { global } from 'styles/global';
 import { IMusicKit } from 'types';
 import useStore from 'store';
+import { Audio, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
+import { useSnackbar } from 'hooks/useSnackbar';
+import { helpers } from '@utils/helpers';
 
 export default function KitsPage() {
   const $api = new api();
   const $store = useStore();
+  const $snackbar = useSnackbar();
   const [ isLoading, setIsLoading ] = useState(false);
   const [ musicKits, setMusicKits ] = useState<IMusicKit[]>([]);
   const [ input, setInput ] = useState('');
+  const [ mvpSound, setMvpSound ] = useState<Audio.Sound | null>(null);
+  const [ playbackStatus, setPlaybackStatus ] = useState<AVPlaybackStatus | null>(null);
 
   const renderedKits = useMemo(
     () => musicKits.filter(mk => mk.artist.toLowerCase().includes(input.toLowerCase()) || mk.title.toLowerCase().includes(input.toLowerCase())),
@@ -39,6 +45,24 @@ export default function KitsPage() {
     }
   });
 
+  async function playMVP(kit: IMusicKit) {
+    if (mvpSound) {
+      mvpSound.unloadAsync();
+      setMvpSound(null);
+    }
+    const { sound } = await Audio.Sound.createAsync(
+      { uri: `https://linquint.dev/music/${kit.folder}/roundmvpanthem_01.mp3` },
+      { shouldPlay: false },
+      undefined,
+      true,
+    );
+    const status = await sound.playAsync();
+    setMvpSound(sound);
+    if (status.isLoaded) {
+      $snackbar.playbackSnackBar(kit, (status as AVPlaybackStatusSuccess).durationMillis);
+    }
+  }
+
   return (
     <>
       <Text style={global.title}>Music Kits</Text>
@@ -54,12 +78,9 @@ export default function KitsPage() {
             data={renderedKits}
             renderItem={({ item }) =>
               <MusicKit
-                artist={item.artist}
-                title={item.title}
-                image={item.image}
-                price={(item.price || 0)}
-                statPrice={(item.statPrice || 0)}
+                kit={item}
                 rate={$store.currency}
+                onClick={playMVP}
               />}
             keyExtractor={({ artist, title }) => `${artist}-${title}`.replaceAll(' ', '_')}
           />

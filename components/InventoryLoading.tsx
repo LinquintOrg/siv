@@ -1,12 +1,14 @@
 import { View } from 'react-native';
 import { templates } from 'styles/global';
-import { IInventories, IInventoryGame, IItemStickers, ISteamInventoryRes, ISteamProfile } from 'types';
+import { IInventories, IInventoryGame, ISteamInventoryRes, ISteamProfile } from 'types';
 import Profile from './Profile';
 import Loader from './Loader';
 import { useEffect, useState } from 'react';
 import api from '@utils/api';
 import { helpers } from '@utils/helpers';
 import useStore from 'store';
+import Text from './Text';
+import Button from './Button';
 
 interface IInventoryLoadingProps {
   profile: ISteamProfile;
@@ -21,10 +23,30 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
   const [ loadingMsg, setLoadingMsg ] = useState('');
   const [ loading, setLoading ] = useState(false);
   const [ inventoryRes ] = useState<{ [appid: number]: ISteamInventoryRes }>({});
+  const [ errored, setErrored ] = useState(false);
 
-  useEffect(() => {
-    async function prepare() {
-      setLoading(true);
+  const getTimeoutLength = () => {
+    if (games.length < 3) {
+      return 1500;
+    }
+    if (games.length < 4) {
+      return 7500;
+    }
+    if (games.length < 5) {
+      return 12500;
+    }
+    return 16000;
+  };
+
+  function setInvLoading(isLoading: boolean) {
+    setLoading(isLoading);
+    $store.setIsInventoryLoading(isLoading);
+  }
+
+  async function prepare() {
+    try {
+      $store.setCurrentProfile(profile);
+      setInvLoading(true);
       if (__DEV__) {
         setLoadingMsg('Loading Counter Strike 2 inventory');
         const invRes = await $api.devInventory();
@@ -34,14 +56,15 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
           setLoadingMsg(`Loading ${game.name} inventory`);
           const invRes = await $api.getInventory(profile.id, game.appid);
           inventoryRes[+(game.appid)] = invRes;
-          await helpers.sleep(1500);
+          const timeoutLen = getTimeoutLength();
+          await helpers.sleep(timeoutLen);
         }
       }
 
       setLoadingMsg('Loading prices');
       const data = Object.entries(inventoryRes).map<{ appid: number; items: string[] }>(([ appid, inv ]) => ({
         appid: +appid,
-        items: inv.descriptions.filter(desc => desc.marketable).map(desc => desc.market_hash_name),
+        items: (inv.descriptions || []).filter(desc => desc.marketable || desc.market_actions?.length).map(desc => desc.market_hash_name),
       }));
       const stickersToLoad: string[] = [];
       const pricesRes = await $api.getPrices({ data });
@@ -49,12 +72,15 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
       for (const [ appid, inv ] of Object.entries(inventoryRes)) {
         const prices = pricesRes[appid];
         finalItems[appid] = [];
-        for (const item of inv.descriptions) {
+        for (const item of (inv.descriptions || [])) {
           const price = prices[item.market_hash_name];
-          const stickers: IItemStickers | undefined = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions);
-          stickers?.items.forEach(sticker => {
-            if (!stickersToLoad.includes(sticker.longName) && !(sticker.longName in $store.stickerPrices)) {
-              stickersToLoad.push(sticker.longName);
+          const stickers = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions, 'sticker');
+          const patches = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions, 'patch');
+          const charms = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions, 'charm');
+
+          [ ...stickers || [], ...patches || [], ...charms || [] ].forEach(({ longName }) => {
+            if (!stickersToLoad.includes(longName) && !(longName in $store.stickerPrices)) {
+              stickersToLoad.push(longName);
             }
           });
           finalItems[appid].push({
@@ -62,9 +88,16 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
             amount: helpers.inv.itemCount(inv.assets, item.classid, item.instanceid),
             price: {
               ...(price || { found: false }),
-              difference: price ? helpers.inv.priceDiff(price) : 0,
+              difference: price ? helpers.inv.priceDiff(price) : {
+                day: { percent: 0, amount: 0 },
+                month: { percent: 0, amount: 0 },
+                threeMonths: { percent: 0, amount: 0 },
+                year: { percent: 0, amount: 0 },
+              },
             },
             stickers,
+            patches,
+            charms,
           });
         }
       }
@@ -75,17 +108,37 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
         Object.entries(stickerPricesRes).map(([ name, { price } ]) => $store.stickerPrices[name] = price);
       }
       setInventory(finalItems);
+      const summary = helpers.inv.generateSummary(profile, finalItems, games, $store.currency, $store.stickerPrices);
+      $store.setSummary(summary);
+      setInvLoading(false);
+    } catch (err: any) {
+      setErrored(true);
+      throw new Error(err.message);
     }
+  }
 
-    if (!loading && profile && games.length) {
+  useEffect(() => {
+    if (!loading && profile && games.length && !errored) {
       prepare();
     }
   });
 
+  function retryLoading() {
+    setErrored(false);
+    prepare();
+  }
+
   return (
     <View style={[ templates.column, templates.fullHeight, templates.justifyCenter ]}>
       <Profile profile={profile} nonClickable />
-      <Loader text={loadingMsg} size={'large'} />
+      { !errored && <Loader text={loadingMsg} size={'large'} /> }
+      {
+        errored &&
+          <View style={[ templates.column ]}>
+            <Text bold>Error occurred!</Text>
+            <Button onPress={retryLoading} text='Retry' />
+          </View>
+      }
     </View>
   );
 }

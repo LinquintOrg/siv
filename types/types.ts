@@ -18,16 +18,19 @@ export interface ISteamProfile {
 }
 
 export interface IMusicKit {
+  id: number;
   artist: string;
   title: string;
-  image?: string;
-  price?: number;
-  statPrice?: number;
+  image: string;
+  folder: string;
+  price: {
+    normal: number;
+    stattrak: number;
+  };
 }
 
 export interface IMusicKitsRes {
   kits: IMusicKit[];
-  count: number;
 }
 
 export interface IVanityRes {
@@ -153,26 +156,72 @@ export interface IPricesRes {
   };
 }
 
-export interface IItemPrice extends IItemPriceRes {
-  difference: number;
+export interface IPriceDiff {
+  day: { percent: number; amount: number };
+  month: { percent: number; amount: number };
+  threeMonths: { percent: number; amount: number };
+  year: { percent: number; amount: number };
 }
 
-export interface IItemStickers {
-  type: string;
-  count: number;
-  items: {
-    name: string;
-    img: string;
-    longName: string;
-  }[];
+export interface IItemPrice extends IItemPriceRes {
+  difference: IPriceDiff;
+}
+
+export interface IItemSticker {
+  name: string;
+  img: string;
+  longName: string;
 }
 
 export interface IItem extends ISteamInventoryDescription {
   price: IItemPrice;
   amount: number;
-  stickers?: IItemStickers;
+  stickers?: IItemSticker[];
+  patches?: IItemSticker[];
+  charms?: IItemSticker[];
 }
 
 export interface IInventories {
   [appid: string]: IItem[];
+}
+
+export interface ISummaryBase {
+  totalValue: number;
+  itemCount: number;
+  sellableItems: number;
+  avg24: number;
+  avg7: number;
+  avg30: number;
+  p24ago: number;
+  p30ago: number;
+  p90ago: number;
+  yearAgo: number;
+}
+
+export interface IGameSummary extends ISummaryBase {
+  game: IInventoryGame;
+  withNameTag?: number;
+  withStickers?: number;
+  withPatches?: number;
+  withCharms?: number;
+  stickerValue?: number;
+  patchValue?: number;
+  charmValue?: number;
+}
+
+export interface ISummary extends ISummaryBase {
+  profile: ISteamProfile;
+  games: IGameSummary[];
+  currency: IExchangeRate;
+}
+
+export interface IFilterOptions {
+  nonMarketable: boolean;
+  nonTradable: boolean;
+}
+
+export interface ISortOptions {
+  by: number; // 0 - default, 1 - Name, 2 - Price, 3 - Profit/Loss (Amount), 4 - Profit/Loss (Percent)
+  order: 'desc' | 'asc';
+  period: 'day' | 'month' | 'threeMonths' | 'year';
 }

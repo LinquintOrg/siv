@@ -5,8 +5,9 @@ import { useMemo } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import useStore from 'store';
 import styles from '@styles/pages/item';
-import { global, templates } from '@styles/global';
+import { colors, global, templates } from '@styles/global';
 import { IItemPrice } from 'types';
+import AppliedItems from '@/AppliedItems';
 
 export default function InventoryItemPage() {
   const $store = useStore();
@@ -58,23 +59,12 @@ export default function InventoryItemPage() {
     return `https://community.akamai.steamstatic.com/economy/image/${item.icon_url}`;
   }, [ item ]);
 
-  const stickersTotal = useMemo(() => {
-    if (!item || !item.stickers?.count) {
-      return null;
-    }
-    let total = 0;
-    item.stickers.items.forEach(sticker => {
-      total += +($store.stickerPrices[sticker.longName] * $store.currency.rate).toFixed(2);
-    });
-    return total;
-  }, [ item, $store ]);
-
   function priceDiff(prc: IItemPrice, key: keyof IItemPrice) {
     const currentPrice = prc.price;
     const comparedPrice = prc[key] as number;
-    const percent = (comparedPrice - currentPrice) / currentPrice * 100;
+    const percent = (currentPrice - comparedPrice) / comparedPrice * 100;
     return {
-      difference: comparedPrice - currentPrice,
+      difference: currentPrice - comparedPrice,
       percent: (percent > 0 ? '+' : '') + percent.toFixed(1) + '%',
       theme: percent < 0 ? styles.loss : percent > 0 ? styles.profit : styles.samePrice,
     };
@@ -109,40 +99,23 @@ export default function InventoryItemPage() {
               <Text bold style={{ fontSize: helpers.resize(16) }}>{ helpers.inv.nametag(item) }</Text>
             </View>
             <Text bold style={styles.itemName}>{ item.market_name }</Text>
-            { collection && <Text bold>{ collection }</Text> }
-
             {
-              item.stickers?.count && stickersTotal !== null &&
-              <>
-                {
-                  item.stickers.items.map(sticker => (
-                    <View style={[ templates.row, { gap: helpers.resize(12), alignItems: 'center' } ]}>
-                      <Image style={styles.stickerImage} source={{ uri: sticker.img }} />
-                      <View>
-                        <Text style={styles.stickerName}>{ sticker.name }</Text>
-                        <Text bold style={styles.stickerPrice}>{ helpers.price($store.currency, $store.stickerPrices[sticker.longName]) }</Text>
-                      </View>
-                    </View>
-                  ))
-                }
-                {
-                  item.stickers.count > 1 &&
-                    <View style={[ templates.row, { justifyContent: 'space-between' } ]}>
-                      <Text style={{ fontSize: helpers.resize(24) }}>{ item.stickers.type === 'sticker' ? 'Stickers' : 'Patches' } total</Text>
-                      <Text bold style={{ fontSize: helpers.resize(22) }}>{ helpers.price({ code: $store.currency.code, rate: 1 }, stickersTotal) }</Text>
-                    </View>
-                }
-              </>
+              collection && <View style={[ templates.row, { gap: helpers.resize(4), alignItems: 'center' } ]}>
+                <Text bold style={{ fontSize: helpers.resize(16) }}>Collection:</Text>
+                <Text style={{ fontSize: helpers.resize(16), color: colors.primary }}>{ collection }</Text>
+              </View>
             }
 
+            <AppliedItems item={item} />
+
             <View style={[ templates.row, { alignItems: 'center', justifyContent: 'space-between' } ]}>
-              <Text bold style={global.title}>Price</Text>
+              <Text bold style={[ global.title, { marginVertical: helpers.resize(0) } ]}>Price</Text>
               {
                 item.price.found &&
-              <View style={[ templates.column, { alignItems: 'center' } ]}>
-                <Text bold style={{ fontSize: helpers.resize(24) }}>{ helpers.price($store.currency, item.price.price) }</Text>
-                <Text style={{ fontSize: helpers.resize(16) }}>{ item.price.listed } listed</Text>
-              </View>
+                  <View style={[ templates.column, { alignItems: 'center' } ]}>
+                    <Text bold style={{ fontSize: helpers.resize(24) }}>{ helpers.price($store.currency, item.price.price) }</Text>
+                    <Text style={{ fontSize: helpers.resize(16) }}>{ item.price.listed } listed</Text>
+                  </View>
               }
             </View>
             { !item.price.found && <Text bold>Not found.</Text> }

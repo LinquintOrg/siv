@@ -1,18 +1,21 @@
 import api from '@utils/api';
 import { sql } from '@utils/sql';
 import Nav from 'components/Nav';
-import { SplashScreen, Tabs, useNavigation, useNavigationContainerRef } from 'expo-router';
+import { SplashScreen, Tabs, useNavigationContainerRef } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { BackHandler, View } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView, useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, variables } from 'styles/global';
-import { helpers } from 'utils/helpers';
+import { helpers } from '@utils/helpers';
 import * as Sentry from '@sentry/react-native';
 import { SnackbarProvider } from 'hooks/useSnackbar';
 import GlobalErrorHandler from '@/GlobalErrorHandler';
 import useStore from 'store';
 import { useBackButtonHandler } from 'hooks/useBackButtonHandler';
 import { isRunningInExpoGo } from 'expo';
+import { StatusBar } from 'expo-status-bar';
+import { PaperProvider } from 'react-native-paper';
+import currencyNames from '@utils/currency';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -66,6 +69,7 @@ function RootLayout() {
         await sql.updateRates(rates);
         await sql.updateInventoryGames(inventoryGames);
         store.setGames(inventoryGames);
+        store.setCurrencyNames(currencyNames);
 
         if (extraMigrationsNeeded) {
           const dataToMigrate = await helpers.loadDataForMigration();
@@ -96,6 +100,7 @@ function RootLayout() {
         const currentCurrency = await sql.getOneRate();
         store.setCurrency(currentCurrency);
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error(err);
       } finally {
         setLoaded(true);
@@ -121,23 +126,26 @@ function RootLayout() {
   }
 
   return (
-    <SafeAreaView style={{ height: '100%' }} onLayout={onLayoutRootView}>
-      <SnackbarProvider>
-        <GlobalErrorHandler />
-        <View style={{ maxHeight: viewHeight, minHeight: viewHeight, paddingHorizontal: helpers.resize(8) }}>
-          <Tabs
-            screenOptions={() => ({
-              headerShown: false,
-              tabBarStyle: {
-                display: 'none',
-              },
-            })}
-            sceneContainerStyle={{ backgroundColor: colors.background }}
-            backBehavior='history'
-          />
-        </View>
-        <Nav />
-      </SnackbarProvider>
+    <SafeAreaView style={{ height: '100%', backgroundColor: colors.background }} onLayout={onLayoutRootView}>
+      <PaperProvider>
+        <SnackbarProvider>
+          <GlobalErrorHandler />
+          <View style={{ maxHeight: viewHeight, minHeight: viewHeight, paddingHorizontal: helpers.resize(8) }}>
+            <Tabs
+              screenOptions={() => ({
+                headerShown: false,
+                tabBarStyle: {
+                  display: 'none',
+                },
+              })}
+              sceneContainerStyle={{ backgroundColor: colors.background }}
+              backBehavior='history'
+            />
+          </View>
+          <Nav />
+        </SnackbarProvider>
+      </PaperProvider>
+      <StatusBar style='dark' />
     </SafeAreaView>
   );
 }

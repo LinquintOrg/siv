@@ -8,7 +8,7 @@ import BouncyCheckbox from 'react-native-bouncy-checkbox';
 import NetInfo from '@react-native-community/netinfo';
 import Modal from 'react-native-modal';
 import { useRateState, useRatesState } from '../utils/store';
-import { helpers } from '../utils/helpers';
+import { helpers } from '@utils/helpers';
 import { colors, global, variables } from '../styles/global';
 import { IDropdownItem, ISteamMarketResponse, ISteamMarketSearchResult } from '../utils/types';
 import Loader from '../components/Loader';

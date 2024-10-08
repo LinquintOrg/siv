@@ -3,16 +3,15 @@ import Game from '@/Game';
 import Profile from '@/Profile';
 import Text from '@/Text';
 import { helpers } from '@utils/helpers';
-import { sql } from '@utils/sql';
 import { router, useFocusEffect, useGlobalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import useStore from 'store';
-import { global } from 'styles/global';
+import { colors, global, templates } from 'styles/global';
 import { ISteamProfile } from 'types';
 
 export default function InventoryGamesSelectPage() {
-  const store = useStore();
+  const $store = useStore();
   const { id } = useGlobalSearchParams();
   const [ user, setUser ] = useState<ISteamProfile | string | null>(null);
   const [ selectedGames, setSelectedGames ] = useState<string[]>([]);
@@ -34,21 +33,17 @@ export default function InventoryGamesSelectPage() {
         return;
       }
 
-      try {
-        const userById = await sql.getOneProfile(id as string);
-        if (userById) {
-          setUser(userById);
-        } else {
-          setUser(id as string);
-        }
-      } catch (err) {
-        console.error(err);
+      const userById = $store.currentProfile;
+      if (userById) {
+        setUser(userById);
+      } else {
+        setUser(id as string);
       }
     }
     if (pageInFocus && !user) {
       prepare();
     }
-  }, [ pageInFocus, user, id ]);
+  }, [ pageInFocus, user, id, $store.currentProfile ]);
 
   function setGameActive(id: string) {
     const existing = selectedGames.includes(id);
@@ -74,7 +69,7 @@ export default function InventoryGamesSelectPage() {
 
   return (
     <>
-      <Text bold style={global.titleSmall}>Selected Profile</Text>
+      <Text bold style={global.titleSmall}>Profile</Text>
       {
         user && <>
           <View>
@@ -85,16 +80,20 @@ export default function InventoryGamesSelectPage() {
             }
           </View>
 
-          <Text bold style={[ global.title, { marginBottom: helpers.resize(4) } ]}>Select Games</Text>
+          <View style={[ templates.row, { marginVertical: helpers.resize(8) }, templates.alignCenter ]}>
+            <Text style={{ fontSize: helpers.resize(32) }}>Select Games</Text>
+            <Text style={{ color: colors.primary, fontSize: helpers.resize(36) }}> | </Text>
+            <Text bold style={{ color: colors.textAccent, fontSize: helpers.resize(20), marginTop: helpers.resize(4) }}>{ selectedGames.length }</Text>
+          </View>
 
           <FlatList
-            data={store.games}
+            data={$store.games}
             renderItem={({ item }) => <Game game={item} isActive={selectedGames.includes(item.appid)} onClick={setGameActive} />}
             keyExtractor={item => `app-${item.appid}`}
           />
 
           <Button
-            text={`Select games (${selectedGames.length}/3)`}
+            text='Select games'
             style={{ marginTop: helpers.resize(12) }}
             onPress={() => selectGames()}
           />

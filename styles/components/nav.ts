@@ -1,39 +1,45 @@
 import { StyleSheet } from 'react-native';
-import { colors, variables } from 'styles/global';
-import { helpers } from 'utils/helpers';
+import { colors, templates } from 'styles/global';
+import { helpers } from '@utils/helpers';
 
 const navStyles = StyleSheet.create({
   container: {
+    ...templates.row,
     width: '100%',
-    borderRadius: helpers.resize(16),
     backgroundColor: colors.white,
-    paddingVertical: helpers.resize(16),
-    paddingHorizontal: helpers.resize(32),
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    paddingVertical: helpers.resize(8),
+    justifyContent: 'space-evenly',
     shadowColor: '#333',
+    gap: helpers.resize(8),
   },
   navButton: {
-    borderRadius: helpers.resize(10),
+    ...templates.column,
+    gap: helpers.resize(4),
     backgroundColor: '#ffffff00',
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: helpers.resize(2),
-    maxWidth: helpers.resize(variables.iconXLarge),
+    minWidth: helpers.resize(64),
   },
   navText: {
     textAlign: 'center',
-    fontSize: helpers.resize(14),
+    fontSize: helpers.resize(12),
     fontWeight: 'bold',
+    color: colors.primary,
   },
   navIcon: {
-    padding: helpers.resize(8),
+    paddingHorizontal: helpers.resize(16),
+    paddingVertical: helpers.resize(4),
   },
-  activeIcon: {
-    backgroundColor: colors.primary,
-    borderRadius: helpers.resize(12),
+  navIconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  navIconBackground: {
+    zIndex: 0,
+    borderRadius: 50,
+    position: 'absolute',
+    height: '100%',
   },
 });
 

@@ -3,31 +3,42 @@ import Text from '@/Text';
 import { helpers } from '@utils/helpers';
 import { sql } from '@utils/sql';
 import { router, useFocusEffect, useGlobalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, View } from 'react-native';
-import { IInventories, IItem, ISteamProfile } from 'types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Image, Pressable } from 'react-native';
+import { IFilterOptions, IInventories, IInventoryGame, IItem, ISortOptions, ISteamProfile } from 'types';
 import styles from '@styles/pages/inventory';
-import { global, templates } from 'styles/global';
 import useStore from 'store';
+import InventoryFabGroup from '@/InventoryFabGroup';
+import Input from '@/Input';
+import InventoryItem from '@/InventoryItem';
+import { FlashList } from '@shopify/flash-list';
+import SortFilterSheet from '@/SortFilterSheet';
 
 export default function InventoryOverviewPage() {
   const $store = useStore();
+  const flashList = useRef<FlashList<IInvMap> | null>(null);
+
   const { id, games } = useGlobalSearchParams();
   const [ user, setUser ] = useState<ISteamProfile | string | null>(null);
   const [ pageInFocus, setPageInFocus ] = useState(false);
   const [ loading, setLoading ] = useState(false);
   const [ inv, setInv ] = useState<IInventories>({});
-  const [ filterOptions ] = useState({
+  const [ searchQuery, setSearchQuery ] = useState('');
+  const [ showOptions, setShowOptions ] = useState(false);
+  const [ filterOptions, setFilterOptions ] = useState<IFilterOptions>({
     nonMarketable: false,
+    nonTradable: false,
+  });
+  const [ sortOptions, setSortOptions ] = useState<ISortOptions>({
+    by: 0,
+    order: 'desc',
+    period: 'day',
   });
 
-  useFocusEffect(
-    useCallback(() => {
-      setPageInFocus(true);
-      return () => {
-        setPageInFocus(false);
-      };
-    }, []),
+
+  const selectedGames = useMemo(
+    () => (games as string || '').split(',').map(app => $store.games.find(game => game.appid === app)!),
+    [ games, $store ],
   );
 
   useEffect(() => {
@@ -44,22 +55,36 @@ export default function InventoryOverviewPage() {
       }
       setLoading(true);
     }
-    if (pageInFocus && !user) {
-      prepare();
+
+    if (pageInFocus) {
+      const invGames = Object.keys(inv);
+      const haveGamesChanged = invGames.some(id => selectedGames.findIndex(sg => sg.appid === id) === -1);
+      if (!user || (!loading && (invGames.length !== selectedGames.length || haveGamesChanged))) {
+        prepare();
+      }
     }
-  }, [ pageInFocus, user, id ]);
+  }, [ pageInFocus, user, id, selectedGames, inv, loading ]);
 
-  const selectedGames = useMemo(
-    () => (games as string || '').split(',').map(app => $store.games.find(game => game.appid === app)!),
-    [ games, $store ],
-  );
+  type IInvMap = (({ element: 'header' } & IInventoryGame) | ({ element: 'item' } & IItem));
 
-  const invMap = useMemo(
-    () => Object.entries(inv).map(([ appid, inventory ]) => ({
-      game: $store.games.find(g => g.appid === appid),
-      items: inventory.filter(i => filterOptions.nonMarketable || i.marketable),
-    })),
-    [ inv, $store, filterOptions ],
+  const invMap = useMemo<IInvMap[]>(() => {
+    const mappedData: IInvMap[] = [];
+    Object.entries(inv).forEach(([ appid, inventory ]) => {
+      const game = $store.games.find(g => g.appid === appid)!;
+      mappedData.push({ element: 'header', ...game });
+      const sortedInv = helpers.inv.sortInventory(inventory, sortOptions);
+      for (const item of sortedInv) {
+        if (helpers.inv.isVisible(item, searchQuery, filterOptions)) {
+          mappedData.push({ element: 'item', ...item });
+        }
+      }
+    });
+    return mappedData;
+  }, [ $store.games, filterOptions, inv, searchQuery, sortOptions ]);
+
+  const stickyHeaderIndices = useMemo(
+    () => invMap.map(({ element }, id) => element === 'header' ? id : null).filter(id => typeof id === 'number') as number[],
+    [ invMap ],
   );
 
   function setInventory(inventory: IInventories) {
@@ -72,95 +97,81 @@ export default function InventoryOverviewPage() {
     router.push(`/inventory/item/${item.classid}-${item.instanceid}`);
   }
 
+  function scrollToIndex(index: number) {
+    if (flashList?.current) {
+      flashList.current.scrollToIndex({ index, animated: true });
+    }
+  }
+
+  function setOptions(newFilter: IFilterOptions, newSort: ISortOptions) {
+    setFilterOptions(newFilter);
+    setSortOptions(newSort);
+    setShowOptions(false);
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      setPageInFocus(true);
+      if ($store.currency.code !== $store.summary?.currency.code || (user && typeof user !== 'string' && user?.id !== $store.summary.profile?.id)) {
+        const summary = helpers.inv.generateSummary(user as ISteamProfile, inv, selectedGames, $store.currency, $store.stickerPrices);
+        $store.setSummary(summary);
+      }
+      return () => {
+        setPageInFocus(false);
+      };
+    }, [ $store, inv, user, selectedGames ]),
+  );
+
   return (
     <>
-      <View>
-        {
-          loading && user && typeof user !== 'string' && selectedGames?.length
-            && <InventoryLoading profile={user} games={selectedGames} setInventory={setInventory}/>
-        }
-        {
-          !loading && !!Object.keys(inv).length &&
-          <ScrollView>
+      {
+        loading && user && typeof user !== 'string' && selectedGames?.length
+          && <InventoryLoading profile={user} games={selectedGames} setInventory={setInventory} />
+      }
+      {
+        !loading && !!Object.keys(inv).length &&
+          <>
             {
-              invMap.map(({ game, items }) => (
-                <>
-                  <View style={styles.game}>
-                    <Image source={{ uri: game!.img }} style={styles.gameIcon} />
-                    <Text bold style={styles.gameTitle}>{ game?.name || 'Zaidimas' }</Text>
-                  </View>
-                  {
-                    items.map(item => (
-                      <Pressable style={styles.item} onPress={() => navigateToItem(item)}>
-                        <Image source={{ uri: `https://community.akamai.steamstatic.com/economy/image/${item.icon_url}` }} style={styles.itemImage} />
-                        <View style={[ templates.column, { width: helpers.resize(290), justifyContent: 'space-between', minHeight: helpers.resize(100) } ]}>
-                          <View style={[ templates.column ]}>
-                            <View style={global.wrapRow}>
-                              {
-                                !!helpers.inventory.getRarity(item.tags) &&
-                                <Text bold style={[
-                                  styles.itemPill, {
-                                    backgroundColor: helpers.pastelify(helpers.inventory.getRarityColor(item.tags)),
-                                    color: helpers.pastelify(helpers.inventory.getRarityColor(item.tags), 0),
-                                  },
-                                ]}
-                                >
-                                  { helpers.inventory.getRarity(item.tags)!.replace(' Grade', '') }
-                                </Text>
-                              }
-                              <Text bold style={[ styles.itemPill ]}>{ helpers.inv.itemType(item) }</Text>
-                            </View>
-                            <Text bold style={styles.itemTitle}>{ item.market_hash_name }</Text>
-                          </View>
-                          <View style={templates.row}>
-                            <View style={[
-                              item.amount > 1 ? templates.column : templates.row, {
-                                width: item.amount > 1 ? '38%' : '98%',
-                                justifyContent: item.amount > 1 ? 'center' : 'flex-end',
-                                gap: item.amount > 1 ? 1 : helpers.resize(8),
-                                alignItems: 'center',
-                              },
-                            ]}>
-                              {
-                                item.amount > 1
-                                  ? <Text style={styles.itemPriceInfo}>{ item.amount } owned</Text>
-                                  : <Text bold style={[
-                                    styles.itemPriceInfo, item.price.difference < 0 ? styles.loss : item.price.difference > 0 ? styles.profit:styles.samePrice,
-                                  ]}>
-                                    {item.price.difference > 0 ? '+' : ''}{ item.price.difference.toFixed(1) }%
-                                  </Text>
-                              }
-                              <Text bold style={styles.itemPrice}>{ helpers.price($store.currency, item.price.price || 0) }</Text>
-                            </View>
-                            {
-                              item.amount > 1 &&
-                              <View style={[
-                                templates.row, {
-                                  width: '60%',
-                                  justifyContent: 'flex-end',
-                                  alignItems: 'flex-end',
-                                  gap: helpers.resize(8),
-                                },
-                              ]}>
-                                <Text bold style={[
-                                  styles.itemPriceInfo, item.price.difference < 0 ? styles.loss : item.price.difference > 0 ? styles.profit : styles.samePrice,
-                                ]}>
-                                  {item.price.difference > 0 ? '+' : ''}{ item.price.difference.toFixed(1) }%
-                                </Text>
-                                <Text bold style={styles.itemPrice}>{ helpers.price($store.currency, item.price.price || 0, item.amount) }</Text>
-                              </View>
-                            }
-                          </View>
-                        </View>
-                      </Pressable>
-                    ))
-                  }
-                </>
-              ))
+              pageInFocus && <InventoryFabGroup expand={() => setShowOptions(true)} />
             }
-          </ScrollView>
-        }
-      </View>
+            {
+              pageInFocus && <Input label='Search' onChange={setSearchQuery} value={searchQuery} icon={{ name: 'search', type: 'feather' }} />
+            }
+            {
+              pageInFocus && showOptions &&
+                <SortFilterSheet
+                  filter={filterOptions}
+                  sort={sortOptions}
+                  setOptions={setOptions}
+                  close={() => setShowOptions(false)}
+                  hasCS={selectedGames.findIndex(g => g.appid === '730') !== -1}
+                />
+            }
+            <FlashList
+              ref={flashList}
+              data={invMap}
+              renderItem={({ item, index }) => {
+                if (item.element === 'header') {
+                  return (
+                    <Pressable style={styles.game} onPress={() => scrollToIndex(index)}>
+                      <Image source={{ uri: item!.img }} style={styles.gameIcon} />
+                      <Text bold style={styles.gameTitle}>{ item?.name || 'Game Title' }</Text>
+                    </Pressable>
+                  );
+                }
+                const { element, ...restData } = item;
+                return <InventoryItem
+                  item={restData}
+                  idx={index}
+                  navigateToItem={navigateToItem}
+                  sort={sortOptions}
+                />;
+              }}
+              stickyHeaderIndices={stickyHeaderIndices}
+              estimatedItemSize={helpers.resize(120)}
+            />
+          </>
+      }
     </>
   );
 }
