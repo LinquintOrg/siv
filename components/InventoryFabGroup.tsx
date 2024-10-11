@@ -21,38 +21,26 @@ export default function InventoryFabGroup(props: { expand: () => void }) {
         icon={'dots-vertical'}
         style={{ marginBottom: helpers.resize(70) }}
         theme={{
+          roundness: helpers.resize(3),
           colors: {
-            primary: colors.primary,
-            primaryContainer: colors.primary,
-            onPrimary: colors.text,
-            onPrimaryContainer: colors.text,
-            background: colors.background,
+            accent: colors.accent,
           },
         }}
         actions={[
           {
             icon: 'filter-variant',
             label: 'Filter and sort',
-            color: colors.primary,
-            labelTextColor: colors.text,
-            containerStyle: { backgroundColor: colors.primary },
+            style: { backgroundColor: colors.accent },
             onPress: () => props.expand(),
           },
           {
             icon: 'information-outline',
             label: 'Summary',
-            color: colors.primary,
-            labelTextColor: colors.text,
-            containerStyle: { backgroundColor: colors.primary },
+            style: { backgroundColor: colors.accent },
             onPress: () => navigateToSummary(),
           },
         ]}
         onStateChange={onStateChange}
-        onPress={() => {
-          if (open) {
-          // do something if the speed dial is open
-          }
-        }}
       />
     </Portal>
   );

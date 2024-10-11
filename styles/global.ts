@@ -19,8 +19,10 @@ export const colors = {
   secondary: '#91a7e9',
   accent: '#577be4',
   success: '#9AD797',
-  error: '#eb5855',
+  // error: '#eb5855',
   white: '#FFF',
+  error: '#FF0033',
+  onError: '#FAFAFA',
 };
 
 export const variables = {
