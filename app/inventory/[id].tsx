@@ -28,6 +28,7 @@ export default function InventoryOverviewPage() {
   const [ filterOptions, setFilterOptions ] = useState<IFilterOptions>({
     nonMarketable: false,
     nonTradable: false,
+    applied: false,
   });
   const [ sortOptions, setSortOptions ] = useState<ISortOptions>({
     by: 0,

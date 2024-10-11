@@ -43,14 +43,13 @@ export default function InventoryGamesSelectPage() {
     if (pageInFocus && !user) {
       prepare();
     }
+    if (pageInFocus) {
+      setSelectedGames([]);
+    }
   }, [ pageInFocus, user, id, $store.currentProfile ]);
 
   function setGameActive(id: string) {
     const existing = selectedGames.includes(id);
-    if (selectedGames.length >= 3 && !existing) {
-      return;
-    }
-
     const temp = helpers.clone(selectedGames);
     if (existing) {
       setSelectedGames(temp.filter(g => g !== id));

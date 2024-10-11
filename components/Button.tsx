@@ -26,6 +26,7 @@ export default function Button(props: IPropsButton) {
         { minHeight: helpers.resize(40) },
       ]}
       compact={false}
+      onPress={props.onPress}
     >
       <Text bold={props.textBold} style={[ { fontSize: helpers.resize(16) }, props.textStyle ]}>
         { props.text }

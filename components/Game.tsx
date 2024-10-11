@@ -4,7 +4,7 @@ import { IInventoryGame } from 'types';
 import Text from './Text';
 import styles from 'styles/components/game';
 import Animated, { useSharedValue, withTiming } from 'react-native-reanimated';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface IPropsGame {
   game: IInventoryGame;
@@ -15,6 +15,13 @@ interface IPropsGame {
 export default function Game({ game, isActive = false, onClick }: IPropsGame) {
   const backgroundColor = useSharedValue('#fff0');
   const [ isActiveState, setIsActive ] = useState(isActive);
+
+  useEffect(() => {
+    if (isActive !== isActiveState) {
+      setIsActive(isActive);
+      backgroundColor.value = withTiming(isActive ? '#355bd544' : '#fff0', { duration: 150 });
+    }
+  }, [ isActive, backgroundColor, isActiveState ]);
 
   function onGameClick() {
     setIsActive(!isActiveState);

@@ -243,6 +243,8 @@ export const helpers = {
     isVisible(item: IItem, search: string, options: IFilterOptions): boolean {
       return ((options.nonMarketable || !!item.marketable)
         || (options.nonTradable || !!item.tradable))
+        && (item.appid != 730 || !options.applied ||
+          ((item.stickers?.length || 0) + (item.patches?.length || 0) + (item.charms?.length || 0)) > 0)
         && helpers.search(item.market_hash_name, search);
     },
     sortInventory(inventory: IItem[], options: ISortOptions): IItem[] {
