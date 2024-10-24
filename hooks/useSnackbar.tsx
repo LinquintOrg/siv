@@ -80,7 +80,9 @@ export const SnackbarProvider: React.FC<SnackbarProviderProps> = ({ children }) 
         >
           <Text style={style.musicKit.title}>MVP Anthem is playing</Text>
           <Text bold style={style.musicKit.kitTitle}>{ kitData.kit.title }</Text>
-          <Text style={style.musicKit.kitArtist}>{ kitData.kit.artist } - { kitData.duration }ms</Text>
+          <Text style={style.musicKit.kitArtist}>
+            { kitData.kit.artist } - { Math.ceil((kitData.duration || 0) / 1000) } seconds
+          </Text>
         </Snackbar>
       }
     </SnackbarContext.Provider>

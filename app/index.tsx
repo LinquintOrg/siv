@@ -169,7 +169,7 @@ export default function HomePage() {
       <Text style={global.title}>Saved Profiles</Text>
       <View style={[ templates.row, { gap: helpers.resize(8), alignItems: 'center', marginTop: helpers.resize(-10), marginBottom: helpers.resize(12) } ]}>
         <Icon name='infocirlce' type='ant-design' color={colors.primary} />
-        <Text style={{ fontSize: helpers.resize(15) }}>Long press profile to delete</Text>
+        <Text style={{ fontSize: helpers.resize(15) }}>Long press profile to remove it</Text>
       </View>
       <ScrollView>
         {
