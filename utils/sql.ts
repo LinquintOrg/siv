@@ -59,6 +59,20 @@ export abstract class sql {
     await stmt.finalizeAsync();
   }
 
+  public static async deleteProfile(id: string): Promise<ISteamProfile[]> {
+    if (!this.db) {
+      return [];
+    }
+    const exists = await sql.getOneProfile(id);
+    if (!exists) {
+      return sql.getAllProfiles();
+    }
+    const stmt = await this.db.prepareAsync('DELETE FROM SavedProfiles WHERE id = $id;');
+    await stmt.executeAsync({ $id: id });
+    await stmt.finalizeAsync();
+    return await sql.getAllProfiles();
+  }
+
   // ! Exchange rates
 
   public static async getOneRate(): Promise<IExchangeRate> {
