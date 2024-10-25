@@ -8,11 +8,13 @@ import { helpers } from '@utils/helpers';
 import { sql } from '@utils/sql';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
-import { global } from 'styles/global';
+import { colors, global, templates } from 'styles/global';
 import styles from 'styles/pages/profile';
 import { IInventoryGame, ISteamProfile, ISteamUser } from 'types';
 import useStore from 'store';
 import { router, useFocusEffect } from 'expo-router';
+import { Icon } from 'react-native-elements';
+import { Dialog, Button as PaperButton } from 'react-native-paper';
 
 export default function HomePage() {
   const $api = new api();
@@ -23,6 +25,7 @@ export default function HomePage() {
   const [ foundProfile, setFoundProfile ] = useState<ISteamUser | null>(null);
   const [ savedProfiles, setSavedProfiles ] = useState<ISteamProfile[]>([]);
   const [ pageInFocus, setPageInFocus ] = useState(false);
+  const [ removalDialog, setRemovalDialog ] = useState<ISteamProfile | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -38,8 +41,24 @@ export default function HomePage() {
       const profiles = await sql.getAllProfiles();
       setSavedProfiles(profiles);
     }
-    prepare();
+    if (pageInFocus && !savedProfiles.length) {
+      prepare();
+    }
   });
+
+  const loadedGames = useMemo<IInventoryGame[]>(() => {
+    if (!$store.inventory || !$store.currentProfile) {
+      return [];
+    }
+    return Object.keys($store.inventory).map(id => $store.games.find(({ appid }) => appid === id)!);
+  }, [ $store ]);
+
+  const linkToInventory = useMemo(() => {
+    if (!$store.inventory || !$store.currentProfile) {
+      return '';
+    }
+    return `/inventory/${$store.currentProfile.id}?games=${loadedGames.map(game => game.appid).join(',')}`;
+  }, [ $store, loadedGames ]);
 
   async function onSubmitSearch() {
     let idInput = search.trim();
@@ -90,23 +109,27 @@ export default function HomePage() {
     }
   }
 
-  const loadedGames = useMemo<IInventoryGame[]>(() => {
-    if (!$store.inventory || !$store.currentProfile) {
-      return [];
-    }
-    return Object.keys($store.inventory).map(id => $store.games.find(({ appid }) => appid === id)!);
-  }, [ $store ]);
-
-  const linkToInventory = useMemo(() => {
-    if (!$store.inventory || !$store.currentProfile) {
-      return '';
-    }
-    return `/inventory/${$store.currentProfile.id}?games=${loadedGames.map(game => game.appid).join(',')}`;
-  }, [ $store, loadedGames ]);
+  function removeSearch() {
+    setFoundProfile(null);
+    setSearch('');
+  }
 
   function goToInventory() {
     if (linkToInventory) {
       router.push(linkToInventory);
+    }
+  }
+
+  function removeProfile(toRemove: ISteamProfile) {
+    setRemovalDialog(toRemove);
+  }
+
+  async function confirmRemove() {
+    try {
+      const newPlayerList = await sql.deleteProfile(removalDialog!.id);
+      setSavedProfiles(newPlayerList);
+    } finally {
+      setRemovalDialog(null);
     }
   }
 
@@ -122,7 +145,7 @@ export default function HomePage() {
 
       {
         (searching || foundProfile) &&
-          <View style={styles.section}>
+          <Pressable style={styles.section} onLongPress={removeSearch}>
             {
               searching
                 ? <Loader text='Finding profile...' />
@@ -140,14 +163,18 @@ export default function HomePage() {
                     </View>
                   </View>
             }
-          </View>
+          </Pressable>
       }
 
       <Text style={global.title}>Saved Profiles</Text>
+      <View style={[ templates.row, { gap: helpers.resize(8), alignItems: 'center', marginTop: helpers.resize(-10), marginBottom: helpers.resize(12) } ]}>
+        <Icon name='infocirlce' type='ant-design' color={colors.primary} />
+        <Text style={{ fontSize: helpers.resize(15) }}>Long press profile to remove it</Text>
+      </View>
       <ScrollView>
         {
           savedProfiles.map(profile => (
-            <Profile profile={profile} key={profile.id} />
+            <Profile profile={profile} key={profile.id} removeProfile={() => removeProfile(profile)} />
           ))
         }
       </ScrollView>
@@ -181,6 +208,36 @@ export default function HomePage() {
             </View>
           </Pressable>
         </>
+      }
+
+      {
+        !!removalDialog &&
+        <Dialog
+          visible={!!removalDialog}
+          onDismiss={() => setRemovalDialog(null)}
+          theme={{
+            colors: {
+              primary: colors.primary,
+              accent: colors.primary,
+              backdrop: '#fff0',
+            },
+            roundness: helpers.resize(3),
+          }}>
+          <Dialog.Icon icon='alert' />
+          <Dialog.Title style={{ fontSize: helpers.resize(24) }}>Remove this profile?</Dialog.Title>
+          <Dialog.Content>
+            <Text bold style={{ fontSize: helpers.resize(16) }}>{ removalDialog.name }</Text>
+            <Text>{ removalDialog.id }</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <PaperButton labelStyle={{ fontSize: helpers.resize(16) }} onPress={() => setRemovalDialog(null)}>
+              Cancel
+            </PaperButton>
+            <PaperButton labelStyle={{ fontSize: helpers.resize(16), color: colors.error }} onPress={confirmRemove}>
+              Delete
+            </PaperButton>
+          </Dialog.Actions>
+        </Dialog>
       }
     </>
   );

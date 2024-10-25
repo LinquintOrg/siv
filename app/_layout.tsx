@@ -14,7 +14,7 @@ import useStore from 'store';
 import { useBackButtonHandler } from 'hooks/useBackButtonHandler';
 import { isRunningInExpoGo } from 'expo';
 import { StatusBar } from 'expo-status-bar';
-import { PaperProvider } from 'react-native-paper';
+import { PaperProvider, DefaultTheme } from 'react-native-paper';
 import currencyNames from '@utils/currency';
 
 SplashScreen.preventAutoHideAsync();
@@ -127,7 +127,48 @@ function RootLayout() {
 
   return (
     <SafeAreaView style={{ height: '100%', backgroundColor: colors.background }} onLayout={onLayoutRootView}>
-      <PaperProvider>
+      <PaperProvider
+        theme={{
+          dark: false,
+          version: 3,
+          animation: { defaultAnimationDuration: 300 },
+          isV3: true,
+          colors: {
+            ...DefaultTheme.colors,
+            primary: colors.primary,
+            onPrimary: colors.white,
+            secondary: colors.accent,
+            onSecondary: colors.text,
+            tertiary: colors.accent,
+            onTertiary: colors.text,
+            primaryContainer: colors.primary,
+            onPrimaryContainer: colors.white,
+            secondaryContainer: colors.accent,
+            onSecondaryContainer: colors.white,
+            tertiaryContainer: colors.accent,
+            onTertiaryContainer: colors.white,
+
+            // Snackbar
+            background: colors.background,
+            onBackground: colors.text,
+
+            backdrop: `${colors.primary}55`,
+            surface: colors.primary,
+            onSurface: colors.primary,
+            surfaceVariant: `${colors.primary}33`,
+            onSurfaceVariant: colors.text,
+            inverseSurface: colors.background,
+            inverseOnSurface: colors.primary,
+            outline: colors.primary,
+            error: colors.error,
+            onError: colors.white,
+            errorContainer: colors.error,
+            onErrorContainer: colors.white,
+            inversePrimary: colors.accent,
+            scrim: colors.primary,
+          },
+        }}
+      >
         <SnackbarProvider>
           <GlobalErrorHandler />
           <View style={{ maxHeight: viewHeight, minHeight: viewHeight, paddingHorizontal: helpers.resize(8) }}>

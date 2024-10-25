@@ -10,10 +10,13 @@ import { router } from 'expo-router';
 
 interface IPropsProfile {
   profile: ISteamProfile;
+  removeProfile?: () => void;
   nonClickable?: boolean;
 }
 
 export default function Profile(props: IPropsProfile) {
+  const { removeProfile } = props;
+
   const profileState = useMemo(() => {
     switch (props.profile.state) {
     case 0: return { text: 'Offline', icon: { name: 'circle', color: '#f00' } };
@@ -35,7 +38,7 @@ export default function Profile(props: IPropsProfile) {
   }
 
   return (
-    <Pressable style={[ styles.flowRow, { marginBottom: props.nonClickable ? 0 : helpers.resize(12) } ]} onPress={navigateToGames}>
+    <Pressable style={[ styles.flowRow, { marginBottom: props.nonClickable ? 0 : helpers.resize(12) } ]} onPress={navigateToGames} onLongPress={removeProfile}>
       <Image source={{ uri: props.profile.url }} style={props.nonClickable ? styles.imageSmall : styles.image} />
       <View style={props.nonClickable ? styles.flowDownSmall : styles.flowDown}>
         { !props.nonClickable &&

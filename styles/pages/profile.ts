@@ -11,11 +11,11 @@ const profilePageStyles = StyleSheet.create({
   },
   section: {
     ...templates.column,
-    borderWidth: 0,
+    borderWidth: 2,
+    borderColor: colors.accent,
     borderRadius: helpers.resize(16),
     marginVertical: helpers.resize(12),
     padding: helpers.resize(8),
-    backgroundColor: colors.secondary,
     width: helpers.resize(400),
     alignSelf: 'center',
   },

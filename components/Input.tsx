@@ -1,3 +1,4 @@
+import { helpers } from '@utils/helpers';
 import { Icon } from 'react-native-elements';
 import { TextInput } from 'react-native-paper';
 import { colors, global, variables } from 'styles/global';
@@ -17,13 +18,11 @@ interface IPropsInput {
 export default function Input(props: IPropsInput) {
   return (
     <TextInput
-      style={ global.input }
+      style={{ marginBottom: helpers.resize(8) }}
       placeholder={props.placeholder}
-      mode={'outlined'}
       onChangeText={text => props.onChange(text)}
       onSubmitEditing={() => props.onSubmit ? props.onSubmit() : undefined}
       label={props.label}
-      activeOutlineColor={ colors.primary }
       value={props.value}
       left={
         <TextInput.Icon
@@ -35,13 +34,16 @@ export default function Input(props: IPropsInput) {
       }
       right={
         <TextInput.Icon
-          icon={() => (<Icon name={'search'} type={'feather'} color={'#1F4690'} />)}
+          icon={() => (<Icon name={'search'} type={'feather'} color={colors.primary} />)}
           size={ variables.iconLarge }
           style={ global.inputIcon }
           onPress={() => props.onSubmit ? props.onSubmit() : undefined}
           forceTextInputFocus={false}
         />
       }
+      theme={{
+        roundness: helpers.resize(12),
+      }}
     />
   );
 }

@@ -124,10 +124,10 @@ export default function SortFilterSheet(props: ISortFilterSheetProps) {
             {
               props.hasCS && <>
                 <View style={styles.option}>
-                  <Text bold style={styles.optionTitle}>CS2: Items with stickers</Text>
+                  <Text bold style={styles.optionTitle}>CS2: Items with stickers, patches or charms</Text>
                   <Checkbox
-                    status={filterOptions.nonTradable ? 'checked' : 'unchecked'}
-                    onPress={() => changeFilterOption('nonTradable')}
+                    status={filterOptions.applied ? 'checked' : 'unchecked'}
+                    onPress={() => changeFilterOption('applied')}
                     color={colors.primary}
                     uncheckedColor={colors.primary}
                   />

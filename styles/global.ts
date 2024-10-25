@@ -19,8 +19,10 @@ export const colors = {
   secondary: '#91a7e9',
   accent: '#577be4',
   success: '#9AD797',
-  error: '#eb5855',
+  // error: '#eb5855',
   white: '#FFF',
+  error: '#FF0033',
+  onError: '#FAFAFA',
 };
 
 export const variables = {
@@ -34,8 +36,8 @@ export const templates = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: resize(16),
-    height: resize(48),
+    borderRadius: resize(32),
+    height: resize(40),
   },
   column: {
     display: 'flex',

@@ -1,5 +1,8 @@
 import Text from '@/Text';
+import { colors } from '@styles/global';
+import { helpers } from '@utils/helpers';
 import { ReactNode, createContext, useCallback, useContext, useState } from 'react';
+import { StyleSheet } from 'react-native';
 import { Snackbar } from 'react-native-paper';
 import { IMusicKit } from 'types';
 
@@ -36,7 +39,7 @@ export const SnackbarProvider: React.FC<SnackbarProviderProps> = ({ children }) 
     const tempTimer = setTimeout(() => {
       setVisible(false);
       setKitData(null);
-    }, 3000);
+    }, 5000);
     setTimer(tempTimer);
   }, [ timer ]);
 
@@ -62,8 +65,11 @@ export const SnackbarProvider: React.FC<SnackbarProviderProps> = ({ children }) 
         <Snackbar
           visible={visible}
           onDismiss={() => null}
+          style={[ { marginBottom: helpers.resize(80) }, style.error.container ]}
+          theme={{ roundness: helpers.resize(10) }}
         >
-          {message}
+          <Text style={style.error.title}>Error occurred</Text>
+          <Text bold style={style.error.text}>{ message }</Text>
         </Snackbar>
       }
       {
@@ -71,11 +77,46 @@ export const SnackbarProvider: React.FC<SnackbarProviderProps> = ({ children }) 
         <Snackbar
           visible={visible}
           onDismiss={() => null}
+          style={[ { marginBottom: helpers.resize(80) } ]}
+          theme={{ roundness: helpers.resize(10) }}
         >
-          <Text bold>{ kitData.kit.title }</Text>
-          <Text>{ kitData.kit.artist } - { kitData.duration }ms</Text>
+          <Text style={style.musicKit.title}>MVP Anthem is playing</Text>
+          <Text bold style={style.musicKit.kitTitle}>{ kitData.kit.title }</Text>
+          <Text style={style.musicKit.kitArtist}>
+            { kitData.kit.artist } - { Math.ceil((kitData.duration || 0) / 1000) } seconds
+          </Text>
         </Snackbar>
       }
     </SnackbarContext.Provider>
   );
+};
+
+const style = {
+  error: StyleSheet.create({
+    container: {
+      backgroundColor: colors.error,
+    },
+    text: {
+      color: colors.onError,
+    },
+    title: {
+      color: colors.onError,
+      fontSize: helpers.resize(18),
+      marginBottom: helpers.resize(8),
+    },
+  }),
+  musicKit: StyleSheet.create({
+    title: {
+      color: colors.primary,
+      fontSize: helpers.resize(18),
+      marginBottom: helpers.resize(8),
+    },
+    kitTitle: {
+      fontSize: helpers.resize(16),
+    },
+    kitArtist: {
+      fontSize: helpers.resize(14),
+      color: colors.textAccent,
+    },
+  }),
 };

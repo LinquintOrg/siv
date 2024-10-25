@@ -218,6 +218,7 @@ export interface ISummary extends ISummaryBase {
 export interface IFilterOptions {
   nonMarketable: boolean;
   nonTradable: boolean;
+  applied: boolean;
 }
 
 export interface ISortOptions {

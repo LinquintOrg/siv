@@ -1,4 +1,4 @@
-import { Portal, Dialog, Button, RadioButton, Divider } from 'react-native-paper';
+import { Portal, Dialog, Button, Divider } from 'react-native-paper';
 import Text from './Text';
 import { FlashList } from '@shopify/flash-list';
 import { useMemo, useState } from 'react';
