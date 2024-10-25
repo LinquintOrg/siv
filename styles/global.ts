@@ -36,7 +36,7 @@ export const templates = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: resize(16),
+    borderRadius: resize(32),
     height: resize(48),
   },
   column: {
