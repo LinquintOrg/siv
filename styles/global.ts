@@ -37,7 +37,7 @@ export const templates = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: resize(32),
-    height: resize(48),
+    height: resize(40),
   },
   column: {
     display: 'flex',
