@@ -18,14 +18,11 @@ interface IPropsInput {
 export default function Input(props: IPropsInput) {
   return (
     <TextInput
-      // style={ global.input }
       style={{ marginBottom: helpers.resize(8) }}
       placeholder={props.placeholder}
-      // mode={'outlined'}
       onChangeText={text => props.onChange(text)}
       onSubmitEditing={() => props.onSubmit ? props.onSubmit() : undefined}
       label={props.label}
-      // activeOutlineColor={ colors.primary }
       value={props.value}
       left={
         <TextInput.Icon
@@ -44,6 +41,9 @@ export default function Input(props: IPropsInput) {
           forceTextInputFocus={false}
         />
       }
+      theme={{
+        roundness: helpers.resize(12),
+      }}
     />
   );
 }

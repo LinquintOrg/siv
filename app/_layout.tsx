@@ -133,7 +133,6 @@ function RootLayout() {
           version: 3,
           animation: { defaultAnimationDuration: 300 },
           isV3: true,
-          roundness: helpers.resize(10),
           colors: {
             ...DefaultTheme.colors,
             primary: colors.primary,
