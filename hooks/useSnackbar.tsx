@@ -66,6 +66,7 @@ export const SnackbarProvider: React.FC<SnackbarProviderProps> = ({ children }) 
           visible={visible}
           onDismiss={() => null}
           style={[ { marginBottom: helpers.resize(80) }, style.error.container ]}
+          theme={{ roundness: helpers.resize(10) }}
         >
           <Text style={style.error.title}>Error occurred</Text>
           <Text bold style={style.error.text}>{ message }</Text>
@@ -77,6 +78,7 @@ export const SnackbarProvider: React.FC<SnackbarProviderProps> = ({ children }) 
           visible={visible}
           onDismiss={() => null}
           style={[ { marginBottom: helpers.resize(80) } ]}
+          theme={{ roundness: helpers.resize(10) }}
         >
           <Text style={style.musicKit.title}>MVP Anthem is playing</Text>
           <Text bold style={style.musicKit.kitTitle}>{ kitData.kit.title }</Text>
