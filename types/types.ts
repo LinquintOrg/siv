@@ -118,9 +118,28 @@ export interface ISteamInventoryDescription {
   fraudwarnings?: string[];
 }
 
+export interface ISteamInventoryAssetProperty {
+  appid: number;
+  contextid: string;
+  assetid: string;
+  asset_properties?: [
+    {
+      propertyid: number;
+      float_value: string;
+      name: string;
+    },
+    {
+      propertyid: number;
+      int_value: string;
+      name: string;
+    }
+  ];
+}
+
 export interface ISteamInventoryRes {
   assets: ISteamInventoryAsset[];
   descriptions: ISteamInventoryDescription[];
+  asset_properties: ISteamInventoryAssetProperty[];
   total_inventory_count: number;
   success: 0 | 1;
   rwgrsn: number;
