@@ -1,11 +1,16 @@
-import { colors } from './../styles/global';
+import { colors } from '@styles/global';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IInventory, IInventoryItem, IInventoryResAsset, IInventoryResDescriptionDescription, IInventoryResDescriptionTag,
   ISticker } from './types';
 import { Dimensions } from 'react-native';
-import { IExchangeRate, IGameSummary, IInventories, IItem, IItemPriceRes, ISteamInventoryAsset, ISteamInventoryDescriptionDescription,
+import {
+  IExchangeRate, IGameSummary, IInventories, IItemPriceRes, ISteamInventoryAsset,
+  ISteamInventoryDescriptionDescription,
   ISteamProfile, ISteamUser, ISummary, IInventoryGame, IFilterOptions,
-  ISortOptions, IPriceDiff, IItemSticker } from 'types';
+  ISortOptions, IPriceDiff, IItemSticker, IParsedItem, ISteamInventoryDescription, IItemPrice,
+  ISteamInventoryAssetProps,
+  ISteamAssetPropFloat, ISteamAssetPropPattern,
+} from 'types';
 import { emptyBaseSummary } from './objects';
 
 /**
@@ -75,7 +80,7 @@ export const helpers = {
     itemCount(assets: ISteamInventoryAsset[], classid: string, instanceid: string): number {
       return assets.filter(asset => asset.classid === classid && asset.instanceid === instanceid).length;
     },
-    itemType(item: IItem): string {
+    itemType(item: ISteamInventoryDescription): string {
       if (item.appid === 232090) {
         return 'None';
       }
@@ -115,73 +120,44 @@ export const helpers = {
         },
       };
     },
-    nametag(item: IItem): string {
-      if (item.fraudwarnings && item.fraudwarnings.length > 0) {
-        return `"${item.fraudwarnings[0].replaceAll('Name Tag: ', '').replaceAll('\'', '')}"`;
-      }
-      const description = item.descriptions.find(d => d.value.includes('Name Tag: '));
-      if (description) {
-        return `"${description.value.replaceAll('Name Tag: ', '').replaceAll('\'', '')}"`;
-      }
-      return '';
-    },
-    collection(item: IItem): string | null {
-      const collectionTag = item.tags?.find(tag => [ 'Collection', 'Sticker Collection' ].includes(tag.localized_category_name));
-      if (collectionTag) {
-        return collectionTag.localized_tag_name;
-      }
-      return null;
-    },
-    findStickers(descriptions: ISteamInventoryDescriptionDescription[], searchType: 'sticker' | 'patch' | 'charm'): IItemSticker[] | undefined {
-      const appliedItems = descriptions.find(d => d.value.includes(`title="${helpers.capitalize(searchType)}"`));
-      if (!appliedItems) {
+    findStickers(descriptions: ISteamInventoryDescriptionDescription[], searchType: 'sticker' | 'patch' | 'keychain'): IItemSticker[] | undefined {
+      const className = `${searchType}_info`;
+      const appliedItems = descriptions.find(d => d.name === className);
+      if (!appliedItems || !appliedItems.value) {
         return undefined;
       }
 
       let html = appliedItems.value;
-      const count = (html.match(/img/g) || []).length;
-      if (count === 0) {
+      const count = (html.match(/<img/g) || []).length;
+      if (!count) {
         return undefined;
       }
 
-      // eslint-disable-next-line max-len
-      html = html.replaceAll(`<br><div id="sticker_info" name="sticker_info" title="${helpers.capitalize(searchType)}" style="border: 2px solid rgb(102, 102, 102); border-radius: 6px; width=100; margin:4px; padding:8px;"><center>`, '');
-      html = html.replaceAll('</center></div>', '');
-      html = html.replaceAll('<img width=64 height=48 src="', '');
-      html = html.replaceAll(`<br>${helpers.capitalize(searchType)}: `, '');
-      html = html.replaceAll('">', ';');
-
-      let tmpArr = html.split(';');
-
-      // Manage exceptions
-      const exceptions = [ 'Rock, Paper, Scissors (Foil)' ];
-      tmpArr = tmpArr.map(itm => {
-        const included = exceptions.find(e => itm.includes(e));
-        if (included) {
-          const escapedName = included.replaceAll(',', ';');
-          return itm.replace(included, escapedName);
+      let title = helpers.capitalize(searchType);
+      if (searchType === 'keychain') {
+        if (appliedItems.value.includes('Souvenir Charm: ')) {
+          title = 'Souvenir Charm';
+        } else {
+          title = 'Charm';
         }
-        return itm;
-      });
-
-      const tmpNames = tmpArr[count].replaceAll(', Champion', '; Champion').split(', ');
-      tmpArr = tmpArr.splice(0, count);
-
-      const tmpStickers = [];
-      for (let j = 0; j < count; j++) {
-        const abbreviation = `${helpers.capitalize(searchType)} | `;
-        const sticker = {
-          name: (tmpNames[j]).replace('; Champion', ', Champion').replaceAll(';', ','),
-          img: tmpArr[j],
-          longName: (abbreviation + tmpNames[j]).replace('; Champion', ', Champion').replaceAll(';', ','),
-        };
-        tmpStickers.push(sticker);
       }
+      // eslint-disable-next-line max-len
+      html = html.replaceAll(`<br><div id="${className}" class="${className}" style="border: 2px solid rgb(102, 102, 102); border-radius: 6px; width=100; margin:4px; padding:8px;"><center>`, '');
+      html = html.replaceAll('</center></div>', '');
+      html = html.replaceAll('<img width=64 height=48 src="', '{"image":"');
+      html = html.replaceAll(`" title="${title}: `, '", "title":"');
+      html = html.replaceAll('">', '"},');
+      html = html.replaceAll(/,<br>[\w\W]+/g, '');
 
-      return tmpStickers;
+      const itemsJson: { image: string; title: string }[] = JSON.parse(`[${html}]`);
+      return itemsJson.map(item => ({
+        img: item.image,
+        name: item.title,
+        longName: `${title} | ${item.title}`,
+      }));
     },
     stickersTotal(prices: { [hash: string]: number }, stickers: IItemSticker[], currency: IExchangeRate) {
-      return stickers.reduce<number>((val, { longName }) => val += helpers.priceAsNum(currency, prices[longName]), 0);
+      return stickers.reduce<number>((val, { longName }) => val + helpers.priceAsNum(currency, prices[longName]), 0);
     },
     // eslint-disable-next-line max-len
     generateSummary(profile: ISteamProfile, inventory: IInventories, gamesList: IInventoryGame[], currency: IExchangeRate, stickerPrices: { [hash: string]: number }): ISummary {
@@ -201,18 +177,18 @@ export const helpers = {
         };
 
         for (const item of items) {
-          gameSummary.totalValue += helpers.priceAsNum(currency, item.price.price, item.amount);
+          gameSummary.totalValue += helpers.priceAsNum(currency, item.price.found ? item.price.price : 0, item.amount);
           gameSummary.itemCount += item.amount;
           gameSummary.sellableItems += item.marketable ? item.amount : 0;
-          gameSummary.avg24 += helpers.priceAsNum(currency, item.price.avg24, item.amount);
-          gameSummary.avg7 += helpers.priceAsNum(currency, item.price.avg7, item.amount);
-          gameSummary.avg30 += helpers.priceAsNum(currency, item.price.avg30, item.amount);
-          gameSummary.p24ago += helpers.priceAsNum(currency, item.price.p24ago, item.amount);
-          gameSummary.p30ago += helpers.priceAsNum(currency, item.price.p30ago, item.amount);
-          gameSummary.p90ago += helpers.priceAsNum(currency, item.price.p90ago, item.amount);
-          gameSummary.yearAgo += helpers.priceAsNum(currency, item.price.yearAgo, item.amount);
+          gameSummary.avg24 += helpers.priceAsNum(currency, item.price.found ? item.price.avg24 : 0, item.amount);
+          gameSummary.avg7 += helpers.priceAsNum(currency, item.price.found ? item.price.avg7 : 0, item.amount);
+          gameSummary.avg30 += helpers.priceAsNum(currency, item.price.found ? item.price.avg30 : 0, item.amount);
+          gameSummary.p24ago += helpers.priceAsNum(currency, item.price.found ? item.price.p24ago : 0, item.amount);
+          gameSummary.p30ago += helpers.priceAsNum(currency, item.price.found ? item.price.p30ago : 0, item.amount);
+          gameSummary.p90ago += helpers.priceAsNum(currency, item.price.found ? item.price.p90ago : 0, item.amount);
+          gameSummary.yearAgo += helpers.priceAsNum(currency, item.price.found ? item.price.yearAgo : 0, item.amount);
           if (item.appid === 730) {
-            gameSummary.withNameTag! += !!this.nametag(item) ? 1 : 0;
+            gameSummary.withNameTag! += !!item.nameTag ? 1 : 0;
             gameSummary.withStickers! += item.stickers?.length ? 1 : 0;
             gameSummary.withPatches! += item.patches?.length ? 1 : 0;
             gameSummary.withCharms! += item.charms?.length ? 1 : 0;
@@ -228,36 +204,34 @@ export const helpers = {
         games,
         profile,
         currency,
-        totalValue: games.reduce<number>((val, game) => val += game.totalValue, 0),
-        itemCount: games.reduce<number>((val, game) => val += game.itemCount, 0),
-        sellableItems: games.reduce<number>((val, game) => val += game.sellableItems, 0),
-        avg24: games.reduce<number>((val, game) => val += game.avg24, 0),
-        avg7: games.reduce<number>((val, game) => val += game.avg7, 0),
-        avg30: games.reduce<number>((val, game) => val += game.avg30, 0),
-        p24ago: games.reduce<number>((val, game) => val += game.p24ago, 0),
-        p30ago: games.reduce<number>((val, game) => val += game.p30ago, 0),
-        p90ago: games.reduce<number>((val, game) => val += game.p90ago, 0),
-        yearAgo: games.reduce<number>((val, game) => val += game.yearAgo, 0),
+        totalValue: games.reduce<number>((val, game) => val + game.totalValue, 0),
+        itemCount: games.reduce<number>((val, game) => val + game.itemCount, 0),
+        sellableItems: games.reduce<number>((val, game) => val + game.sellableItems, 0),
+        avg24: games.reduce<number>((val, game) => val + game.avg24, 0),
+        avg7: games.reduce<number>((val, game) => val + game.avg7, 0),
+        avg30: games.reduce<number>((val, game) => val + game.avg30, 0),
+        p24ago: games.reduce<number>((val, game) => val + game.p24ago, 0),
+        p30ago: games.reduce<number>((val, game) => val + game.p30ago, 0),
+        p90ago: games.reduce<number>((val, game) => val + game.p90ago, 0),
+        yearAgo: games.reduce<number>((val, game) => val + game.yearAgo, 0),
       };
     },
-    isVisible(item: IItem, search: string, options: IFilterOptions): boolean {
-      return ((options.nonMarketable || !!item.marketable)
-        || (options.nonTradable || !!item.tradable))
-        && (item.appid != 730 || !options.applied ||
+    isVisible(item: IParsedItem, search: string, options: IFilterOptions): boolean {
+      return ((options.nonMarketable || item.marketable) || (options.nonTradable || item.tradable)) && (item.appid !== 730 || !options.applied ||
           ((item.stickers?.length || 0) + (item.patches?.length || 0) + (item.charms?.length || 0)) > 0)
-        && helpers.search(item.market_hash_name, search);
+        && helpers.search(item.marketName, search);
     },
-    sortInventory(inventory: IItem[], options: ISortOptions): IItem[] {
+    sortInventory(inventory: IParsedItem[], options: ISortOptions): IParsedItem[] {
       return inventory.sort((a, b) => {
         switch (options.by) {
         case 0: {
           return 0;
-        };
+        }
         case 1: {
           if (options.order === 'asc') {
-            return a.market_hash_name < b.market_hash_name ? -1 : 1;
+            return a.marketName < b.marketName ? -1 : 1;
           }
-          return a.market_hash_name < b.market_hash_name ? 1 : -1;
+          return a.marketName < b.marketName ? 1 : -1;
         }
         case 2: {
           if (!a.price.found) {
@@ -318,6 +292,96 @@ export const helpers = {
         }
         return 0;
       });
+    },
+    parseItem(
+      assets: ISteamInventoryAsset[],
+      assetProps: ISteamInventoryAssetProps[],
+      item: ISteamInventoryDescription,
+      itemPrice?: IItemPriceRes,
+      stickers: IItemSticker[] = [],
+      patches: IItemSticker[] = [],
+      keychains: IItemSticker[] = [],
+    ): IParsedItem {
+      item.descriptions ||= [];
+      item.tags ||= [];
+      const price: IItemPrice | { found: false } = itemPrice
+        ? { ...itemPrice, difference: this.priceDiff(itemPrice) }
+        : { found: false };
+
+      const parsedItem: IParsedItem = {
+        appid: item.appid,
+        classid: item.classid,
+        instanceid: item.instanceid,
+        itemLink: `/inventory/item/${item.classid}-${item.instanceid}`,
+        iconUrl: item.icon_url,
+        tradable: !!item.tradable,
+        marketable: !!item.marketable,
+        commodity: !!item.commodity,
+        name: item.name,
+        marketName: item.market_name,
+        nameColor: item.name_color,
+        itemType: this.itemType(item),
+        price,
+        amount: this.itemCount(assets, item.classid, item.instanceid),
+        stickers,
+        patches,
+        charms: keychains,
+      };
+
+      // Get item description
+      const description = item.descriptions.find(d => d.name === 'description');
+      if (description) {
+        parsedItem.description = description.value;
+      }
+
+      // Get item rarity
+      const rarity = helpers.inventory.getRarity(item.tags);
+      if (rarity) {
+        parsedItem.rarity = {
+          name: rarity,
+          color: helpers.inventory.getRarityColor(item.tags),
+        };
+      }
+
+      if (item.appid === 730) {
+        const asset = assets.find(asset => asset.classid === item.classid && asset.instanceid === item.instanceid);
+        // Set inspect link
+        if (item.actions?.length) {
+          parsedItem.inspectLink = item.actions[0].link;
+        }
+
+        // Get skin collection
+        const collection = item.tags.find(tag => tag.category === 'ItemSet');
+        if (collection) {
+          parsedItem.collection = collection.localized_tag_name;
+        }
+
+        // Get skin condition (wear)
+        const wearCategory = item.tags.find(tag => tag.category === 'Exterior');
+        if (wearCategory) {
+          parsedItem.condition = wearCategory.localized_tag_name;
+        }
+
+        // Get skin nametag
+        const nameTag = item.descriptions.find(d => d.name === 'nametag');
+        if (nameTag) {
+          parsedItem.nameTag = nameTag.value.replace('Name Tag: \'\'', '').replace('\'\'', '');
+        }
+
+        // Get skin float and pattern index
+        const itemProperties = assetProps.find(p => p.assetid === asset?.assetid);
+        if (itemProperties) {
+          const float = itemProperties.asset_properties?.find(d => d.propertyid === 2);
+          const patternIndex = itemProperties.asset_properties?.find(d => d.name === 'Pattern Template');
+          if (float && patternIndex) {
+            parsedItem.skinProps = {
+              float: (float as ISteamAssetPropFloat).float_value,
+              pattern: +(patternIndex as ISteamAssetPropPattern).int_value,
+            };
+          }
+        }
+      }
+      return parsedItem;
     },
   },
 
@@ -391,7 +455,7 @@ export const helpers = {
     }
 
     // eslint-disable-next-line max-len
-    html = html.replaceAll(`<br><div id="sticker_info" name="sticker_info" title="${this.capitalize(type)}" style="border: 2px solid rgb(102, 102, 102); border-radius: 6px; width=100; margin:4px; padding:8px;"><center>`, '');
+    html = html.replaceAll(`<br><div id="sticker_info" class="sticker_info" title="${this.capitalize(type)}" style="border: 2px solid rgb(102, 102, 102); border-radius: 6px; width=100; margin:4px; padding:8px;"><center>`, '');
     html = html.replaceAll('</center></div>', '');
     html = html.replaceAll('<img width=64 height=48 src="', '');
     html = html.replaceAll(`<br>${this.capitalize(type)}: `, '');

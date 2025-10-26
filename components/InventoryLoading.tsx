@@ -49,13 +49,11 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
       setInvLoading(true);
       if (__DEV__) {
         setLoadingMsg('Loading Counter Strike 2 inventory');
-        const invRes = await $api.devInventory();
-        inventoryRes[730] = invRes;
+        inventoryRes[730] = await $api.devInventory();
       } else {
         for (const game of games) {
           setLoadingMsg(`Loading ${game.name} inventory`);
-          const invRes = await $api.getInventory(profile.id, game.appid);
-          inventoryRes[+(game.appid)] = invRes;
+          inventoryRes[+(game.appid)] = await $api.getInventory(profile.id, game.appid);
           const timeoutLen = getTimeoutLength();
           await helpers.sleep(timeoutLen);
         }
@@ -74,38 +72,18 @@ export default function InventoryLoading(props: IInventoryLoadingProps) {
         finalItems[appid] = [];
         for (const item of (inv.descriptions || [])) {
           const price = prices[item.market_hash_name];
-          const stickers = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions, 'sticker');
-          const patches = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions, 'patch');
-          const charms = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions, 'charm');
-
-          [ ...stickers || [], ...patches || [], ...charms || [] ].forEach(({ longName }) => {
-            if (!stickersToLoad.includes(longName) && !(longName in $store.stickerPrices)) {
-              stickersToLoad.push(longName);
-            }
-          });
-          finalItems[appid].push({
-            ...item,
-            amount: helpers.inv.itemCount(inv.assets, item.classid, item.instanceid),
-            price: {
-              ...(price || { found: false }),
-              difference: price ? helpers.inv.priceDiff(price) : {
-                day: { percent: 0, amount: 0 },
-                month: { percent: 0, amount: 0 },
-                threeMonths: { percent: 0, amount: 0 },
-                year: { percent: 0, amount: 0 },
-              },
-            },
-            stickers,
-            patches,
-            charms,
-          });
+          const stickers = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions || [], 'sticker');
+          const patches = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions || [], 'patch');
+          const keychains = appid !== '730' ? undefined : helpers.inv.findStickers(item.descriptions || [], 'keychain');
+          stickersToLoad.push(...[ ...stickers || [], ...patches || [], ...keychains || [] ].map(i => i.longName));
+          finalItems[appid].push(helpers.inv.parseItem(inv.assets, inv.asset_properties, item, price, stickers, patches, keychains));
         }
       }
 
-      if (stickersToLoad.length > 0) {
+      if (stickersToLoad?.length) {
         setLoadingMsg('Loading stickers and patches');
-        const stickerPricesRes = await $api.getStickerPrices(stickersToLoad);
-        Object.entries(stickerPricesRes).map(([ name, { price } ]) => $store.stickerPrices[name] = price);
+        const stickerPricesRes = await $api.getStickerPrices([ ...new Set(stickersToLoad) ]);
+        Object.entries(stickerPricesRes).map(([ name, price ]) => $store.stickerPrices[name] = price);
       }
       setInventory(finalItems);
       const summary = helpers.inv.generateSummary(profile, finalItems, games, $store.currency, $store.stickerPrices);

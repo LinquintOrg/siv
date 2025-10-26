@@ -7,7 +7,7 @@ export default class api {
   private axiosInstance: AxiosInstance;
 
   constructor() {
-    this.axiosInstance = axios.create({ baseURL: 'https://linquint.dev/api' });
+    this.axiosInstance = axios.create({ baseURL: __DEV__ ? 'http://192.168.1.123:3000' : 'https://api.linquint.dev' });
   }
 
   public async getRates(): Promise<IExchangeRate[]> {
@@ -64,15 +64,15 @@ export default class api {
     return pricesRes.data;
   }
 
-  public async getStickerPrices(stickers: string[]): Promise<{ [hash: string]: { price: number } }> {
+  public async getStickerPrices(stickers: string[]): Promise<{ [hash: string]: number }> {
     console.log('calling getStickerPrices');
-    const pricesRes = await this.axiosInstance.post<{ [hash: string]: { price: number } }>('/stickers', stickers);
+    const pricesRes = await this.axiosInstance.post<{ [hash: string]: number }>('/stickers', stickers);
     return pricesRes.data;
   }
 
   public async devInventory(): Promise<ISteamInventoryRes> {
     console.log('calling devInventory');
-    const inventoryRes = await this.axiosInstance.get<ISteamInventoryRes>('https://inventory.linquint.dev/api/Steam/dev/inv730.php');
+    const inventoryRes = await this.axiosInstance.get<ISteamInventoryRes>('https://inventory.linquint.dev/inv730.json');
     return inventoryRes.data;
   }
 }

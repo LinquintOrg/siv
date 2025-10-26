@@ -5,7 +5,7 @@ export interface IExchangeRate {
 
 export interface IInventoryGame {
   appid: string;
-  img: string;
+  icon: string;
   name: string;
 }
 
@@ -78,6 +78,7 @@ export interface ISteamInventoryAsset {
 export interface ISteamInventoryDescriptionDescription {
   type: string;
   value: string;
+  name: string;
   color?: string;
 }
 
@@ -118,9 +119,29 @@ export interface ISteamInventoryDescription {
   fraudwarnings?: string[];
 }
 
+export interface ISteamAssetPropFloat {
+  propertyid: 2;
+  float_value: string;
+  name: 'Wear Rating';
+}
+
+export interface ISteamAssetPropPattern {
+  propertyid: 1;
+  int_value: number;
+  name: 'Pattern Template';
+}
+
+export interface ISteamInventoryAssetProps {
+  appid: 730;
+  contextid: string;
+  assetid: string;
+  asset_properties: (ISteamAssetPropFloat | ISteamAssetPropPattern)[];
+}
+
 export interface ISteamInventoryRes {
   assets: ISteamInventoryAsset[];
   descriptions: ISteamInventoryDescription[];
+  asset_properties: ISteamInventoryAssetProps[];
   total_inventory_count: number;
   success: 0 | 1;
   rwgrsn: number;
@@ -181,8 +202,41 @@ export interface IItem extends ISteamInventoryDescription {
   charms?: IItemSticker[];
 }
 
+export interface IParsedItem {
+  appid: number;
+  classid: string;
+  instanceid: string;
+  iconUrl: string;
+  tradable: boolean;
+  marketable: boolean;
+  commodity: boolean;
+  name: string;
+  marketName: string;
+  nameColor: string;
+  inspectLink?: string;
+  itemType: string;
+  condition?: string;
+  rarity?: {
+    name: string;
+    color: string;
+  };
+  nameTag?: string;
+  description?: string;
+  price: IItemPrice | { found: false };
+  amount: number;
+  itemLink: string;
+  skinProps?: {
+    float: string;
+    pattern: number;
+  };
+  collection?: string;
+  stickers?: IItemSticker[];
+  patches?: IItemSticker[];
+  charms?: IItemSticker[];
+}
+
 export interface IInventories {
-  [appid: string]: IItem[];
+  [appid: string]: IParsedItem[];
 }
 
 export interface ISummaryBase {

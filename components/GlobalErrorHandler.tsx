@@ -7,6 +7,8 @@ const GlobalErrorHandler: React.FC = () => {
   useEffect(() => {
     const defaultHandler = ErrorUtils.getGlobalHandler && ErrorUtils.getGlobalHandler();
     ErrorUtils.setGlobalHandler(error => {
+      console.error('error happened');
+      console.error(JSON.stringify(error, null, 2));
       if (typeof error === 'string') {
         showSnackbar(error);
       } else if (typeof error === 'object' && !Array.isArray(error) && 'message' in error) {
@@ -21,12 +23,14 @@ const GlobalErrorHandler: React.FC = () => {
     require('promise/lib/rejection-tracking').enable({
       allRejections: true,
       onUnhandled: (_id: number, error: string | Error) => {
+        console.error('promise error happened');
         if (typeof error === 'string') {
           showSnackbar(error);
+          console.error(JSON.stringify(error));
         } else if (typeof error === 'object' && !Array.isArray(error) && 'message' in error) {
           showSnackbar(error.message);
+          console.error(error.message, error.stack || 'stack', error.cause);
         }
-        console.error(error);
       },
     });
   }, [ showSnackbar ]);

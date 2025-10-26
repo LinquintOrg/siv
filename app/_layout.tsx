@@ -1,7 +1,7 @@
 import api from '@utils/api';
 import { sql } from '@utils/sql';
 import Nav from 'components/Nav';
-import { SplashScreen, Tabs, useNavigationContainerRef } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView, useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,21 +16,29 @@ import { isRunningInExpoGo } from 'expo';
 import { StatusBar } from 'expo-status-bar';
 import { PaperProvider, DefaultTheme } from 'react-native-paper';
 import currencyNames from '@utils/currency';
+import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync();
-
-const routingInstrumentation = new Sentry.ReactNavigationInstrumentation();
+if (!isRunningInExpoGo()) {
+  SplashScreen.setOptions({
+    fade: true,
+    duration: 1000,
+  });
+}
 
 Sentry.init({
   dsn: 'https://755f445790cc440eb625404426d380d7@o1136798.ingest.sentry.io/6188926',
-  debug: true,
+  debug: __DEV__,
+  sendDefaultPii: true,
   tracesSampleRate: 1.0,
-  integrations: [
-    new Sentry.ReactNativeTracing({
-      routingInstrumentation,
-      enableNativeFramesTracking: !isRunningInExpoGo(),
-    }),
-  ],
+  profilesSampleRate: 1.0,
+  beforeSend(event, hint) {
+    if (__DEV__) {
+      console.error('Sentry Error:', hint.originalException || hint.syntheticException);
+      console.log('Event:', event);
+    }
+    return event;
+  },
 });
 
 function RootLayout() {
@@ -48,14 +56,6 @@ function RootLayout() {
     [ height, top ],
   );
 
-  const ref = useNavigationContainerRef();
-
-  useEffect(() => {
-    if (ref) {
-      routingInstrumentation.registerNavigationContainer(ref);
-    }
-  }, [ ref ]);
-
   useEffect(() => {
     async function prepare() {
       try {
@@ -66,8 +66,8 @@ function RootLayout() {
           $api.getInventoryGames(),
         ]);
 
-        await sql.updateRates(rates);
-        await sql.updateInventoryGames(inventoryGames);
+        // await sql.updateRates(rates);
+        // await sql.updateInventoryGames(inventoryGames);
         store.setGames(inventoryGames);
         store.setCurrencyNames(currencyNames);
 
@@ -179,7 +179,6 @@ function RootLayout() {
                   display: 'none',
                 },
               })}
-              sceneContainerStyle={{ backgroundColor: colors.background }}
               backBehavior='history'
             />
           </View>

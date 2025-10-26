@@ -5,14 +5,14 @@ import { sql } from '@utils/sql';
 import { router, useFocusEffect, useGlobalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable } from 'react-native';
-import { IFilterOptions, IInventories, IInventoryGame, IItem, ISortOptions, ISteamProfile } from 'types';
+import { IFilterOptions, IInventories, IInventoryGame, IParsedItem, ISortOptions, ISteamProfile } from 'types';
 import styles from '@styles/pages/inventory';
 import useStore from 'store';
 import InventoryFabGroup from '@/InventoryFabGroup';
-import Input from '@/Input';
-import InventoryItem from '@/InventoryItem';
 import { FlashList } from '@shopify/flash-list';
 import SortFilterSheet from '@/SortFilterSheet';
+import { FieldsSearch } from '@/fields/Search';
+import { InventoryItem } from '@/InventoryItem';
 
 export default function InventoryOverviewPage() {
   const $store = useStore();
@@ -66,8 +66,7 @@ export default function InventoryOverviewPage() {
     }
   }, [ pageInFocus, user, id, selectedGames, inv, loading ]);
 
-  type IInvMap = (({ element: 'header' } & IInventoryGame) | ({ element: 'item' } & IItem));
-
+  type IInvMap = (({ element: 'header' } & IInventoryGame) | ({ element: 'item' } & IParsedItem));
   const invMap = useMemo<IInvMap[]>(() => {
     const mappedData: IInvMap[] = [];
     Object.entries(inv).forEach(([ appid, inventory ]) => {
@@ -92,10 +91,6 @@ export default function InventoryOverviewPage() {
     setInv(inventory);
     setLoading(false);
     $store.setInventory(inventory);
-  }
-
-  function navigateToItem(item: IItem) {
-    router.push(`/inventory/item/${item.classid}-${item.instanceid}`);
   }
 
   function scrollToIndex(index: number) {
@@ -136,7 +131,7 @@ export default function InventoryOverviewPage() {
               pageInFocus && <InventoryFabGroup expand={() => setShowOptions(true)} />
             }
             {
-              pageInFocus && <Input label='Search' onChange={setSearchQuery} value={searchQuery} icon={{ name: 'search', type: 'feather' }} />
+              pageInFocus && <FieldsSearch value={searchQuery} onChange={setSearchQuery} />
             }
             {
               pageInFocus && showOptions &&
@@ -155,7 +150,7 @@ export default function InventoryOverviewPage() {
                 if (item.element === 'header') {
                   return (
                     <Pressable style={styles.game} onPress={() => scrollToIndex(index)}>
-                      <Image source={{ uri: item!.img }} style={styles.gameIcon} />
+                      <Image source={{ uri: item!.icon }} style={styles.gameIcon} />
                       <Text bold style={styles.gameTitle}>{ item?.name || 'Game Title' }</Text>
                     </Pressable>
                   );
@@ -164,7 +159,7 @@ export default function InventoryOverviewPage() {
                 return <InventoryItem
                   item={restData}
                   idx={index}
-                  navigateToItem={navigateToItem}
+                  navigateToItem={(item: IParsedItem) => router.push(item.itemLink)}
                   sort={sortOptions}
                 />;
               }}

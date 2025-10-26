@@ -32,7 +32,7 @@ export default function Game({ game, isActive = false, onClick }: IPropsGame) {
   return (
     <Pressable onPress={() => onGameClick()}>
       <Animated.View style={[ styles.wrapper, { backgroundColor } ]}>
-        <Image source={{ uri: game.img }} style={styles.image} />
+        <Image source={{ uri: game.icon }} style={styles.image} />
         <View style={global.column}>
           <Text bold style={styles.gameTitle}>{ game.name }</Text>
           <Text style={styles.gameId}>{ game.appid }</Text>
