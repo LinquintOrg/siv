@@ -7,9 +7,9 @@ import type {
   SteamProfile,
 } from './types';
 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://linquint.dev/api';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.linquint.dev';
 
-// Music kit audio files are served statically next to the API.
+// Music kit audio files are served statically by the main site, not the API host.
 export const MUSIC_URL = process.env.EXPO_PUBLIC_MUSIC_URL ?? 'https://linquint.dev/music';
 
 export class ApiError extends Error {

@@ -23,7 +23,7 @@ yarn lint
 yarn typecheck
 ```
 
-The API defaults to `https://linquint.dev/api`. Point it at a local backend with:
+The API defaults to `https://api.linquint.dev` (set explicitly for release builds in `eas.json`). Point it at a local backend with:
 
 ```bash
 EXPO_PUBLIC_API_URL=http://192.168.1.10:8000 yarn start
