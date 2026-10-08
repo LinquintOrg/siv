@@ -2,53 +2,41 @@
   "expo": {
     "name": "Steam Inventory Value",
     "slug": "siv",
-    "version": "4.0.0",
+    "version": "5.0.0",
     "orientation": "portrait",
     "icon": "./assets/icons/siv.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#091b53"
-    },
-    "jsEngine": "hermes",
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "jsEngine": "jsc"
-    },
+    "scheme": "siv",
+    "userInterfaceStyle": "automatic",
     "android": {
+      "package": "com.rsds.steaminventoryvalue",
+      "versionCode": 2010000181,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/siv-foreground.png",
         "backgroundColor": "#FFFFFF"
       },
-      "config": {},
-      "package": "com.rsds.steaminventoryvalue",
-      "versionCode": 2010000180
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
+      "predictiveBackGestureEnabled": true
     },
     "plugins": [
+      "expo-router",
       [
-        "@sentry/react-native/expo",
+        "expo-splash-screen",
         {
-          "organization": "domr",
-          "project": "domr"
+          "image": "./assets/splash.png",
+          "imageWidth": 200,
+          "backgroundColor": "#091b53"
         }
       ],
-      "expo-font",
-      "expo-router"
+      "expo-audio",
+      "expo-asset"
     ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
     "extra": {
       "eas": {
         "projectId": "9ee78a6c-9709-416e-baf5-905247436ac4"
       }
-    },
-    "scheme": "siv-scheme"
+    }
   }
 }
