@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.rsds.steaminventoryvalue",
-      "versionCode": 2010000181,
+      "versionCode": 2010000182,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/siv-foreground.png",
         "backgroundColor": "#FFFFFF"
