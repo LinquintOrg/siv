@@ -204,7 +204,7 @@ function LoadingBar() {
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: GUTTER,
-    paddingTop: 56,
+    paddingTop: 28,
     paddingBottom: 48,
   },
   flex: {

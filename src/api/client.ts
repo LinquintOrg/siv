@@ -9,8 +9,8 @@ import type {
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.linquint.dev';
 
-// Music kit audio files are served statically by the main site, not the API host.
-export const MUSIC_URL = process.env.EXPO_PUBLIC_MUSIC_URL ?? 'https://linquint.dev/music';
+// Music kit audio files are served statically by the API under /music.
+export const MUSIC_URL = process.env.EXPO_PUBLIC_MUSIC_URL ?? `${API_URL}/music`;
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -45,7 +45,8 @@ export const api = {
     body: JSON.stringify({ search }),
   }),
 
-  inventoryGames: () => request<InventoryGame[]>('/games/inventory'),
+  // appid can arrive as a string (bigint columns), and screens look games up with ===
+  inventoryGames: async () => (await request<InventoryGame[]>('/games/inventory')).map(g => ({ ...g, appid: Number(g.appid) })),
 
   inventory: (steamid: string, appid: number | string) => request<InventoryResponse>(`/inventory/${steamid}/${appid}`),
 

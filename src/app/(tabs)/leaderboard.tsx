@@ -1,6 +1,6 @@
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -8,6 +8,7 @@ import { useInventoryGames, useLeaderboard } from '@/api/queries';
 import type { LeaderboardEntry } from '@/api/types';
 import { Avatar, DashedSelect, Row, Skeleton, UnderlineInput, quietRefresh } from '@/components/quiet/Controls';
 import { TabScreen } from '@/components/quiet/Screen';
+import { ScrollTopButton, useScrollTop } from '@/components/quiet/ScrollTop';
 import { OptionSheet } from '@/components/quiet/Sheet';
 import { Text } from '@/components/quiet/Text';
 import { ErrorView } from '@/components/StateViews';
@@ -30,6 +31,8 @@ export default function LeaderboardScreen() {
   const [ appid, setAppid ] = useState<number | undefined>(params.appid ? +params.appid : 730);
   const [ query, setQuery ] = useState('');
   const [ picking, setPicking ] = useState(false);
+  const list = useRef<FlashListRef<LeaderboardEntry>>(null);
+  const scrollTop = useScrollTop(list);
   const search = useDebounced(query.trim());
   const leaderboard = useLeaderboard({ appid, search: search || undefined });
   const entries = leaderboard.data?.pages.flatMap(p => p.entries) ?? [];
@@ -99,12 +102,14 @@ export default function LeaderboardScreen() {
         </>
       ) : (
         <FlashList
+          ref={list}
           data={leaderboard.isPending ? [] : entries}
           keyExtractor={item => String(item.id)}
           renderItem={renderEntry}
           ListHeaderComponent={header}
           contentContainerStyle={styles.pad}
           keyboardShouldPersistTaps="handled"
+          onScroll={scrollTop.onScroll}
           onEndReached={() => {
             if (leaderboard.hasNextPage && !leaderboard.isFetchingNextPage) {
               leaderboard.fetchNextPage();
@@ -122,6 +127,7 @@ export default function LeaderboardScreen() {
               : null}
         />
       )}
+      <ScrollTopButton visible={scrollTop.visible && !leaderboard.isError} onPress={scrollTop.scrollToTop} />
       <OptionSheet
         open={picking}
         onClose={() => setPicking(false)}
@@ -144,7 +150,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   header: {
-    paddingTop: 56,
+    paddingTop: 28,
     paddingBottom: 22,
     gap: 16,
   },
