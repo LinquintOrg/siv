@@ -6,10 +6,10 @@
     "orientation": "portrait",
     "icon": "./assets/icons/siv.png",
     "scheme": "siv",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "android": {
       "package": "com.rsds.steaminventoryvalue",
-      "versionCode": 2010000182,
+      "versionCode": 2010000183,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/siv-foreground.png",
         "backgroundColor": "#FFFFFF"

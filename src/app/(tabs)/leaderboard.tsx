@@ -1,13 +1,17 @@
 import { FlashList } from '@shopify/flash-list';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Appbar, Avatar, Searchbar, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { useInventoryGames, useLeaderboard } from '@/api/queries';
 import type { LeaderboardEntry } from '@/api/types';
-import { FilterChip } from '@/components/FilterChip';
-import { ErrorView, LoadingView, MessageView } from '@/components/StateViews';
+import { Avatar, DashedSelect, Row, Skeleton, UnderlineInput, quietRefresh } from '@/components/quiet/Controls';
+import { TabScreen } from '@/components/quiet/Screen';
+import { OptionSheet } from '@/components/quiet/Sheet';
+import { Text } from '@/components/quiet/Text';
+import { ErrorView } from '@/components/StateViews';
+import { GUTTER, q } from '@/theme';
 import { useFormatPrice } from '@/utils/currency';
 
 function useDebounced<T>(value: T, delay = 350) {
@@ -20,102 +24,151 @@ function useDebounced<T>(value: T, delay = 350) {
 }
 
 export default function LeaderboardScreen() {
-  const theme = useTheme();
+  const params = useLocalSearchParams<{ appid?: string }>();
   const formatPrice = useFormatPrice();
   const games = useInventoryGames();
-  const [ appid, setAppid ] = useState<number | undefined>(730);
+  const [ appid, setAppid ] = useState<number | undefined>(params.appid ? +params.appid : 730);
   const [ query, setQuery ] = useState('');
+  const [ picking, setPicking ] = useState(false);
   const search = useDebounced(query.trim());
   const leaderboard = useLeaderboard({ appid, search: search || undefined });
-
   const entries = leaderboard.data?.pages.flatMap(p => p.entries) ?? [];
+  const gameName = appid === undefined ? 'All games' : games.data?.find(g => g.appid === appid)?.name ?? 'Counter-Strike 2';
 
-  const renderEntry = ({ item, index }: { item: LeaderboardEntry; index: number }) => (
-    <TouchableRipple onPress={() => router.push({ pathname: '/profile/[steamid]', params: { steamid: item.steamid } })}>
-      <View style={styles.row}>
-        <Text variant="titleMedium" style={[ styles.rank, { color: index < 3 && !search ? theme.colors.primary : theme.colors.onSurfaceVariant } ]}>
-          {/* Positions within search results aren't global ranks */}
-          {search ? '' : index + 1}
-        </Text>
-        <Avatar.Image size={40} source={{ uri: item.avatar_url }} />
-        <View style={styles.body}>
-          <Text variant="bodyLarge" numberOfLines={1}>{item.username}</Text>
-          <Text variant="bodySmall" numberOfLines={1} style={{ color: theme.colors.onSurfaceVariant }}>
-            {appid === undefined ? `${item.game_title} · ` : ''}{`${item.item_count.toLocaleString()} items`}
-          </Text>
-        </View>
-        <Text variant="titleSmall">{formatPrice(item.inventory_value)}</Text>
+  // Opened from an inventory's rank link: follow the game it passes in
+  const [ seenParam, setSeenParam ] = useState(params.appid);
+  if (params.appid !== seenParam) {
+    setSeenParam(params.appid);
+    if (params.appid) {
+      setAppid(+params.appid);
+    }
+  }
+
+  const renderEntry = ({ item, index }: { item: LeaderboardEntry; index: number }) => {
+    // Positions within search results aren't global ranks
+    const top = !search && index < 3;
+    return (
+      <Animated.View entering={index < 14 ? FadeInDown.duration(400).delay(index * 30) : undefined}>
+        <Row
+          accessibilityLabel={`${search ? '' : `Rank ${index + 1}, `}${item.username}, ${formatPrice(item.inventory_value)}`}
+          onPress={() => router.push({ pathname: '/profile/[steamid]', params: { steamid: item.steamid } })}
+        >
+          <Text size={12} mono tabular color={top ? q.accent : q.faint} style={styles.rank}>{search ? '' : String(index + 1).padStart(2, '0')}</Text>
+          <Avatar uri={item.avatar_url} name={item.username} size={38} />
+          <View style={styles.body}>
+            <Text size={15} numberOfLines={1}>{item.username}</Text>
+            <Text size={12} color={q.dim} numberOfLines={1}>
+              {appid === undefined ? `${item.game_title} · ` : ''}{`${item.item_count.toLocaleString('en-US')} items`}
+            </Text>
+          </View>
+          <Text size={top ? 17 : 15} tabular>{formatPrice(item.inventory_value)}</Text>
+        </Row>
+      </Animated.View>
+    );
+  };
+
+  const header = (
+    <Animated.View entering={FadeInDown.duration(450)} style={styles.header}>
+      <Text size={44} weight="extralight" tracking={-0.045}>Leaderboard</Text>
+      <View style={styles.sentence}>
+        <Text size={15} color={q.muted}>The most valuable inventories in</Text>
+        <DashedSelect label={gameName} size={15} onPress={() => setPicking(true)} accessibilityLabel={`Game: ${gameName}. Change game`} />
       </View>
-    </TouchableRipple>
+      <UnderlineInput icon="search" value={query} onChangeText={setQuery} placeholder="Find a player" accessibilityLabel="Find a player" />
+    </Animated.View>
   );
 
-  return (
-    <View style={[ styles.flex, { backgroundColor: theme.colors.background } ]}>
-      <Appbar.Header>
-        <Appbar.Content title="Leaderboard" />
-      </Appbar.Header>
-
-      <View style={styles.search}>
-        <Searchbar placeholder="Search players" value={query} onChangeText={setQuery} autoCorrect={false} autoCapitalize="none" />
+  const skeletonRows = (count: number) => Array.from({ length: count }, (_, i) => (
+    <Row key={i}>
+      <Skeleton width={18} height={10} />
+      <Skeleton width={38} height={38} radius={19} />
+      <View style={styles.body}>
+        <Skeleton width="46%" height={12} />
+        <Skeleton width="64%" height={10} />
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={styles.chipsScroll}>
-        <FilterChip selected={appid === undefined} onPress={() => setAppid(undefined)}>All games</FilterChip>
-        {games.data?.map(game => (
-          <FilterChip key={game.appid} selected={appid === game.appid} onPress={() => setAppid(game.appid)}>{game.name}</FilterChip>
-        ))}
-      </ScrollView>
+      <Skeleton width={76} height={14} />
+    </Row>
+  ));
 
-      {leaderboard.isPending ? <LoadingView /> : leaderboard.isError ? <ErrorView error={leaderboard.error} onRetry={leaderboard.refetch} /> : (
+  return (
+    <TabScreen>
+      {leaderboard.isError ? (
+        <>
+          <View style={styles.pad}>{header}</View>
+          <ErrorView title="Couldn't load the leaderboard" error={leaderboard.error} onRetry={leaderboard.refetch} />
+        </>
+      ) : (
         <FlashList
-          data={entries}
+          data={leaderboard.isPending ? [] : entries}
           keyExtractor={item => String(item.id)}
           renderItem={renderEntry}
+          ListHeaderComponent={header}
+          contentContainerStyle={styles.pad}
+          keyboardShouldPersistTaps="handled"
           onEndReached={() => {
             if (leaderboard.hasNextPage && !leaderboard.isFetchingNextPage) {
               leaderboard.fetchNextPage();
             }
           }}
           onEndReachedThreshold={0.5}
-          refreshControl={<RefreshControl refreshing={leaderboard.isRefetching && !leaderboard.isFetchingNextPage} onRefresh={leaderboard.refetch} />}
-          ListFooterComponent={leaderboard.isFetchingNextPage ? <ActivityIndicator style={styles.footer} /> : null}
-          ListEmptyComponent={<MessageView icon="trophy-outline" title="No players found" />}
+          refreshControl={quietRefresh(leaderboard.isRefetching && !leaderboard.isFetchingNextPage, leaderboard.refetch)}
+          ListEmptyComponent={leaderboard.isPending
+            ? <View>{skeletonRows(8)}</View>
+            : <Text size={15} color={q.dim} align="center" style={styles.empty}>{search ? `No players match “${search}”.` : 'No players yet.'}</Text>}
+          ListFooterComponent={leaderboard.isFetchingNextPage
+            ? <View>{skeletonRows(3)}</View>
+            : entries.length > 0 && !leaderboard.hasNextPage
+              ? <Text size={12} color={q.faint} align="center" style={styles.end}>That&apos;s everyone for now.</Text>
+              : null}
         />
       )}
-    </View>
+      <OptionSheet
+        open={picking}
+        onClose={() => setPicking(false)}
+        kicker="Most valuable in"
+        title="Leaderboard"
+        options={[ { value: 0, label: 'All games' }, ...(games.data ?? []).map(g => ({ value: g.appid, label: g.name, image: g.icon })) ]}
+        selected={appid ?? 0}
+        onSelect={value => {
+          setAppid(value === 0 ? undefined : value);
+          setPicking(false);
+        }}
+      />
+    </TabScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
+  pad: {
+    paddingHorizontal: GUTTER,
+    paddingBottom: 32,
   },
-  search: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
+  header: {
+    paddingTop: 56,
+    paddingBottom: 22,
+    gap: 16,
   },
-  chipsScroll: {
-    flexGrow: 0,
-  },
-  chips: {
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  row: {
+  sentence: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    columnGap: 6,
+    rowGap: 4,
   },
   rank: {
-    width: 32,
-    textAlign: 'center',
+    width: 22,
   },
   body: {
     flex: 1,
+    gap: 4,
   },
-  footer: {
-    padding: 16,
+  empty: {
+    paddingVertical: 40,
+  },
+  end: {
+    paddingTop: 24,
+    paddingBottom: 8,
+    borderTopWidth: 1,
+    borderTopColor: q.line,
   },
 });

@@ -1,20 +1,22 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useTheme } from 'react-native-paper';
+
+import { fonts, q } from '@/theme';
 
 export default function TabsLayout() {
-  const theme = useTheme();
-
   return (
     <NativeTabs
-      backgroundColor={theme.colors.elevation.level2}
-      indicatorColor={theme.colors.secondaryContainer}
-      iconColor={{ default: theme.colors.onSurfaceVariant, selected: theme.colors.onSecondaryContainer }}
-      labelStyle={{ default: { color: theme.colors.onSurfaceVariant }, selected: { color: theme.colors.onSurface } }}
-      rippleColor={theme.colors.onSurface + '1f'}
+      backgroundColor={q.bg}
+      indicatorColor={q.line2}
+      iconColor={{ default: q.dim, selected: q.text }}
+      labelStyle={{
+        default: { color: q.dim, fontFamily: fonts.regular, fontSize: 11 },
+        selected: { color: q.text, fontFamily: fonts.regular, fontSize: 11 },
+      }}
+      rippleColor="#FFFFFF14"
       labelVisibilityMode="labeled"
     >
       <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Inventory</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon md="search" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="leaderboard">
@@ -27,7 +29,7 @@ export default function TabsLayout() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="settings">
         <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon md="settings" />
+        <NativeTabs.Trigger.Icon md="tune" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );
