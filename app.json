@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icons/siv.png",
     "scheme": "siv",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "android": {
       "package": "com.rsds.steaminventoryvalue",
       "versionCode": 2010000182,

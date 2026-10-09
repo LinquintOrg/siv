@@ -1,83 +1,46 @@
-import { DarkTheme as NavDarkTheme, DefaultTheme as NavLightTheme } from 'expo-router';
-import { MD3DarkTheme, MD3LightTheme, type MD3Theme } from 'react-native-paper';
+import { DarkTheme as NavDarkTheme } from 'expo-router';
+import { MD3DarkTheme, type MD3Theme } from 'react-native-paper';
 
-// Material 3 tonal-spot schemes generated from the brand seed #091b53
-// with @material/material-color-utilities.
-const light = {
-  primary: '#4e5b92',
-  onPrimary: '#ffffff',
-  primaryContainer: '#dde1ff',
-  onPrimaryContainer: '#364479',
-  secondary: '#5a5d72',
-  onSecondary: '#ffffff',
-  secondaryContainer: '#dee1f9',
-  onSecondaryContainer: '#424659',
-  tertiary: '#75546f',
-  onTertiary: '#ffffff',
-  tertiaryContainer: '#ffd7f4',
-  onTertiaryContainer: '#5c3d56',
-  error: '#ba1a1a',
-  onError: '#ffffff',
-  errorContainer: '#ffdad6',
-  onErrorContainer: '#93000a',
-  background: '#fbf8ff',
-  onBackground: '#1a1b21',
-  surface: '#fbf8ff',
-  onSurface: '#1a1b21',
-  surfaceVariant: '#e2e1ec',
-  onSurfaceVariant: '#45464f',
-  outline: '#767680',
-  outlineVariant: '#c6c5d0',
-  inverseSurface: '#2f3036',
-  inverseOnSurface: '#f2f0f7',
-  inversePrimary: '#b7c4ff',
-  elevation: {
-    level0: 'transparent',
-    level1: '#f4f2fa',
-    level2: '#efedf4',
-    level3: '#e9e7ef',
-    level4: '#e6e4ec',
-    level5: '#e3e1e9',
-  },
-};
+/**
+ * Quiet palette, shared with the linquint.dev web app.
+ * Surfaces and lines go darkest to lightest, text goes faintest to brightest.
+ */
+export const q = {
+  bg: '#0A0A0B',
+  sheet: '#0F0F11',
+  raised: '#111113',
+  hover: '#141416',
+  line: '#161618',
+  line2: '#1C1C1F',
+  line3: '#2A2A2E',
 
-const dark = {
-  primary: '#b7c4ff',
-  onPrimary: '#1e2d61',
-  primaryContainer: '#364479',
-  onPrimaryContainer: '#dde1ff',
-  secondary: '#c2c5dd',
-  onSecondary: '#2c3042',
-  secondaryContainer: '#424659',
-  onSecondaryContainer: '#dee1f9',
-  tertiary: '#e4bad9',
-  onTertiary: '#43273f',
-  tertiaryContainer: '#5c3d56',
-  onTertiaryContainer: '#ffd7f4',
-  error: '#ffb4ab',
-  onError: '#690005',
-  errorContainer: '#93000a',
-  onErrorContainer: '#ffdad6',
-  background: '#121318',
-  onBackground: '#e3e1e9',
-  surface: '#121318',
-  onSurface: '#e3e1e9',
-  surfaceVariant: '#45464f',
-  onSurfaceVariant: '#c6c5d0',
-  outline: '#90909a',
-  outlineVariant: '#45464f',
-  inverseSurface: '#e3e1e9',
-  inverseOnSurface: '#2f3036',
-  inversePrimary: '#4e5b92',
-  elevation: {
-    level0: 'transparent',
-    level1: '#1a1b21',
-    level2: '#1f1f25',
-    level3: '#292a2f',
-    level4: '#2e2f34',
-    level5: '#34343a',
-  },
-};
+  faint: '#4A4A4F',
+  dim: '#6B6B70',
+  muted: '#8A8A8F',
+  soft: '#B4B4B9',
+  text: '#EDEDED',
+  white: '#FFFFFF',
+
+  accent: '#6EA8FF',
+  danger: '#E5806B',
+  gold: '#F3C969',
+  backdrop: 'rgba(5,5,6,0.84)',
+} as const;
+
+/** Loaded in the root layout; React Native picks a weight by family name. */
+export const fonts = {
+  extralight: 'Geist_200ExtraLight',
+  light: 'Geist_300Light',
+  regular: 'Geist_400Regular',
+  medium: 'Geist_500Medium',
+  semibold: 'Geist_600SemiBold',
+  mono: 'GeistMono_400Regular',
+} as const;
+
+export type FontWeight = Exclude<keyof typeof fonts, 'mono'>;
+
+/** Screen side padding, matching the web's mobile gutter. */
+export const GUTTER = 20;
 
 export interface AppTheme extends MD3Theme {
   colors: MD3Theme['colors'] & {
@@ -86,28 +49,37 @@ export interface AppTheme extends MD3Theme {
   };
 }
 
-export const lightTheme: AppTheme = {
-  ...MD3LightTheme,
-  colors: { ...MD3LightTheme.colors, ...light, positive: '#2e7d32', negative: '#ba1a1a' },
-};
-
-export const darkTheme: AppTheme = {
+// Paper is only used for a few primitives now; map it onto the Quiet palette so they blend in.
+export const theme: AppTheme = {
   ...MD3DarkTheme,
-  colors: { ...MD3DarkTheme.colors, ...dark, positive: '#81c784', negative: '#ffb4ab' },
+  roundness: 3,
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: q.accent,
+    onPrimary: q.bg,
+    background: q.bg,
+    onBackground: q.text,
+    surface: q.bg,
+    onSurface: q.text,
+    surfaceVariant: q.raised,
+    onSurfaceVariant: q.muted,
+    outline: q.line3,
+    outlineVariant: q.line2,
+    error: q.danger,
+    positive: q.accent,
+    negative: q.danger,
+  },
 };
 
-export function navigationTheme(theme: AppTheme, isDark: boolean) {
-  const base = isDark ? NavDarkTheme : NavLightTheme;
-  return {
-    ...base,
-    colors: {
-      ...base.colors,
-      primary: theme.colors.primary,
-      background: theme.colors.background,
-      card: theme.colors.surface,
-      text: theme.colors.onSurface,
-      border: theme.colors.outlineVariant,
-      notification: theme.colors.error,
-    },
-  };
-}
+export const navigationTheme = {
+  ...NavDarkTheme,
+  colors: {
+    ...NavDarkTheme.colors,
+    primary: q.accent,
+    background: q.bg,
+    card: q.bg,
+    text: q.text,
+    border: q.line,
+    notification: q.danger,
+  },
+};

@@ -1,158 +1,151 @@
+import { Feather } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
-import { useQueryClient } from '@tanstack/react-query';
-import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Image } from 'expo-image';
 import { useMemo, useState } from 'react';
-import { RefreshControl, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Appbar, IconButton, Searchbar, Snackbar, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { MUSIC_URL, api } from '@/api/client';
 import { useMusicKits } from '@/api/queries';
 import type { MusicKit } from '@/api/types';
-import { ErrorView, LoadingView, MessageView } from '@/components/StateViews';
+import { Equalizer, useMusicPlayer } from '@/components/MusicPlayer';
+import { Row, Skeleton, UnderlineInput, quietRefresh } from '@/components/quiet/Controls';
+import { TabScreen } from '@/components/quiet/Screen';
+import { Text } from '@/components/quiet/Text';
+import { ErrorView } from '@/components/StateViews';
+import { GUTTER, q } from '@/theme';
 import { useFormatPrice } from '@/utils/currency';
 
-const AUDIO_FILE = /\.(mp3|ogg|wav|m4a)$/i;
-
-/** Prefer the MVP anthem, which is the most recognisable track of a kit. */
-function pickPreviewFile(files: string[]) {
-  const audio = files.filter(f => AUDIO_FILE.test(f));
-  return audio.find(f => /mvp/i.test(f)) ?? audio[0];
-}
-
 export default function MusicKitsScreen() {
-  const theme = useTheme();
-  const queryClient = useQueryClient();
   const kits = useMusicKits();
   const formatPrice = useFormatPrice();
-  const player = useAudioPlayer();
-  const status = useAudioPlayerStatus(player);
+  const { current, playing, loadingId, toggle } = useMusicPlayer();
   const [ query, setQuery ] = useState('');
-  const [ current, setCurrent ] = useState<number | null>(null);
-  const [ loadingId, setLoadingId ] = useState<number | null>(null);
-  const [ error, setError ] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q2 = query.trim().toLowerCase();
     return (kits.data ?? [])
-      .filter(kit => !q || kit.artist.toLowerCase().includes(q) || kit.title.toLowerCase().includes(q))
+      .filter(kit => !q2 || kit.artist.toLowerCase().includes(q2) || kit.title.toLowerCase().includes(q2))
       .sort((a, b) => a.artist.localeCompare(b.artist) || a.title.localeCompare(b.title));
   }, [ kits.data, query ]);
 
-  const togglePlay = async (kit: MusicKit) => {
-    if (current === kit.id) {
-      if (status.playing) {
-        player.pause();
-      } else {
-        if (status.currentTime >= status.duration - 0.1) {
-          await player.seekTo(0);
-        }
-        player.play();
-      }
-      return;
-    }
-
-    setLoadingId(kit.id);
-    try {
-      const files = await queryClient.fetchQuery({
-        queryKey: [ 'musicKitFiles', kit.id ],
-        queryFn: () => api.musicKitFiles(kit.id),
-        staleTime: Infinity,
-      });
-      const file = pickPreviewFile(files);
-      if (!file) {
-        throw new Error('No preview available for this kit.');
-      }
-      player.replace({ uri: `${MUSIC_URL}/${encodeURIComponent(kit.folder)}/${encodeURIComponent(file)}`, name: `${kit.artist} – ${kit.title}` });
-      player.play();
-      setCurrent(kit.id);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not play this kit.');
-    } finally {
-      setLoadingId(null);
-    }
-  };
-
-  const renderKit = ({ item }: { item: MusicKit }) => {
-    const isCurrent = current === item.id;
-    const isPlaying = isCurrent && status.playing;
+  const renderKit = ({ item, index }: { item: MusicKit; index: number }) => {
+    const isCurrent = current?.id === item.id;
+    const isPlaying = isCurrent && playing;
+    const isLoading = loadingId === item.id;
     return (
-      <TouchableRipple onPress={() => togglePlay(item)}>
-        <View style={styles.row}>
-          <Image source={item.image ? { uri: item.image } : null} style={[ styles.art, { backgroundColor: theme.colors.surfaceVariant } ]} contentFit="cover" />
-          <View style={styles.body}>
-            <Text variant="bodyLarge" numberOfLines={1} style={isCurrent ? { color: theme.colors.primary } : undefined}>{item.title}</Text>
-            <Text variant="bodyMedium" numberOfLines={1} style={{ color: theme.colors.onSurfaceVariant }}>{item.artist}</Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              {`${formatPrice(item.price.normal)} · StatTrak™ ${formatPrice(item.price.stattrak)}`}
-            </Text>
+      <Animated.View entering={index < 12 ? FadeInDown.duration(400).delay(index * 30) : undefined}>
+        <Row style={styles.row} onPress={() => toggle(item)} accessibilityLabel={`${item.title} by ${item.artist}`}>
+          <View style={styles.art}>
+            {item.image ? <Image source={{ uri: item.image }} style={[ StyleSheet.absoluteFill, isCurrent && styles.artDim ]} contentFit="cover" /> : null}
+            {isCurrent ? <Equalizer playing={isPlaying} /> : null}
           </View>
-          {loadingId === item.id ? <ActivityIndicator style={styles.spinner} /> : (
-            <IconButton
-              icon={isPlaying ? 'pause-circle' : 'play-circle-outline'}
-              iconColor={isCurrent ? theme.colors.primary : undefined}
-              size={32}
-              onPress={() => togglePlay(item)}
-              accessibilityLabel={isPlaying ? `Pause ${item.title}` : `Play ${item.title}`}
-            />
-          )}
-        </View>
-      </TouchableRipple>
+          <View style={styles.body}>
+            <Text size={15} numberOfLines={1} color={isCurrent ? q.accent : q.text}>{item.title}</Text>
+            <Text size={13} color={q.muted} numberOfLines={1}>{item.artist}</Text>
+            <Text size={12} color={q.dim} tabular>{`${formatPrice(item.price.normal)} · StatTrak™ ${formatPrice(item.price.stattrak)}`}</Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={isPlaying ? `Pause ${item.title}` : `Play ${item.title}`}
+            onPress={() => toggle(item)}
+            style={[ styles.play, { borderColor: isCurrent ? q.accent : q.line3 } ]}
+          >
+            {isLoading
+              ? <ActivityIndicator size="small" color={q.accent} />
+              : <Feather name={isPlaying ? 'pause' : 'play'} size={16} color={isCurrent ? q.accent : q.soft} style={isPlaying ? undefined : styles.playIcon} />}
+          </Pressable>
+        </Row>
+      </Animated.View>
     );
   };
 
-  return (
-    <View style={[ styles.flex, { backgroundColor: theme.colors.background } ]}>
-      <Appbar.Header>
-        <Appbar.Content title="Music kits" />
-      </Appbar.Header>
-      <View style={styles.search}>
-        <Searchbar placeholder="Search artist or kit" value={query} onChangeText={setQuery} autoCorrect={false} />
-      </View>
+  const header = (
+    <Animated.View entering={FadeInDown.duration(450)} style={styles.header}>
+      <Text size={44} weight="extralight" tracking={-0.045}>Music kits</Text>
+      <Text size={15} color={q.muted} leading={1.6}>Hear every Counter-Strike 2 kit before you buy it.</Text>
+      <UnderlineInput icon="search" value={query} onChangeText={setQuery} placeholder="Search artist or kit" accessibilityLabel="Search music kits" />
+    </Animated.View>
+  );
 
-      {kits.isPending ? <LoadingView /> : kits.isError ? <ErrorView error={kits.error} onRetry={kits.refetch} /> : (
+  return (
+    <TabScreen>
+      {kits.isError ? (
+        <>
+          <View style={styles.pad}>{header}</View>
+          <ErrorView title="Couldn't load music kits" error={kits.error} onRetry={kits.refetch} />
+        </>
+      ) : (
         <FlashList
-          data={filtered}
+          data={kits.isPending ? [] : filtered}
           keyExtractor={kit => String(kit.id)}
           renderItem={renderKit}
-          extraData={{ current, loadingId, playing: status.playing }}
+          extraData={{ current, playing, loadingId }}
+          ListHeaderComponent={header}
+          contentContainerStyle={styles.pad}
           keyboardShouldPersistTaps="handled"
-          refreshControl={<RefreshControl refreshing={kits.isRefetching} onRefresh={kits.refetch} />}
-          ListEmptyComponent={<MessageView icon="music-note-off-outline" title="No music kits found" />}
+          refreshControl={quietRefresh(kits.isRefetching, kits.refetch)}
+          ListEmptyComponent={kits.isPending ? (
+            <View>
+              {Array.from({ length: 7 }, (_, i) => (
+                <Row key={i} style={styles.row}>
+                  <Skeleton width={52} height={52} radius={12} />
+                  <View style={styles.body}>
+                    <Skeleton width="55%" height={12} />
+                    <Skeleton width="35%" height={10} />
+                    <Skeleton width="60%" height={10} />
+                  </View>
+                  <Skeleton width={44} height={44} radius={22} />
+                </Row>
+              ))}
+            </View>
+          ) : <Text size={15} color={q.dim} align="center" style={styles.empty}>No kits match “{query.trim()}”.</Text>}
         />
       )}
-
-      <Snackbar visible={!!error} onDismiss={() => setError(null)} duration={4000}>{error}</Snackbar>
-    </View>
+    </TabScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
+  pad: {
+    paddingHorizontal: GUTTER,
+    paddingBottom: 32,
   },
-  search: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  header: {
+    paddingTop: 56,
+    paddingBottom: 22,
+    gap: 16,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    paddingLeft: 16,
-    paddingRight: 4,
-    paddingVertical: 8,
+    minHeight: 72,
   },
   art: {
-    width: 56,
-    height: 56,
-    borderRadius: 8,
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: q.hover,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  artDim: {
+    opacity: 0.25,
   },
   body: {
     flex: 1,
-    gap: 1,
+    gap: 3,
   },
-  spinner: {
-    width: 56,
+  play: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playIcon: {
+    marginLeft: 2,
+  },
+  empty: {
+    paddingVertical: 40,
   },
 });

@@ -1,68 +1,49 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import type { ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Button, Text, useTheme } from 'react-native-paper';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
-type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
-
-export function LoadingView({ label }: { label?: string }) {
-  return (
-    <View style={styles.center}>
-      <ActivityIndicator size="large" />
-      {label ? <Text variant="bodyMedium" style={styles.label}>{label}</Text> : null}
-    </View>
-  );
-}
+import { Pill } from '@/components/quiet/Controls';
+import { Text } from '@/components/quiet/Text';
+import { GUTTER, q } from '@/theme';
 
 interface MessageViewProps {
-  icon: IconName;
   title: string;
   message?: string;
+  tone?: 'default' | 'danger';
   actionLabel?: string;
   onAction?: () => void;
 }
 
-export function MessageView({ icon, title, message, actionLabel, onAction }: MessageViewProps) {
-  const theme = useTheme();
+/** Large, left-aligned message for empty and error states. */
+export function MessageView({ title, message, tone = 'default', actionLabel, onAction }: MessageViewProps) {
   return (
-    <View style={styles.center}>
-      <MaterialCommunityIcons name={icon} size={48} color={theme.colors.onSurfaceVariant} />
-      <Text variant="titleMedium" style={styles.title}>{title}</Text>
-      {message ? <Text variant="bodyMedium" style={[ styles.label, { color: theme.colors.onSurfaceVariant } ]}>{message}</Text> : null}
-      {actionLabel && onAction ? <Button mode="contained-tonal" onPress={onAction} style={styles.action}>{actionLabel}</Button> : null}
+    <Animated.View entering={FadeInDown.duration(400)} style={styles.wrap}>
+      <Text size={30} weight="extralight" tracking={-0.03} leading={1.15} color={tone === 'danger' ? q.danger : q.text}>{title}</Text>
+      {message ? <Text size={15} color={q.muted} leading={1.6}>{message}</Text> : null}
+      {actionLabel && onAction ? <Pill label={actionLabel} variant="ghost" onPress={onAction} style={styles.action} /> : null}
+    </Animated.View>
+  );
+}
+
+export function ErrorView({ title = 'Couldn\'t load this', error, onRetry }: { title?: string; error: unknown; onRetry?: () => void }) {
+  const message = error instanceof Error ? error.message : 'Something went wrong.';
+  return (
+    <View style={styles.flex}>
+      <MessageView title={message} message={title} tone="danger" actionLabel={onRetry ? 'Try again' : undefined} onAction={onRetry} />
     </View>
   );
 }
 
-export function ErrorView({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
-  const message = error instanceof Error ? error.message : 'Something went wrong.';
-  return (
-    <MessageView
-      icon="alert-circle-outline"
-      title="Couldn't load data"
-      message={message}
-      actionLabel={onRetry ? 'Try again' : undefined}
-      onAction={onRetry}
-    />
-  );
-}
-
 const styles = StyleSheet.create({
-  center: {
+  flex: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-    gap: 8,
   },
-  title: {
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  label: {
-    textAlign: 'center',
+  wrap: {
+    paddingHorizontal: GUTTER,
+    paddingVertical: 48,
+    gap: 12,
   },
   action: {
-    marginTop: 12,
+    alignSelf: 'flex-start',
+    marginTop: 10,
   },
 });

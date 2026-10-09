@@ -678,6 +678,16 @@
     "@eslint/core" "^0.17.0"
     levn "^0.4.1"
 
+"@expo-google-fonts/geist-mono@^0.4.3":
+  version "0.4.3"
+  resolved "https://registry.yarnpkg.com/@expo-google-fonts/geist-mono/-/geist-mono-0.4.3.tgz#7b23dff6e37d80bd30ce4bada822e05539afdc16"
+  integrity sha512-gjnwv1QOG4meZpMhrLjTIPC/+lhyNu8EcXa2eJPVbPrYvguVjCfBq+Ezq6cWKWW8ung6fqb2TjvuTalE6lqlnw==
+
+"@expo-google-fonts/geist@^0.4.2":
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/@expo-google-fonts/geist/-/geist-0.4.2.tgz#67ceaef82a42f32e8294105dd4cc5c1ff992281c"
+  integrity sha512-cTsqJRQrvK5EniTVwH7UDK18RFf9Bc6yxciAuM936aViQ+eR6j3mLEI2rQkJXz5JP9kwtn8tHJviDyZ0ulH6oA==
+
 "@expo-google-fonts/material-symbols@^0.4.1":
   version "0.4.49"
   resolved "https://registry.yarnpkg.com/@expo-google-fonts/material-symbols/-/material-symbols-0.4.49.tgz#29bed0101d23e4f63b50994092fb892ff862e7de"
