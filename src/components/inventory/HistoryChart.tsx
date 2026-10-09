@@ -1,5 +1,7 @@
+import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Svg, { Polyline } from 'react-native-svg';
 
 import type { InventoryHistoryEntry } from '@/api/types';
@@ -8,10 +10,11 @@ import { q } from '@/theme';
 
 const HEIGHT = 112;
 const PAD = 6;
+const HOLD_MS = 180;
 
 const shortDate = (iso: string | number) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-/** Thin line of inventory value or item count over time. Drag across it to read a point. */
+/** Thin line of inventory value or item count over time. Hold or drag sideways across it to read a point. */
 export function HistoryChart({ history, formatPrice }: { history: InventoryHistoryEntry[]; formatPrice: (usd: number) => string }) {
   const [ width, setWidth ] = useState(0);
   const [ mode, setMode ] = useState<'value' | 'items'>('value');
@@ -37,6 +40,26 @@ export function HistoryChart({ history, formatPrice }: { history: InventoryHisto
     }
   };
 
+  // Once either gesture activates it owns the touch, so the page stops scrolling until the finger lifts.
+  // A vertical swipe that starts on the chart fails both and scrolls the page as usual.
+  const hold = Gesture.Pan()
+    .runOnJS(true)
+    .activateAfterLongPress(HOLD_MS)
+    .onStart(e => {
+      Haptics.selectionAsync();
+      pick(e.x);
+    })
+    .onUpdate(e => pick(e.x))
+    .onFinalize(() => setScrub(null));
+  const swipe = Gesture.Pan()
+    .runOnJS(true)
+    .activeOffsetX([ -8, 8 ])
+    .failOffsetY([ -8, 8 ])
+    .onStart(e => pick(e.x))
+    .onUpdate(e => pick(e.x))
+    .onFinalize(() => setScrub(null));
+  const scrubbing = Gesture.Race(hold, swipe);
+
   const active = scrub !== null ? points[scrub] : null;
   const readout = active
     ? `${shortDate(active.t)} · ${mode === 'value' ? formatPrice(active.value) : `${active.items.toLocaleString('en-US')} items`}`
@@ -54,31 +77,26 @@ export function HistoryChart({ history, formatPrice }: { history: InventoryHisto
           ))}
         </View>
       </View>
-      <View
-        style={{ height: HEIGHT }}
-        onLayout={e => setWidth(e.nativeEvent.layout.width)}
-        onStartShouldSetResponder={() => true}
-        onMoveShouldSetResponder={() => true}
-        onResponderTerminationRequest={() => false}
-        onResponderGrant={e => pick(e.nativeEvent.locationX)}
-        onResponderMove={e => pick(e.nativeEvent.locationX)}
-        onResponderRelease={() => setScrub(null)}
-        onResponderTerminate={() => setScrub(null)}
-        accessibilityRole="image"
-        accessibilityLabel={`Inventory ${mode} from ${shortDate(points[0].t)} to ${shortDate(points[points.length - 1].t)}`}
-      >
-        {width > 0 && (
-          <Svg width={width} height={HEIGHT}>
-            <Polyline points={line} fill="none" stroke={q.accent} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
-          </Svg>
-        )}
-        {scrub !== null && width > 0 ? (
-          <>
-            <View pointerEvents="none" style={[ styles.hairline, { left: x(scrub) } ]} />
-            <View pointerEvents="none" style={[ styles.dot, { left: x(scrub) - 4.5, top: y(series[scrub]) - 4.5 } ]} />
-          </>
-        ) : null}
-      </View>
+      <GestureDetector gesture={scrubbing}>
+        <View
+          style={{ height: HEIGHT }}
+          onLayout={e => setWidth(e.nativeEvent.layout.width)}
+          accessibilityRole="image"
+          accessibilityLabel={`Inventory ${mode} from ${shortDate(points[0].t)} to ${shortDate(points[points.length - 1].t)}`}
+        >
+          {width > 0 && (
+            <Svg width={width} height={HEIGHT}>
+              <Polyline points={line} fill="none" stroke={q.accent} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+            </Svg>
+          )}
+          {scrub !== null && width > 0 ? (
+            <>
+              <View pointerEvents="none" style={[ styles.hairline, { left: x(scrub) } ]} />
+              <View pointerEvents="none" style={[ styles.dot, { left: x(scrub) - 4.5, top: y(series[scrub]) - 4.5 } ]} />
+            </>
+          ) : null}
+        </View>
+      </GestureDetector>
       <View style={styles.dates}>
         <Text size={11} color={q.faint}>{shortDate(points[0].t)}</Text>
         <Text size={11} color={q.faint}>{shortDate(points[points.length - 1].t)}</Text>

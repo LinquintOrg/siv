@@ -1,16 +1,18 @@
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useInventory, useInventoryGames, useProfile } from '@/api/queries';
 import type { InventoryHistoryEntry, InventoryItem } from '@/api/types';
 import { CountingValue } from '@/components/inventory/CountingValue';
 import { HistoryChart } from '@/components/inventory/HistoryChart';
 import { ItemCard } from '@/components/inventory/ItemCard';
-import { Avatar, DashedSelect, IconButton, Pill, Skeleton, ToggleChip, UnderlineInput, quietRefresh } from '@/components/quiet/Controls';
+import { Avatar, DashedSelect, IconButton, Pill, Skeleton, ToggleChip, UnderlineInput } from '@/components/quiet/Controls';
 import { StackScreen } from '@/components/quiet/Screen';
+import { ScrollTopButton, useScrollTop } from '@/components/quiet/ScrollTop';
 import { OptionSheet } from '@/components/quiet/Sheet';
 import { Text } from '@/components/quiet/Text';
 import { ErrorView } from '@/components/StateViews';
@@ -27,6 +29,9 @@ export default function InventoryScreen() {
   const formatPrice = useFormatPrice();
   const view = useInventoryView();
   const [ sheet, setSheet ] = useState<'game' | 'sort' | null>(null);
+  const insets = useSafeAreaInsets();
+  const list = useRef<FlashListRef<InventoryItem>>(null);
+  const scrollTop = useScrollTop(list);
 
   // A different inventory starts unfiltered
   const resetView = useInventoryView(state => state.reset);
@@ -34,7 +39,7 @@ export default function InventoryScreen() {
     resetView();
   }, [ steamid, appid, resetView ]);
 
-  const gameName = games.data?.find(g => g.appid === +appid)?.name ?? 'Inventory';
+  const gameName = games.data?.find(g => g.appid === +appid)?.name ?? 'Game';
   const all = inventory.data?.items;
   const items = useMemo(() => visibleItems(all ?? [], view), [ all, view ]);
 
@@ -164,6 +169,7 @@ export default function InventoryScreen() {
   return (
     <StackScreen center={center} right={isEmpty ? undefined : right}>
       <FlashList
+        ref={list}
         data={isEmpty ? [] : items}
         numColumns={2}
         keyExtractor={itemKey}
@@ -171,8 +177,10 @@ export default function InventoryScreen() {
         ListHeaderComponent={header}
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"
-        refreshControl={quietRefresh(inventory.isRefetching, inventory.refetch)}
+        onScroll={scrollTop.onScroll}
       />
+      {/* Pushed screens run under the system navigation bar */}
+      <ScrollTopButton visible={scrollTop.visible} onPress={scrollTop.scrollToTop} bottom={insets.bottom} />
       {sheets}
     </StackScreen>
   );

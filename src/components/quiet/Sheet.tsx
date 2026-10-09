@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
-import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
+import { useEffect, useState } from 'react';
+import { BackHandler, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Portal } from 'react-native-paper';
+import Animated, { Easing, FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { UnderlineInput } from '@/components/quiet/Controls';
@@ -40,14 +41,32 @@ export function OptionSheet<T extends string | number>({ open, onClose, kicker, 
     onClose();
   };
 
+  // The Android back button closes the sheet instead of leaving the screen
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setQuery('');
+      onClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [ open, onClose ]);
+
+  // Drawn in the app's own window rather than a Modal, so the panel reaches the bottom edge behind the navigation bar
+  if (!open) {
+    return null;
+  }
   return (
-    <Modal visible={open} transparent animationType="fade" onRequestClose={close} statusBarTranslucent navigationBarTranslucent>
-      <View style={styles.root}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityRole="button" accessibilityLabel="Close">
-          <Animated.View entering={FadeIn.duration(200)} style={[ StyleSheet.absoluteFill, { backgroundColor: q.backdrop } ]} />
-        </Pressable>
+    <Portal>
+      <KeyboardAvoidingView behavior="padding" style={styles.root}>
+        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(180)} style={[ StyleSheet.absoluteFill, { backgroundColor: q.backdrop } ]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityRole="button" accessibilityLabel="Close" />
+        </Animated.View>
         <Animated.View
-          entering={SlideInDown.springify().damping(24).stiffness(220)}
+          entering={SlideInDown.duration(260).easing(Easing.out(Easing.cubic))}
+          exiting={SlideOutDown.duration(200).easing(Easing.in(Easing.cubic))}
           style={[ styles.panel, { paddingBottom: insets.bottom + 12 } ]}
           accessibilityViewIsModal
         >
@@ -90,8 +109,8 @@ export function OptionSheet<T extends string | number>({ open, onClose, kicker, 
             {visible.length === 0 ? <Text size={14} color={q.dim} style={styles.empty}>No matches</Text> : null}
           </ScrollView>
         </Animated.View>
-      </View>
-    </Modal>
+      </KeyboardAvoidingView>
+    </Portal>
   );
 }
 

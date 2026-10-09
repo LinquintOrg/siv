@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect, useState } from 'react';
 import { AppState, Platform, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 
 import { MusicPlayerProvider } from '@/components/MusicPlayer';
@@ -54,23 +55,25 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <PaperProvider theme={theme}>
-        <ThemeProvider value={navigationTheme}>
-          <MusicPlayerProvider>
-            <View style={{ flex: 1, backgroundColor: q.bg }}>
-              <StatusBar style="light" />
-              <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: q.bg } }}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="profile/[steamid]/index" />
-                <Stack.Screen name="profile/[steamid]/[appid]/index" />
-                <Stack.Screen name="profile/[steamid]/[appid]/item" />
-              </Stack>
-              <Toaster />
-            </View>
-          </MusicPlayerProvider>
-        </ThemeProvider>
-      </PaperProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <PaperProvider theme={theme}>
+          <ThemeProvider value={navigationTheme}>
+            <MusicPlayerProvider>
+              <View style={{ flex: 1, backgroundColor: q.bg }}>
+                <StatusBar style="light" />
+                <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: q.bg } }}>
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="profile/[steamid]/index" />
+                  <Stack.Screen name="profile/[steamid]/[appid]/index" />
+                  <Stack.Screen name="profile/[steamid]/[appid]/item" />
+                </Stack>
+                <Toaster />
+              </View>
+            </MusicPlayerProvider>
+          </ThemeProvider>
+        </PaperProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -45,7 +45,8 @@ export const api = {
     body: JSON.stringify({ search }),
   }),
 
-  inventoryGames: () => request<InventoryGame[]>('/games/inventory'),
+  // appid can arrive as a string (bigint columns), and screens look games up with ===
+  inventoryGames: async () => (await request<InventoryGame[]>('/games/inventory')).map(g => ({ ...g, appid: Number(g.appid) })),
 
   inventory: (steamid: string, appid: number | string) => request<InventoryResponse>(`/inventory/${steamid}/${appid}`),
 
