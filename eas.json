@@ -17,7 +17,7 @@
     "production": {
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.linquint.dev",
-        "EXPO_PUBLIC_MUSIC_URL": "https://linquint.dev/music"
+        "EXPO_PUBLIC_MUSIC_URL": "https://api.linquint.dev/music"
       }
     }
   },

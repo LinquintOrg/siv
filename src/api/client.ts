@@ -9,8 +9,8 @@ import type {
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.linquint.dev';
 
-// Music kit audio files are served statically by the main site, not the API host.
-export const MUSIC_URL = process.env.EXPO_PUBLIC_MUSIC_URL ?? 'https://linquint.dev/music';
+// Music kit audio files are served statically by the API under /music.
+export const MUSIC_URL = process.env.EXPO_PUBLIC_MUSIC_URL ?? `${API_URL}/music`;
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
