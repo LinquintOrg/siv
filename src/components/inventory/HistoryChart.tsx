@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Svg, { Polyline } from 'react-native-svg';
 
@@ -29,15 +29,18 @@ interface Labels {
 
 const INVENTORY: Labels = { value: 'Value', count: 'Items', countUnit: 'items', valueName: 'Inventory value', countName: 'Item count' };
 
-/** Thin line of a money value or a count over time. Hold or drag sideways across it to read a point. */
-export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY, color = q.accent }: {
+/**
+ * Thin lines of a money value and a count over time, each on its own scale.
+ * Hold or drag sideways across it to read a point.
+ */
+export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY, color = q.accent, countColor = q.gold }: {
   points: HistoryPoint[];
   formatPrice: (usd: number) => string;
   labels?: Labels;
   color?: string;
+  countColor?: string;
 }) {
   const [ width, setWidth ] = useState(0);
-  const [ mode, setMode ] = useState<'value' | 'items'>('value');
   const [ scrub, setScrub ] = useState<number | null>(null);
 
   const points = [ ...unsorted ].sort((a, b) => a.t - b.t);
@@ -45,14 +48,18 @@ export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY
     return null;
   }
 
-  const series = points.map(p => (mode === 'value' ? p.value : p.count));
-  const min = Math.min(...series);
-  const max = Math.max(...series);
   // Spaced by time, so missing days show as longer segments
   const span = points[points.length - 1].t - points[0].t || 1;
   const x = (i: number) => ((points[i].t - points[0].t) / span) * width;
-  const y = (v: number) => (max === min ? HEIGHT / 2 : PAD + (1 - (v - min) / (max - min)) * (HEIGHT - PAD * 2));
-  const line = series.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const scale = (series: number[]) => {
+    const min = Math.min(...series);
+    const max = Math.max(...series);
+    return (v: number) => (max === min ? HEIGHT / 2 : PAD + (1 - (v - min) / (max - min)) * (HEIGHT - PAD * 2));
+  };
+  const valueY = scale(points.map(p => p.value));
+  const countY = scale(points.map(p => p.count));
+  const lineOf = (y: (v: number) => number, key: 'value' | 'count') =>
+    points.map((p, i) => `${x(i).toFixed(1)},${y(p[key]).toFixed(1)}`).join(' ');
 
   const pick = (locationX: number) => {
     if (width > 0) {
@@ -87,22 +94,30 @@ export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY
   const scrubbing = Gesture.Race(hold, swipe);
 
   const active = scrub !== null ? points[scrub] : null;
+  const countLabel = (count: number) => `${count.toLocaleString('en-US')} ${labels.countUnit}`;
   const readout = active
-    ? `${shortDate(active.t)} · ${mode === 'value' ? formatPrice(active.value) : `${active.count.toLocaleString('en-US')} ${labels.countUnit}`}`
+    ? `${shortDate(active.t)} · ${formatPrice(active.value)} · ${countLabel(active.count)}`
     : `Since ${shortDate(points[0].t)}`;
-  const description = `${mode === 'value' ? labels.valueName : labels.countName} from ${shortDate(points[0].t)} to ${shortDate(points[points.length - 1].t)}`;
+  const first = points[0];
+  const last = points[points.length - 1];
+  const description = `${labels.valueName} from ${formatPrice(first.value)} on ${shortDate(first.t)} to ${formatPrice(last.value)} on ${shortDate(last.t)}. `
+    + `${labels.countName} from ${countLabel(first.count)} to ${countLabel(last.count)}.`;
 
   return (
     <View style={styles.wrap}>
       <View style={styles.top}>
-        <Text size={12} color={q.faint} tabular>{readout}</Text>
-        <View style={styles.modes}>
-          {([ [ 'value', labels.value ], [ 'items', labels.count ] ] as const).map(([ key, label ]) => (
-            <Pressable key={key} onPress={() => setMode(key)} hitSlop={8} accessibilityRole="button" accessibilityState={{ selected: mode === key }}>
-              <Text size={12} color={mode === key ? q.text : q.dim}>{label}</Text>
-            </Pressable>
-          ))}
-        </View>
+        <Text size={12} color={q.faint} tabular style={styles.readout} numberOfLines={1}>{readout}</Text>
+        {/* Hidden while reading a point, which needs the whole row on a phone */}
+        {active ? null : (
+          <View style={styles.legend} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            {([ [ labels.value, color ], [ labels.count, countColor ] ] as const).map(([ label, swatch ]) => (
+              <View key={label} style={styles.legendItem}>
+                <View style={[ styles.swatch, { backgroundColor: swatch } ]} />
+                <Text size={12} color={q.dim}>{label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
       <GestureDetector gesture={scrubbing}>
         <View
@@ -113,7 +128,16 @@ export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY
         >
           {width > 0 && (
             <Svg width={width} height={HEIGHT}>
-              <Polyline points={line} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+              <Polyline
+                points={lineOf(countY, 'count')}
+                fill="none"
+                stroke={countColor}
+                strokeOpacity={0.85}
+                strokeWidth={1}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+              <Polyline points={lineOf(valueY, 'value')} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
             </Svg>
           )}
           {scrub !== null && width > 0 ? (
@@ -121,7 +145,11 @@ export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY
               <View pointerEvents="none" style={[ styles.hairline, { left: x(scrub) } ]} />
               <View
                 pointerEvents="none"
-                style={[ styles.dot, { borderColor: color, left: x(scrub) - 4.5, top: y(series[scrub]) - 4.5 } ]}
+                style={[ styles.dot, { borderColor: countColor, left: x(scrub) - 4.5, top: countY(points[scrub].count) - 4.5 } ]}
+              />
+              <View
+                pointerEvents="none"
+                style={[ styles.dot, { borderColor: color, left: x(scrub) - 4.5, top: valueY(points[scrub].value) - 4.5 } ]}
               />
             </>
           ) : null}
@@ -144,9 +172,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  modes: {
+  readout: {
+    flexShrink: 1,
+    marginRight: 12,
+  },
+  legend: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 14,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  swatch: {
+    width: 12,
+    height: 2,
+    borderRadius: 1,
   },
   hairline: {
     position: 'absolute',

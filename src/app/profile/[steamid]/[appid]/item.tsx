@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useInventory } from '@/api/queries';
@@ -126,6 +126,8 @@ export default function ItemScreen() {
 function Hero({ item }: { item: InventoryItem }) {
   const reduceMotion = useReducedMotion();
   const drift = useSharedValue(0);
+  // 0 until the image has loaded, then it rises into its float
+  const shown = useSharedValue(0);
   useEffect(() => {
     if (!reduceMotion) {
       drift.value = withRepeat(withTiming(1, { duration: 3000 }), -1, true);
@@ -134,12 +136,27 @@ function Hero({ item }: { item: InventoryItem }) {
   const floatStyle = useAnimatedStyle(() => ({
     transform: [ { translateY: -8 * drift.value }, { rotate: `${-2 + 3 * drift.value}deg` } ],
   }));
+  const revealStyle = useAnimatedStyle(() => ({
+    opacity: shown.value,
+    transform: reduceMotion ? [] : [ { translateY: 18 * (1 - shown.value) }, { scale: 0.92 + 0.08 * shown.value } ],
+  }));
+  const reveal = () => {
+    shown.set(withTiming(1, { duration: reduceMotion ? 200 : 700, easing: Easing.bezier(0.2, 0.8, 0.2, 1) }));
+  };
 
   return (
     <View style={styles.hero}>
       <RarityGlow color={steamColor(item.rarity?.color)} opacity={0.18} />
-      <Animated.View style={[ styles.heroImageWrap, floatStyle ]}>
-        <Image source={{ uri: itemImageUrl(item.iconUrl, 512) }} style={styles.heroImage} contentFit="contain" transition={200} />
+      <Animated.View style={[ styles.heroImageWrap, revealStyle ]}>
+        <Animated.View style={[ styles.heroImage, floatStyle ]}>
+          <Image
+            source={{ uri: itemImageUrl(item.iconUrl, 512) }}
+            style={styles.heroImage}
+            contentFit="contain"
+            onLoad={reveal}
+            onError={reveal}
+          />
+        </Animated.View>
       </Animated.View>
       {item.nameTag ? (
         <View style={styles.nameTag}>
