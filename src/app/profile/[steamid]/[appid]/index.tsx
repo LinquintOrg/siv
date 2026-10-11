@@ -233,7 +233,10 @@ function Summary({ items, history, rank, appid, formatPrice }: {
       </View>
 
       <Animated.View entering={FadeIn.duration(500).delay(150)} style={styles.chart}>
-        <HistoryChart history={history} formatPrice={formatPrice} />
+        <HistoryChart
+          points={history.map(h => ({ t: new Date(h.searchedAt).getTime(), value: h.inventoryValue, count: h.itemCount }))}
+          formatPrice={formatPrice}
+        />
       </Animated.View>
 
       <Animated.View entering={FadeIn.duration(500).delay(200)} style={styles.stats}>
