@@ -4,7 +4,6 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Svg, { Polyline } from 'react-native-svg';
 
-import type { InventoryHistoryEntry } from '@/api/types';
 import { Text } from '@/components/quiet/Text';
 import { q } from '@/theme';
 
@@ -14,29 +13,56 @@ const HOLD_MS = 180;
 
 const shortDate = (iso: string | number) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-/** Thin line of inventory value or item count over time. Hold or drag sideways across it to read a point. */
-export function HistoryChart({ history, formatPrice }: { history: InventoryHistoryEntry[]; formatPrice: (usd: number) => string }) {
+export interface HistoryPoint {
+  t: number;
+  value: number;
+  count: number;
+}
+
+interface Labels {
+  value: string;
+  count: string;
+  countUnit: string;
+  valueName: string;
+  countName: string;
+}
+
+const INVENTORY: Labels = { value: 'Value', count: 'Items', countUnit: 'items', valueName: 'Inventory value', countName: 'Item count' };
+
+/** Thin line of a money value or a count over time. Hold or drag sideways across it to read a point. */
+export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY, color = q.accent }: {
+  points: HistoryPoint[];
+  formatPrice: (usd: number) => string;
+  labels?: Labels;
+  color?: string;
+}) {
   const [ width, setWidth ] = useState(0);
   const [ mode, setMode ] = useState<'value' | 'items'>('value');
   const [ scrub, setScrub ] = useState<number | null>(null);
 
-  const points = [ ...history ]
-    .map(h => ({ t: new Date(h.searchedAt).getTime(), value: h.inventoryValue, items: h.itemCount }))
-    .sort((a, b) => a.t - b.t);
+  const points = [ ...unsorted ].sort((a, b) => a.t - b.t);
   if (points.length < 2) {
     return null;
   }
 
-  const series = points.map(p => (mode === 'value' ? p.value : p.items));
+  const series = points.map(p => (mode === 'value' ? p.value : p.count));
   const min = Math.min(...series);
   const max = Math.max(...series);
-  const x = (i: number) => (i / (points.length - 1)) * width;
+  // Spaced by time, so missing days show as longer segments
+  const span = points[points.length - 1].t - points[0].t || 1;
+  const x = (i: number) => ((points[i].t - points[0].t) / span) * width;
   const y = (v: number) => (max === min ? HEIGHT / 2 : PAD + (1 - (v - min) / (max - min)) * (HEIGHT - PAD * 2));
   const line = series.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
 
   const pick = (locationX: number) => {
     if (width > 0) {
-      setScrub(Math.max(0, Math.min(points.length - 1, Math.round((locationX / width) * (points.length - 1)))));
+      let nearest = 0;
+      points.forEach((_, i) => {
+        if (Math.abs(x(i) - locationX) < Math.abs(x(nearest) - locationX)) {
+          nearest = i;
+        }
+      });
+      setScrub(nearest);
     }
   };
 
@@ -62,15 +88,16 @@ export function HistoryChart({ history, formatPrice }: { history: InventoryHisto
 
   const active = scrub !== null ? points[scrub] : null;
   const readout = active
-    ? `${shortDate(active.t)} · ${mode === 'value' ? formatPrice(active.value) : `${active.items.toLocaleString('en-US')} items`}`
+    ? `${shortDate(active.t)} · ${mode === 'value' ? formatPrice(active.value) : `${active.count.toLocaleString('en-US')} ${labels.countUnit}`}`
     : `Since ${shortDate(points[0].t)}`;
+  const description = `${mode === 'value' ? labels.valueName : labels.countName} from ${shortDate(points[0].t)} to ${shortDate(points[points.length - 1].t)}`;
 
   return (
     <View style={styles.wrap}>
       <View style={styles.top}>
         <Text size={12} color={q.faint} tabular>{readout}</Text>
         <View style={styles.modes}>
-          {([ [ 'value', 'Value' ], [ 'items', 'Items' ] ] as const).map(([ key, label ]) => (
+          {([ [ 'value', labels.value ], [ 'items', labels.count ] ] as const).map(([ key, label ]) => (
             <Pressable key={key} onPress={() => setMode(key)} hitSlop={8} accessibilityRole="button" accessibilityState={{ selected: mode === key }}>
               <Text size={12} color={mode === key ? q.text : q.dim}>{label}</Text>
             </Pressable>
@@ -82,17 +109,20 @@ export function HistoryChart({ history, formatPrice }: { history: InventoryHisto
           style={{ height: HEIGHT }}
           onLayout={e => setWidth(e.nativeEvent.layout.width)}
           accessibilityRole="image"
-          accessibilityLabel={`Inventory ${mode} from ${shortDate(points[0].t)} to ${shortDate(points[points.length - 1].t)}`}
+          accessibilityLabel={description}
         >
           {width > 0 && (
             <Svg width={width} height={HEIGHT}>
-              <Polyline points={line} fill="none" stroke={q.accent} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+              <Polyline points={line} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
             </Svg>
           )}
           {scrub !== null && width > 0 ? (
             <>
               <View pointerEvents="none" style={[ styles.hairline, { left: x(scrub) } ]} />
-              <View pointerEvents="none" style={[ styles.dot, { left: x(scrub) - 4.5, top: y(series[scrub]) - 4.5 } ]} />
+              <View
+                pointerEvents="none"
+                style={[ styles.dot, { borderColor: color, left: x(scrub) - 4.5, top: y(series[scrub]) - 4.5 } ]}
+              />
             </>
           ) : null}
         </View>

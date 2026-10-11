@@ -1,15 +1,15 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Polyline } from 'react-native-svg';
 
 import { useInventory } from '@/api/queries';
 import type { InventoryItem, ItemPrice, ItemSticker } from '@/api/types';
 import { FloatBar } from '@/components/inventory/FloatBar';
+import { HistoryChart } from '@/components/inventory/HistoryChart';
 import { RarityGlow } from '@/components/inventory/ItemCard';
 import { IconButton, Pill, Skeleton } from '@/components/quiet/Controls';
 import { StackScreen } from '@/components/quiet/Screen';
@@ -185,16 +185,16 @@ function Applied({ title, list, formatPrice }: { title: string; list: readonly I
   );
 }
 
+const DAILY_LABELS = { value: 'Price', count: 'Listings', countUnit: 'listings', valueName: 'Average price', countName: 'Listings' };
+
 function MarketBlocks({ price, formatPrice }: { price: ItemPrice; formatPrice: Format }) {
-  const [ width, setWidth ] = useState(0);
   const current = price.price ?? null;
-  const trend = [ price.yearAgo, price.p90ago, price.p30ago, price.p24ago, current ].filter((v): v is number => typeof v === 'number');
-  const min = Math.min(...trend);
-  const max = Math.max(...trend);
-  const yearPct = percentChange(price.yearAgo, current);
-  const px = (i: number) => (i / Math.max(1, trend.length - 1)) * width;
-  const py = (v: number) => (max === min ? 48 : 6 + (1 - (v - min) / (max - min)) * 84);
-  const line = trend.map((v, i) => `${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(' ');
+  // Days are UTC dates; build them as local midnight so they're labelled with the same day
+  const daily = (price.daily ?? []).map(([ day, value, count ]) => {
+    const [ y, m, d ] = day.split('-').map(Number);
+    return { t: new Date(y, m - 1, d).getTime(), value, count };
+  });
+  const monthPct = daily.length > 1 ? percentChange(daily[0].value, daily[daily.length - 1].value) : null;
 
   const market = [
     { label: 'Avg 24 h', value: formatPrice(price.avg24) },
@@ -213,21 +213,16 @@ function MarketBlocks({ price, formatPrice }: { price: ItemPrice; formatPrice: F
 
   return (
     <>
-      {trend.length > 1 ? (
-        <View style={styles.block}>
-          <View style={styles.blockHead}>
-            <Text size={13}>Price trend</Text>
-            <Text size={12} color={q.dim} tabular>{formatPrice(min)} – {formatPrice(max)}</Text>
-          </View>
-          <View style={styles.trend} onLayout={e => setWidth(e.nativeEvent.layout.width)} accessibilityLabel="Price over the last year">
-            {width > 0 ? (
-              <Svg width={width} height={96}>
-                <Polyline points={line} fill="none" stroke={yearPct !== null && yearPct < 0 ? q.danger : q.accent} strokeWidth={1.5} strokeLinejoin="round" />
-              </Svg>
-            ) : null}
-          </View>
-          <View style={styles.trendLabels}>
-            {[ '1 y', '90 d', '30 d', '24 h', 'Now' ].map(label => <Text key={label} size={10} mono color={q.faint}>{label}</Text>)}
+      {daily.length > 1 ? (
+        <View>
+          <Text size={13} color={q.muted} style={styles.gridTitle}>Last 30 days</Text>
+          <View style={styles.daily}>
+            <HistoryChart
+              points={daily}
+              formatPrice={formatPrice}
+              labels={DAILY_LABELS}
+              color={monthPct !== null && monthPct < 0 ? q.danger : q.accent}
+            />
           </View>
         </View>
       ) : null}
@@ -389,14 +384,8 @@ const styles = StyleSheet.create({
     width: 34,
     height: 26,
   },
-  trend: {
-    height: 96,
-    borderBottomWidth: 1,
-    borderBottomColor: q.line2,
-  },
-  trendLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  daily: {
+    paddingTop: 14,
   },
   gridTitle: {
     paddingBottom: 12,

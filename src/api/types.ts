@@ -34,6 +34,8 @@ export interface ItemPrice {
   p30ago?: number | null;
   p90ago?: number | null;
   yearAgo?: number | null;
+  /** [ day as "YYYY-MM-DD" (UTC), average price, average listings ] for the last 30 days, oldest first */
+  daily?: [ string, number, number ][] | null;
 }
 
 export interface ItemSticker {
