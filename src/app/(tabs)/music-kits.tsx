@@ -12,10 +12,12 @@ import { Row, Skeleton, UnderlineInput, quietRefresh } from '@/components/quiet/
 import { TabScreen } from '@/components/quiet/Screen';
 import { Text } from '@/components/quiet/Text';
 import { ErrorView } from '@/components/StateViews';
-import { GUTTER, q } from '@/theme';
+import { GUTTER, makeStyles, useQ } from '@/theme';
 import { useFormatPrice } from '@/utils/currency';
 
 export default function MusicKitsScreen() {
+  const q = useQ();
+  const styles = useStyles();
   const kits = useMusicKits();
   const formatPrice = useFormatPrice();
   const { current, playing, loadingId, toggle } = useMusicPlayer();
@@ -83,7 +85,7 @@ export default function MusicKitsScreen() {
           ListHeaderComponent={header}
           contentContainerStyle={styles.pad}
           keyboardShouldPersistTaps="handled"
-          refreshControl={quietRefresh(kits.isRefetching, kits.refetch)}
+          refreshControl={quietRefresh(kits.isRefetching, kits.refetch, q)}
           ListEmptyComponent={kits.isPending ? (
             <View>
               {Array.from({ length: 7 }, (_, i) => (
@@ -105,7 +107,7 @@ export default function MusicKitsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   pad: {
     paddingHorizontal: GUTTER,
     paddingBottom: 32,
@@ -148,4 +150,4 @@ const styles = StyleSheet.create({
   empty: {
     paddingVertical: 40,
   },
-});
+}));

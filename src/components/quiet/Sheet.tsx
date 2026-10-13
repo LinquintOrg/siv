@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { UnderlineInput } from '@/components/quiet/Controls';
 import { Text } from '@/components/quiet/Text';
-import { GUTTER, q } from '@/theme';
+import { GUTTER, makeStyles, useQ } from '@/theme';
 
 export interface SheetOption<T extends string | number> {
   value: T;
@@ -30,6 +30,8 @@ interface Props<T extends string | number> {
 /** Bottom sheet with a single-choice list — the app's dropdown. */
 export function OptionSheet<T extends string | number>({ open, onClose, kicker, title, options, selected, onSelect, searchPlaceholder }: Props<T>) {
   const insets = useSafeAreaInsets();
+  const q = useQ();
+  const styles = useStyles();
   const [ query, setQuery ] = useState('');
   const q2 = query.trim().toLowerCase();
   const visible = searchPlaceholder && q2
@@ -114,7 +116,7 @@ export function OptionSheet<T extends string | number>({ open, onClose, kicker, 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   root: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -158,7 +160,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: GUTTER + 2,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#1A1A1D',
+    borderTopColor: q.divider,
   },
   dot: {
     width: 6,
@@ -177,4 +179,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: GUTTER + 2,
     paddingVertical: 16,
   },
-});
+}));

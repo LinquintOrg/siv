@@ -3,7 +3,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Pill } from '@/components/quiet/Controls';
 import { Text } from '@/components/quiet/Text';
-import { GUTTER, q } from '@/theme';
+import { GUTTER, useQ } from '@/theme';
 
 interface MessageViewProps {
   title: string;
@@ -15,6 +15,7 @@ interface MessageViewProps {
 
 /** Large, left-aligned message for empty and error states. */
 export function MessageView({ title, message, tone = 'default', actionLabel, onAction }: MessageViewProps) {
+  const q = useQ();
   return (
     <Animated.View entering={FadeInDown.duration(400)} style={styles.wrap}>
       <Text size={30} weight="extralight" tracking={-0.03} leading={1.15} color={tone === 'danger' ? q.danger : q.text}>{title}</Text>

@@ -5,12 +5,12 @@ import { Pressable, RefreshControl, StyleSheet, TextInput, View, type StyleProp,
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { Text } from '@/components/quiet/Text';
-import { fonts, q } from '@/theme';
+import { fonts, makeStyles, useQ, type Palette } from '@/theme';
 
 export type IconName = ComponentProps<typeof Feather>['name'];
 
-/** Pull-to-refresh spinner in the accent colour. */
-export function quietRefresh(refreshing: boolean, onRefresh: () => void) {
+/** Pull-to-refresh spinner in the accent colour. Pass the screen's palette from useQ(). */
+export function quietRefresh(refreshing: boolean, onRefresh: () => void, q: Palette) {
   return <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[ q.accent ]} progressBackgroundColor={q.raised} tintColor={q.accent} />;
 }
 
@@ -23,6 +23,8 @@ export function Pill({ label, onPress, variant = 'primary', icon, disabled, styl
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
+  const q = useQ();
+  const styles = useStyles();
   const primary = variant === 'primary';
   return (
     <Pressable
@@ -43,13 +45,15 @@ export function Pill({ label, onPress, variant = 'primary', icon, disabled, styl
 }
 
 /** Square 44pt icon button. */
-export function IconButton({ icon, label, onPress, color = q.muted, size = 20 }: {
+export function IconButton({ icon, label, onPress, color, size = 20 }: {
   icon: IconName;
   label: string;
   onPress?: () => void;
   color?: string;
   size?: number;
 }) {
+  const q = useQ();
+  const styles = useStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -58,19 +62,22 @@ export function IconButton({ icon, label, onPress, color = q.muted, size = 20 }:
       hitSlop={4}
       style={({ pressed }) => [ styles.iconButton, { opacity: pressed ? 0.6 : 1 } ]}
     >
-      <Feather name={icon} size={size} color={color} />
+      <Feather name={icon} size={size} color={color ?? q.muted} />
     </Pressable>
   );
 }
 
 /** Text with a dashed underline that opens a picker — the web's game selector. */
-export function DashedSelect({ label, onPress, size = 17, color = q.accent, accessibilityLabel }: {
+export function DashedSelect({ label, onPress, size = 17, color: colorProp, accessibilityLabel }: {
   label: string;
   onPress: () => void;
   size?: number;
   color?: string;
   accessibilityLabel?: string;
 }) {
+  const q = useQ();
+  const styles = useStyles();
+  const color = colorProp ?? q.accent;
   return (
     <Pressable
       accessibilityRole="button"
@@ -92,6 +99,7 @@ export function Row({ children, onPress, style, accessibilityLabel }: {
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
 }) {
+  const styles = useStyles();
   if (!onPress) {
     return <View style={[ styles.row, style ]}>{children}</View>;
   }
@@ -108,6 +116,8 @@ export function Row({ children, onPress, style, accessibilityLabel }: {
 }
 
 export function SectionTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
+  const q = useQ();
+  const styles = useStyles();
   return (
     <View style={styles.sectionTitle}>
       <Text size={13} color={q.muted}>{children}</Text>
@@ -118,6 +128,8 @@ export function SectionTitle({ children, right }: { children: ReactNode; right?:
 
 /** Round avatar that falls back to the name's first letter. */
 export function Avatar({ uri, name, size = 40 }: { uri?: string | null; name: string; size?: number }) {
+  const q = useQ();
+  const styles = useStyles();
   return (
     <View style={[ styles.avatar, { width: size, height: size, borderRadius: size / 2 } ]}>
       {uri ? (
@@ -131,6 +143,8 @@ export function Avatar({ uri, name, size = 40 }: { uri?: string | null; name: st
 
 /** Small toggle chip, outlined until it's on. */
 export function ToggleChip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  const q = useQ();
+  const styles = useStyles();
   return (
     <Pressable
       accessibilityRole="switch"
@@ -150,6 +164,7 @@ export function Skeleton({ width, height, radius = 4, style }: {
   radius?: number;
   style?: StyleProp<ViewStyle>;
 }) {
+  const q = useQ();
   const reduceMotion = useReducedMotion();
   const opacity = useSharedValue(1);
   useEffect(() => {
@@ -163,25 +178,29 @@ export function Skeleton({ width, height, radius = 4, style }: {
 
 /** Underlined text input; `icon` adds a leading search glass. */
 export const UnderlineInput = forwardRef<TextInput, TextInputProps & { icon?: IconName; size?: number; invalid?: boolean }>(
-  ({ icon, size = 15, invalid, style, ...rest }, ref) => (
-    <View style={[ styles.input, { borderBottomColor: invalid ? '#6B3329' : q.line3 } ]}>
-      {icon ? <Feather name={icon} size={15} color={q.dim} /> : null}
-      <TextInput
-        ref={ref}
-        placeholderTextColor={q.faint}
-        selectionColor={q.accent}
-        cursorColor={q.accent}
-        autoCorrect={false}
-        autoCapitalize="none"
-        {...rest}
-        style={[ styles.inputText, { fontSize: size, fontFamily: size > 18 ? fonts.light : fonts.regular }, style ]}
-      />
-    </View>
-  ),
+  ({ icon, size = 15, invalid, style, ...rest }, ref) => {
+    const q = useQ();
+    const styles = useStyles();
+    return (
+      <View style={[ styles.input, { borderBottomColor: invalid ? q.invalid : q.line3 } ]}>
+        {icon ? <Feather name={icon} size={15} color={q.dim} /> : null}
+        <TextInput
+          ref={ref}
+          placeholderTextColor={q.faint}
+          selectionColor={q.accent}
+          cursorColor={q.accent}
+          autoCorrect={false}
+          autoCapitalize="none"
+          {...rest}
+          style={[ styles.inputText, { fontSize: size, fontFamily: size > 18 ? fonts.light : fonts.regular }, style ]}
+        />
+      </View>
+    );
+  },
 );
 UnderlineInput.displayName = 'UnderlineInput';
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   pill: {
     height: 48,
     paddingHorizontal: 22,
@@ -223,7 +242,7 @@ const styles = StyleSheet.create({
     borderTopColor: q.line,
   },
   rowPressed: {
-    backgroundColor: '#121214',
+    backgroundColor: q.pressed,
   },
   sectionTitle: {
     flexDirection: 'row',
@@ -253,8 +272,8 @@ const styles = StyleSheet.create({
   },
   inputText: {
     flex: 1,
-    color: q.white,
+    color: q.bright,
     paddingVertical: 10,
     paddingHorizontal: 0,
   },
-});
+}));

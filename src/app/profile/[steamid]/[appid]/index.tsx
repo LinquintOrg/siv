@@ -1,7 +1,7 @@
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,11 +17,13 @@ import { OptionSheet } from '@/components/quiet/Sheet';
 import { Text } from '@/components/quiet/Text';
 import { ErrorView } from '@/components/StateViews';
 import { SORTS, useInventoryView, visibleItems, type SortKey } from '@/stores/inventoryView';
-import { GUTTER, q } from '@/theme';
+import { GUTTER, makeStyles, useQ } from '@/theme';
 import { useFormatPrice } from '@/utils/currency';
 import { itemKey, itemPrice, percentChange } from '@/utils/steam';
 
 export default function InventoryScreen() {
+  const q = useQ();
+  const styles = useStyles();
   const { steamid, appid } = useLocalSearchParams<{ steamid: string; appid: string }>();
   const inventory = useInventory(steamid, +appid);
   const games = useInventoryGames();
@@ -193,6 +195,8 @@ function Summary({ items, history, rank, appid, formatPrice }: {
   appid: string;
   formatPrice: (usd: number | null | undefined) => string;
 }) {
+  const q = useQ();
+  const styles = useStyles();
   const total = items.reduce((sum, item) => sum + (itemPrice(item) ?? 0) * item.amount, 0);
   const count = items.reduce((sum, item) => sum + item.amount, 0);
   const mostValuable = Math.max(0, ...items.map(item => itemPrice(item) ?? 0));
@@ -252,6 +256,7 @@ function Summary({ items, history, rank, appid, formatPrice }: {
 }
 
 function InventorySkeleton() {
+  const styles = useStyles();
   return (
     <View style={styles.skeleton} accessibilityLabel="Loading inventory">
       <Skeleton width="78%" height={52} radius={12} />
@@ -279,7 +284,7 @@ function InventorySkeleton() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   flex: {
     flex: 1,
   },
@@ -383,4 +388,4 @@ const styles = StyleSheet.create({
     width: '47%',
     gap: 10,
   },
-});
+}));

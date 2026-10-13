@@ -28,6 +28,8 @@ export interface ItemPrice {
   avg24?: number | null;
   avg7?: number | null;
   avg30?: number | null;
+  avg90?: number | null;
+  avg365?: number | null;
   min?: number | null;
   max?: number | null;
   p24ago?: number | null;

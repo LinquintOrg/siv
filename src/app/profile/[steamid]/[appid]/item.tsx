@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo } from 'react';
-import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, View } from 'react-native';
 import Animated, { Easing, FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,13 +16,15 @@ import { StackScreen } from '@/components/quiet/Screen';
 import { Text } from '@/components/quiet/Text';
 import { ErrorView, MessageView } from '@/components/StateViews';
 import { useInventoryView, visibleItems } from '@/stores/inventoryView';
-import { GUTTER, q } from '@/theme';
+import { GUTTER, makeStyles, useQ, type Palette } from '@/theme';
 import { useFormatPrice } from '@/utils/currency';
 import { itemImageUrl, itemKey, marketListingUrl, percentChange, steamColor } from '@/utils/steam';
 
 type Format = (usd: number | null | undefined) => string;
 
 export default function ItemScreen() {
+  const q = useQ();
+  const styles = useStyles();
   const { steamid, appid, key } = useLocalSearchParams<{ steamid: string; appid: string; key: string }>();
   const inventory = useInventory(steamid, +appid);
   const formatPrice = useFormatPrice();
@@ -124,6 +126,8 @@ export default function ItemScreen() {
 }
 
 function Hero({ item }: { item: InventoryItem }) {
+  const q = useQ();
+  const styles = useStyles();
   const reduceMotion = useReducedMotion();
   const drift = useSharedValue(0);
   // 0 until the image has loaded, then it rises into its float
@@ -169,13 +173,15 @@ function Hero({ item }: { item: InventoryItem }) {
 }
 
 function PriceBlock({ price, amount, formatPrice }: { price: ItemPrice; amount: number; formatPrice: Format }) {
+  const q = useQ();
+  const styles = useStyles();
   const current = price.price ?? null;
   const day = percentChange(price.p24ago, current);
   return (
     <View style={styles.priceBlock}>
       <Text size={48} weight="extralight" tracking={-0.05} tabular>{formatPrice(current)}</Text>
       <Text size={14} color={q.muted}>
-        <Text size={14} color={toneOf(day)}>{pctLabel(day)}</Text>
+        <Text size={14} color={toneOf(day, q)}>{pctLabel(day)}</Text>
         {' in 24 h'}
         {amount > 1 && current !== null ? ` · ${formatPrice(current * amount)} for ${amount}` : ''}
       </Text>
@@ -184,6 +190,8 @@ function PriceBlock({ price, amount, formatPrice }: { price: ItemPrice; amount: 
 }
 
 function Applied({ title, list, formatPrice }: { title: string; list: readonly ItemSticker[]; formatPrice: Format }) {
+  const q = useQ();
+  const styles = useStyles();
   const total = list.reduce((sum, s) => sum + (s.price || 0), 0);
   return (
     <View>
@@ -205,6 +213,8 @@ function Applied({ title, list, formatPrice }: { title: string; list: readonly I
 const DAILY_LABELS = { value: 'Price', count: 'Listings', countUnit: 'listings', valueName: 'Average price', countName: 'Listings' };
 
 function MarketBlocks({ price, formatPrice }: { price: ItemPrice; formatPrice: Format }) {
+  const q = useQ();
+  const styles = useStyles();
   const current = price.price ?? null;
   // Days are UTC dates; build them as local midnight so they're labelled with the same day
   const daily = (price.daily ?? []).map(([ day, value, count ]) => {
@@ -217,6 +227,9 @@ function MarketBlocks({ price, formatPrice }: { price: ItemPrice; formatPrice: F
     { label: 'Avg 24 h', value: formatPrice(price.avg24) },
     { label: 'Avg 7 d', value: formatPrice(price.avg7) },
     { label: 'Avg 30 d', value: formatPrice(price.avg30) },
+    // Left out until the API has them
+    ...(price.avg90 != null ? [ { label: 'Avg 90 d', value: formatPrice(price.avg90) } ] : []),
+    ...(price.avg365 != null ? [ { label: 'Avg 1 y', value: formatPrice(price.avg365) } ] : []),
     { label: 'Lowest', value: formatPrice(price.min) },
     { label: 'Highest', value: formatPrice(price.max) },
     { label: 'Listings', value: price.listed ? price.listed.toLocaleString('en-US') : '—' },
@@ -265,7 +278,7 @@ function MarketBlocks({ price, formatPrice }: { price: ItemPrice; formatPrice: F
               <View key={h.label} style={[ styles.cell, { width: '50%' } ]}>
                 <Text size={12} color={q.dim}>{h.label}</Text>
                 <Text size={16} tabular>{formatPrice(h.from)}</Text>
-                <Text size={11} mono color={toneOf(p)}>{pctLabel(p)}</Text>
+                <Text size={11} mono color={toneOf(p, q)}>{pctLabel(p)}</Text>
               </View>
             );
           })}
@@ -276,6 +289,8 @@ function MarketBlocks({ price, formatPrice }: { price: ItemPrice; formatPrice: F
 }
 
 function Details({ item }: { item: InventoryItem }) {
+  const q = useQ();
+  const styles = useStyles();
   const rows = [
     [ 'Type', item.itemType ],
     [ 'Exterior', item.condition ],
@@ -301,7 +316,7 @@ function Details({ item }: { item: InventoryItem }) {
 }
 
 const pctLabel = (p: number | null) => (p === null || !Number.isFinite(p) ? '—' : `${p >= 0 ? '+' : ''}${p.toFixed(1)}%`);
-const toneOf = (p: number | null) => (p === null || !Number.isFinite(p) ? q.dim : p >= 0 ? q.accent : q.danger);
+const toneOf = (p: number | null, q: Palette) => (p === null || !Number.isFinite(p) ? q.dim : p >= 0 ? q.accent : q.danger);
 
 /**
  * Steam returns inspect links as templates (%owner_steamid%, %assetid%).
@@ -312,7 +327,7 @@ function resolveInspectLink(link: string | undefined, steamid: string) {
   return resolved && !/%[a-z_]+%/i.test(resolved) ? resolved : null;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   flex: {
     flex: 1,
   },
@@ -438,4 +453,4 @@ const styles = StyleSheet.create({
     borderTopColor: q.line,
     backgroundColor: q.bg,
   },
-});
+}));

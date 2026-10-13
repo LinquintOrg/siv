@@ -6,7 +6,7 @@ import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import type { InventoryItem } from '@/api/types';
 import { Text } from '@/components/quiet/Text';
-import { q } from '@/theme';
+import { makeStyles, useQ } from '@/theme';
 import { itemImageUrl, itemPrice, steamColor } from '@/utils/steam';
 
 /** Soft rarity-coloured glow behind an item image. A gradient, not a blur, so it stays cheap. */
@@ -40,6 +40,8 @@ interface Props {
 const STAGGERED = 12;
 
 export const ItemCard = memo(({ item, index, formatPrice, onPress }: Props) => {
+  const q = useQ();
+  const styles = useStyles();
   const price = itemPrice(item);
   const rarity = steamColor(item.rarity?.color);
   const nameColor = item.nameColor && item.nameColor.toLowerCase() !== 'd2d2d2' ? steamColor(item.nameColor) : q.text;
@@ -86,7 +88,7 @@ export const ItemCard = memo(({ item, index, formatPrice, onPress }: Props) => {
 });
 ItemCard.displayName = 'ItemCard';
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   cell: {
     flex: 1,
     paddingHorizontal: 7,
@@ -104,7 +106,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   stagePressed: {
-    backgroundColor: '#17171A',
+    backgroundColor: q.stage,
     transform: [ { scale: 0.98 } ],
   },
   image: {
@@ -147,4 +149,4 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 4,
   },
-});
+}));

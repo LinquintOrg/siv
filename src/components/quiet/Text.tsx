@@ -1,6 +1,6 @@
 import { Text as RNText, type TextProps } from 'react-native';
 
-import { fonts, q, type FontWeight } from '@/theme';
+import { fonts, useQ, type FontWeight } from '@/theme';
 
 interface Props extends TextProps {
   size?: number;
@@ -16,7 +16,8 @@ interface Props extends TextProps {
   align?: 'left' | 'center' | 'right';
 }
 
-export function Text({ size = 15, weight = 'regular', mono, color = q.text, tracking, leading, tabular, align, style, ...rest }: Props) {
+export function Text({ size = 15, weight = 'regular', mono, color, tracking, leading, tabular, align, style, ...rest }: Props) {
+  const q = useQ();
   return (
     <RNText
       {...rest}
@@ -24,7 +25,7 @@ export function Text({ size = 15, weight = 'regular', mono, color = q.text, trac
         {
           fontFamily: mono ? fonts.mono : fonts[weight],
           fontSize: size,
-          color,
+          color: color ?? q.text,
           letterSpacing: tracking ? tracking * size : undefined,
           lineHeight: leading ? Math.round(leading * size) : undefined,
           fontVariant: tabular ? [ 'tabular-nums' ] : undefined,

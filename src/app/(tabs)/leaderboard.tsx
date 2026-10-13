@@ -1,7 +1,7 @@
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { useInventoryGames, useLeaderboard } from '@/api/queries';
@@ -12,7 +12,7 @@ import { ScrollTopButton, useScrollTop } from '@/components/quiet/ScrollTop';
 import { OptionSheet } from '@/components/quiet/Sheet';
 import { Text } from '@/components/quiet/Text';
 import { ErrorView } from '@/components/StateViews';
-import { GUTTER, q } from '@/theme';
+import { GUTTER, makeStyles, useQ } from '@/theme';
 import { useFormatPrice } from '@/utils/currency';
 
 function useDebounced<T>(value: T, delay = 350) {
@@ -25,6 +25,8 @@ function useDebounced<T>(value: T, delay = 350) {
 }
 
 export default function LeaderboardScreen() {
+  const q = useQ();
+  const styles = useStyles();
   const params = useLocalSearchParams<{ appid?: string }>();
   const formatPrice = useFormatPrice();
   const games = useInventoryGames();
@@ -116,7 +118,7 @@ export default function LeaderboardScreen() {
             }
           }}
           onEndReachedThreshold={0.5}
-          refreshControl={quietRefresh(leaderboard.isRefetching && !leaderboard.isFetchingNextPage, leaderboard.refetch)}
+          refreshControl={quietRefresh(leaderboard.isRefetching && !leaderboard.isFetchingNextPage, leaderboard.refetch, q)}
           ListEmptyComponent={leaderboard.isPending
             ? <View>{skeletonRows(8)}</View>
             : <Text size={15} color={q.dim} align="center" style={styles.empty}>{search ? `No players match “${search}”.` : 'No players yet.'}</Text>}
@@ -144,7 +146,7 @@ export default function LeaderboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   pad: {
     paddingHorizontal: GUTTER,
     paddingBottom: 32,
@@ -177,4 +179,4 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: q.line,
   },
-});
+}));
