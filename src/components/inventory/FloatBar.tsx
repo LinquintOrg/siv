@@ -1,7 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Text } from '@/components/quiet/Text';
-import { q } from '@/theme';
+import { makeStyles, useQ } from '@/theme';
 
 /** CS2 wear ranges on the 0–1 float scale */
 const BANDS = [
@@ -13,6 +13,8 @@ const BANDS = [
 ];
 
 export function FloatBar({ float, condition }: { float: number; condition?: string }) {
+  const q = useQ();
+  const styles = useStyles();
   const active = BANDS.find(b => float < b.end) ?? BANDS[BANDS.length - 1];
   return (
     <View style={styles.wrap}>
@@ -41,7 +43,7 @@ export function FloatBar({ float, condition }: { float: number; condition?: stri
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   wrap: {
     gap: 8,
   },
@@ -66,7 +68,7 @@ const styles = StyleSheet.create({
     width: 2,
     height: 12,
     marginLeft: -1,
-    backgroundColor: q.white,
+    backgroundColor: q.bright,
   },
   labels: {
     height: 14,
@@ -78,4 +80,4 @@ const styles = StyleSheet.create({
     // FN is narrow; let its label overflow the slot instead of wrapping
     overflow: 'visible',
   },
-});
+}));

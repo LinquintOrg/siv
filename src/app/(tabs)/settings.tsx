@@ -12,14 +12,23 @@ import { Text } from '@/components/quiet/Text';
 import { useToast } from '@/components/quiet/Toaster';
 import { useProfiles } from '@/stores/profiles';
 import { useSettings } from '@/stores/settings';
-import { GUTTER, q } from '@/theme';
+import { GUTTER, useQ, type ThemePreference } from '@/theme';
 import { CURRENCIES } from '@/utils/currency';
 
+const THEMES: { value: ThemePreference; label: string; sub?: string }[] = [
+  { value: 'system', label: 'System', sub: 'Follows your phone' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'light', label: 'Light' },
+];
+
 export default function SettingsScreen() {
-  const { currency, setCurrency } = useSettings();
+  const q = useQ();
+  const { currency, setCurrency, theme, setTheme } = useSettings();
   const { recent, clearRecent } = useProfiles();
   const showToast = useToast(state => state.show);
   const [ picking, setPicking ] = useState(false);
+  const [ pickingTheme, setPickingTheme ] = useState(false);
+  const themeName = THEMES.find(t => t.value === theme)?.label ?? 'Dark';
   const [ confirming, setConfirming ] = useState(false);
   const currencyName = CURRENCIES.find(c => c.code === currency)?.name ?? currency;
   const recentLabel = recent.length ? `${recent.length} ${recent.length === 1 ? 'lookup' : 'lookups'}` : 'Nothing saved';
@@ -43,6 +52,11 @@ export default function SettingsScreen() {
           <Row onPress={() => setPicking(true)} accessibilityLabel={`Currency, ${currencyName}`}>
             <Text size={16} style={styles.flex}>Currency</Text>
             <Text size={14} color={q.muted}>{currencyName} · <Text size={12} mono color={q.muted}>{currency}</Text></Text>
+            <Feather name="arrow-right" size={16} color={q.faint} />
+          </Row>
+          <Row onPress={() => setPickingTheme(true)} accessibilityLabel={`Theme, ${themeName}`}>
+            <Text size={16} style={styles.flex}>Theme</Text>
+            <Text size={14} color={q.muted}>{themeName}</Text>
             <Feather name="arrow-right" size={16} color={q.faint} />
           </Row>
         </Animated.View>
@@ -99,6 +113,19 @@ export default function SettingsScreen() {
           setCurrency(code);
           setPicking(false);
           showToast(`Prices now in ${CURRENCIES.find(c => c.code === code)?.name ?? code}`);
+        }}
+      />
+
+      <OptionSheet
+        open={pickingTheme}
+        onClose={() => setPickingTheme(false)}
+        kicker="Appearance"
+        title="Theme"
+        options={THEMES}
+        selected={theme}
+        onSelect={value => {
+          setTheme(value);
+          setPickingTheme(false);
         }}
       />
     </TabScreen>

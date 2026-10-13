@@ -1,11 +1,11 @@
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Svg, { Polyline } from 'react-native-svg';
 
 import { Text } from '@/components/quiet/Text';
-import { q } from '@/theme';
+import { makeStyles, useQ } from '@/theme';
 
 const HEIGHT = 112;
 const PAD = 6;
@@ -33,13 +33,17 @@ const INVENTORY: Labels = { value: 'Value', count: 'Items', countUnit: 'items', 
  * Thin lines of a money value and a count over time, each on its own scale.
  * Hold or drag sideways across it to read a point.
  */
-export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY, color = q.accent, countColor = q.gold }: {
+export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY, color: colorProp, countColor: countColorProp }: {
   points: HistoryPoint[];
   formatPrice: (usd: number) => string;
   labels?: Labels;
   color?: string;
   countColor?: string;
 }) {
+  const q = useQ();
+  const styles = useStyles();
+  const color = colorProp ?? q.accent;
+  const countColor = countColorProp ?? q.gold;
   const [ width, setWidth ] = useState(0);
   const [ scrub, setScrub ] = useState<number | null>(null);
 
@@ -163,7 +167,7 @@ export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   wrap: {
     gap: 10,
   },
@@ -210,4 +214,4 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-});
+}));

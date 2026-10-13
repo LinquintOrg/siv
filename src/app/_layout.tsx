@@ -10,14 +10,15 @@ import { Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
-import { useEffect, useState } from 'react';
-import { AppState, Platform, View } from 'react-native';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { Appearance, AppState, Platform, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 
 import { MusicPlayerProvider } from '@/components/MusicPlayer';
 import { Toaster } from '@/components/quiet/Toaster';
-import { navigationTheme, q, theme } from '@/theme';
+import { useSettings } from '@/stores/settings';
+import { navigationThemes, PaletteContext, palettes, paperThemes, type ColorScheme } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -27,6 +28,19 @@ AppState.addEventListener('change', status => {
     focusManager.setFocused(status === 'active');
   }
 });
+
+const subscribeHydration = (onChange: () => void) => useSettings.persist.onFinishHydration(onChange);
+const isHydrated = () => useSettings.persist.hasHydrated();
+
+/** The theme to show: the setting, or the phone's own when it's set to follow the system. */
+function useScheme(): ColorScheme {
+  const preference = useSettings(state => state.theme);
+  const system = useColorScheme();
+  if (preference === 'system') {
+    return system === 'light' ? 'light' : 'dark';
+  }
+  return preference;
+}
 
 export default function RootLayout() {
   const [ queryClient ] = useState(() => new QueryClient());
@@ -38,11 +52,23 @@ export default function RootLayout() {
     Geist_600SemiBold,
     GeistMono_400Regular,
   });
-  const ready = fontsLoaded || !!fontError;
+  // Wait for the saved settings too, so the app doesn't open in the wrong theme
+  const hydrated = useSyncExternalStore(subscribeHydration, isHydrated);
+  const ready = (fontsLoaded || !!fontError) && hydrated;
+  const preference = useSettings(state => state.theme);
+  const scheme = useScheme();
+  const q = palettes[scheme];
+
+  // Native parts (dialogs, the keyboard) follow the chosen theme too
+  useEffect(() => {
+    if (Platform.OS !== 'web' && hydrated) {
+      Appearance.setColorScheme(preference === 'system' ? 'unspecified' : preference);
+    }
+  }, [ preference, hydrated ]);
 
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(q.bg);
-  }, []);
+  }, [ q.bg ]);
 
   useEffect(() => {
     if (ready) {
@@ -57,22 +83,24 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <PaperProvider theme={theme}>
-          <ThemeProvider value={navigationTheme}>
-            <MusicPlayerProvider>
-              <View style={{ flex: 1, backgroundColor: q.bg }}>
-                <StatusBar style="light" />
-                <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: q.bg } }}>
-                  <Stack.Screen name="(tabs)" />
-                  <Stack.Screen name="profile/[steamid]/index" />
-                  <Stack.Screen name="profile/[steamid]/[appid]/index" />
-                  <Stack.Screen name="profile/[steamid]/[appid]/item" />
-                </Stack>
-                <Toaster />
-              </View>
-            </MusicPlayerProvider>
-          </ThemeProvider>
-        </PaperProvider>
+        <PaletteContext value={q}>
+          <PaperProvider theme={paperThemes[scheme]}>
+            <ThemeProvider value={navigationThemes[scheme]}>
+              <MusicPlayerProvider>
+                <View style={{ flex: 1, backgroundColor: q.bg }}>
+                  <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+                  <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: q.bg } }}>
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen name="profile/[steamid]/index" />
+                    <Stack.Screen name="profile/[steamid]/[appid]/index" />
+                    <Stack.Screen name="profile/[steamid]/[appid]/item" />
+                  </Stack>
+                  <Toaster />
+                </View>
+              </MusicPlayerProvider>
+            </ThemeProvider>
+          </PaperProvider>
+        </PaletteContext>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

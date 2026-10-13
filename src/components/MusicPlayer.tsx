@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -18,7 +18,7 @@ import type { MusicKit } from '@/api/types';
 import { IconButton } from '@/components/quiet/Controls';
 import { Text } from '@/components/quiet/Text';
 import { useToast } from '@/components/quiet/Toaster';
-import { GUTTER, q } from '@/theme';
+import { GUTTER, makeStyles, useQ } from '@/theme';
 
 const AUDIO_FILE = /\.(mp3|ogg|wav|m4a)$/i;
 
@@ -114,15 +114,18 @@ export function MusicPlayerProvider({ children }: { children: ReactNode }) {
 }
 
 /** Three bars that bounce while a kit plays. */
-export function Equalizer({ playing, color = q.accent }: { playing: boolean; color?: string }) {
+export function Equalizer({ playing, color }: { playing: boolean; color?: string }) {
+  const q = useQ();
+  const styles = useStyles();
   return (
     <View style={styles.eq} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {[ 0, 1, 2 ].map(i => <EqBar key={i} index={i} playing={playing} color={color} />)}
+      {[ 0, 1, 2 ].map(i => <EqBar key={i} index={i} playing={playing} color={color ?? q.accent} />)}
     </View>
   );
 }
 
 function EqBar({ index, playing, color }: { index: number; playing: boolean; color: string }) {
+  const styles = useStyles();
   const reduceMotion = useReducedMotion();
   const height = useSharedValue(6);
   useEffect(() => {
@@ -140,6 +143,8 @@ function EqBar({ index, playing, color }: { index: number; playing: boolean; col
 export function NowPlayingBar() {
   const { current, playing, toggle, stop } = useMusicPlayer();
   const progress = useContext(ProgressContext);
+  const q = useQ();
+  const styles = useStyles();
   if (!current) {
     return null;
   }
@@ -157,7 +162,7 @@ export function NowPlayingBar() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   eq: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -191,4 +196,4 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 1,
   },
-});
+}));

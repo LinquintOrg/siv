@@ -1,10 +1,10 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 
 import { Text } from '@/components/quiet/Text';
-import { q } from '@/theme';
+import { makeStyles, useQ } from '@/theme';
 
 interface Toast {
   id: number;
@@ -38,6 +38,8 @@ export function Toaster() {
   const toast = useToast(state => state.toast);
   const dismiss = useToast(state => state.dismiss);
   const insets = useSafeAreaInsets();
+  const q = useQ();
+  const styles = useStyles();
 
   if (!toast) {
     return null;
@@ -64,7 +66,7 @@ export function Toaster() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   wrap: {
     position: 'absolute',
     left: 14,
@@ -79,7 +81,7 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     paddingVertical: 8,
     borderRadius: 14,
-    backgroundColor: '#161618',
+    backgroundColor: q.toast,
     borderWidth: 1,
     borderColor: q.line3,
   },
@@ -91,4 +93,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     justifyContent: 'center',
   },
-});
+}));

@@ -13,10 +13,12 @@ import { Text } from '@/components/quiet/Text';
 import { useToast } from '@/components/quiet/Toaster';
 import { ErrorView } from '@/components/StateViews';
 import { useIsFavorite, useProfiles } from '@/stores/profiles';
-import { GUTTER, q } from '@/theme';
+import { GUTTER, makeStyles, useQ } from '@/theme';
 import { profileUrl } from '@/utils/steam';
 
 export default function ProfileScreen() {
+  const q = useQ();
+  const styles = useStyles();
   const { steamid } = useLocalSearchParams<{ steamid: string }>();
   const profile = useProfile(steamid);
   const games = useInventoryGames();
@@ -71,7 +73,7 @@ export default function ProfileScreen() {
         refreshControl={quietRefresh(profile.isRefetching, () => {
           profile.refetch();
           games.refetch();
-        })}
+        }, q)}
       >
         {data ? (
           <Animated.View entering={FadeInDown.duration(450)} style={styles.header}>
@@ -119,7 +121,7 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   content: {
     paddingHorizontal: GUTTER,
     paddingTop: 20,
@@ -154,4 +156,4 @@ const styles = StyleSheet.create({
   note: {
     marginTop: 18,
   },
-});
+}));

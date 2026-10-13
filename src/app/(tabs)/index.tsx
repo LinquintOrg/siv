@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
 import { api } from '@/api/client';
@@ -13,7 +13,7 @@ import { TabScreen } from '@/components/quiet/Screen';
 import { Text } from '@/components/quiet/Text';
 import { useToast } from '@/components/quiet/Toaster';
 import { useProfiles, type SavedProfile } from '@/stores/profiles';
-import { GUTTER, q } from '@/theme';
+import { GUTTER, makeStyles, useQ } from '@/theme';
 
 const STEPS = [
   { title: 'Paste a profile', body: 'A steamcommunity.com link, a 17-digit SteamID or a custom URL name.' },
@@ -22,6 +22,8 @@ const STEPS = [
 ];
 
 export default function SearchScreen() {
+  const q = useQ();
+  const styles = useStyles();
   const queryClient = useQueryClient();
   const showToast = useToast(state => state.show);
   const [ query, setQuery ] = useState('');
@@ -168,6 +170,8 @@ function ProfileRow({ profile, detail, mono, onPress, onRemove }: {
   onPress: () => void;
   onRemove?: () => void;
 }) {
+  const q = useQ();
+  const styles = useStyles();
   return (
     <View style={styles.profileRow}>
       <Pressable
@@ -193,6 +197,7 @@ function ProfileRow({ profile, detail, mono, onPress, onRemove }: {
 
 /** Thin bar that sweeps under the input while a lookup runs. */
 function LoadingBar() {
+  const styles = useStyles();
   const x = useSharedValue(0);
   useEffect(() => {
     x.value = withRepeat(withTiming(1, { duration: 1000 }), -1);
@@ -201,7 +206,7 @@ function LoadingBar() {
   return <Animated.View style={[ styles.loadingBar, style ]} />;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   content: {
     paddingHorizontal: GUTTER,
     paddingTop: 28,
@@ -265,4 +270,4 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
-});
+}));

@@ -1,10 +1,10 @@
 import { Feather } from '@expo/vector-icons';
 import type { FlashListRef } from '@shopify/flash-list';
 import { useState, type RefObject } from 'react';
-import { Pressable, StyleSheet, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { Pressable, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
-import { GUTTER, q } from '@/theme';
+import { GUTTER, makeStyles, useQ } from '@/theme';
 
 // About two screens of scrolling before the button is worth showing
 const THRESHOLD = 1200;
@@ -27,6 +27,8 @@ export function useScrollTop<T>(list: RefObject<FlashListRef<T> | null>) {
 
 /** Round button in the bottom-right corner of a long list. */
 export function ScrollTopButton({ visible, onPress, bottom = 0 }: { visible: boolean; onPress: () => void; bottom?: number }) {
+  const q = useQ();
+  const styles = useStyles();
   if (!visible) {
     return null;
   }
@@ -45,7 +47,7 @@ export function ScrollTopButton({ visible, onPress, bottom = 0 }: { visible: boo
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   wrap: {
     position: 'absolute',
     right: GUTTER,
@@ -60,4 +62,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: q.line3,
   },
-});
+}));

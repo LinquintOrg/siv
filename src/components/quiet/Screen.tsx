@@ -1,15 +1,16 @@
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/quiet/Controls';
 import { NowPlayingBar } from '@/components/MusicPlayer';
-import { GUTTER, q } from '@/theme';
+import { GUTTER, makeStyles } from '@/theme';
 
 /** Root of a tab: safe area on top and the now-playing bar at the bottom. */
 export function TabScreen({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets();
+  const styles = useStyles();
   return (
     <View style={[ styles.screen, { paddingTop: insets.top } ]}>
       <View style={styles.flex}>{children}</View>
@@ -21,6 +22,7 @@ export function TabScreen({ children }: { children: ReactNode }) {
 /** Root of a pushed screen: safe area on top, a back button and optional actions. */
 export function StackScreen({ children, center, right }: { children: ReactNode; center?: ReactNode; right?: ReactNode }) {
   const insets = useSafeAreaInsets();
+  const styles = useStyles();
   return (
     <View style={[ styles.screen, { paddingTop: insets.top } ]}>
       <View style={styles.bar}>
@@ -33,7 +35,7 @@ export function StackScreen({ children, center, right }: { children: ReactNode; 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(q => ({
   screen: {
     flex: 1,
     backgroundColor: q.bg,
@@ -58,4 +60,4 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-});
+}));

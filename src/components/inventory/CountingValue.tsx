@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'react-native-reanimated';
 
 import { Text } from '@/components/quiet/Text';
-import { q } from '@/theme';
+import { useQ } from '@/theme';
 
 /**
  * The big inventory value. It counts up from zero when it first appears, and lives
  * in its own component so the per-frame updates don't re-render the item grid.
  */
 export function CountingValue({ value, format }: { value: number; format: (usd: number) => string }) {
+  const q = useQ();
   const reduceMotion = useReducedMotion();
   const [ animated, setAnimated ] = useState(0);
   const frame = useRef(0);

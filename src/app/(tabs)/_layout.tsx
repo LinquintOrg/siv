@@ -1,8 +1,9 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
-import { fonts, q } from '@/theme';
+import { fonts, useQ } from '@/theme';
 
 export default function TabsLayout() {
+  const q = useQ();
   return (
     <NativeTabs
       backgroundColor={q.bg}
@@ -12,7 +13,7 @@ export default function TabsLayout() {
         default: { color: q.dim, fontFamily: fonts.regular, fontSize: 11 },
         selected: { color: q.text, fontFamily: fonts.regular, fontSize: 11 },
       }}
-      rippleColor="#FFFFFF14"
+      rippleColor={q.ripple}
       labelVisibilityMode="labeled"
     >
       <NativeTabs.Trigger name="index">
