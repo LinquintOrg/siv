@@ -227,6 +227,9 @@ function MarketBlocks({ price, formatPrice }: { price: ItemPrice; formatPrice: F
     { label: 'Avg 24 h', value: formatPrice(price.avg24) },
     { label: 'Avg 7 d', value: formatPrice(price.avg7) },
     { label: 'Avg 30 d', value: formatPrice(price.avg30) },
+    // Left out until the API has them
+    ...(price.avg90 != null ? [ { label: 'Avg 90 d', value: formatPrice(price.avg90) } ] : []),
+    ...(price.avg365 != null ? [ { label: 'Avg 1 y', value: formatPrice(price.avg365) } ] : []),
     { label: 'Lowest', value: formatPrice(price.min) },
     { label: 'Highest', value: formatPrice(price.max) },
     { label: 'Listings', value: price.listed ? price.listed.toLocaleString('en-US') : '—' },
