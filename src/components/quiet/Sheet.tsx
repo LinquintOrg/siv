@@ -122,6 +122,9 @@ const useStyles = makeStyles(q => ({
     justifyContent: 'flex-end',
   },
   panel: {
+    width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
     maxHeight: '74%',
     backgroundColor: q.sheet,
     borderTopLeftRadius: 28,

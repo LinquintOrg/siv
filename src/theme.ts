@@ -113,6 +113,9 @@ export type FontWeight = Exclude<keyof typeof fonts, 'mono'>;
 /** Screen side padding, matching the web's mobile gutter. */
 export const GUTTER = 20;
 
+/** Widest the content column gets on tablets and in landscape, like the web's pages. */
+export const MAX_CONTENT_WIDTH = 880;
+
 export interface AppTheme extends MD3Theme {
   colors: MD3Theme['colors'] & {
     positive: string;

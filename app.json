@@ -3,7 +3,7 @@
     "name": "Steam Inventory Value",
     "slug": "siv",
     "version": "5.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icons/siv.png",
     "scheme": "siv",
     "userInterfaceStyle": "automatic",
