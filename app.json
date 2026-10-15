@@ -9,12 +9,18 @@
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.rsds.steaminventoryvalue",
-      "versionCode": 2010000186,
+      "versionCode": 2010000187,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/siv-foreground.png",
         "backgroundColor": "#FFFFFF"
       },
-      "predictiveBackGestureEnabled": true
+      "predictiveBackGestureEnabled": true,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -26,8 +32,24 @@
           "backgroundColor": "#091b53"
         }
       ],
-      "expo-audio",
-      "expo-asset"
+      [
+        "expo-audio",
+        {
+          "enableBackgroundPlayback": false,
+          "recordAudioAndroid": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-asset",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

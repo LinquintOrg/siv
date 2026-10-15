@@ -3118,6 +3118,15 @@ expo-audio@~57.0.5:
   resolved "https://registry.yarnpkg.com/expo-audio/-/expo-audio-57.0.5.tgz#e749518742d50436b71d83f1bd2601c5db091f6a"
   integrity sha512-39fX5JC5zDvELB4/eDJPj2XAYRN0W9+K2DfDWm5N3aC5WZ7HRrhupWtT6hbH09NlfYpsRSqYOwEZnocFM42ynQ==
 
+expo-build-properties@~57.0.22:
+  version "57.0.22"
+  resolved "https://registry.yarnpkg.com/expo-build-properties/-/expo-build-properties-57.0.22.tgz#38f2d91e0db8d43d4c6471df277cc9fcdf6ecd75"
+  integrity sha512-A5oRf2I02XDRu2NnqKo7Au5kUu244unvyoRMUsB+xvg/BOlsR+G/oyDFGkjbda1cJbeKm9eqposIXbA2ri5UrQ==
+  dependencies:
+    "@expo/schema-utils" "^57.0.2"
+    resolve-from "^5.0.0"
+    semver "^7.6.0"
+
 expo-constants@~57.0.21:
   version "57.0.21"
   resolved "https://registry.yarnpkg.com/expo-constants/-/expo-constants-57.0.21.tgz#44867d264bec85147c808eba1d4635aad1e11d52"
