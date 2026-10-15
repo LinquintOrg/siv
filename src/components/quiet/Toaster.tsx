@@ -45,7 +45,7 @@ export function Toaster() {
     return null;
   }
   return (
-    <View pointerEvents="box-none" style={[ styles.wrap, { bottom: insets.bottom + 96 } ]}>
+    <View pointerEvents="box-none" style={[ styles.wrap, { bottom: insets.bottom + 96, left: insets.left + 14, right: insets.right + 14 } ]}>
       <Animated.View key={toast.id} entering={FadeInDown.duration(300)} exiting={FadeOut.duration(150)} style={styles.toast} accessibilityLiveRegion="polite">
         <Text size={14} style={styles.message}>{toast.message}</Text>
         {toast.action ? (
@@ -69,10 +69,11 @@ export function Toaster() {
 const useStyles = makeStyles(q => ({
   wrap: {
     position: 'absolute',
-    left: 14,
-    right: 14,
+    alignItems: 'center',
   },
   toast: {
+    width: '100%',
+    maxWidth: 560,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,

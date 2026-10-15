@@ -11,7 +11,7 @@ import { CountingValue } from '@/components/inventory/CountingValue';
 import { HistoryChart } from '@/components/inventory/HistoryChart';
 import { ItemCard } from '@/components/inventory/ItemCard';
 import { Avatar, DashedSelect, IconButton, Pill, Skeleton, ToggleChip, UnderlineInput } from '@/components/quiet/Controls';
-import { StackScreen } from '@/components/quiet/Screen';
+import { StackScreen, useContentWidth } from '@/components/quiet/Screen';
 import { ScrollTopButton, useScrollTop } from '@/components/quiet/ScrollTop';
 import { OptionSheet } from '@/components/quiet/Sheet';
 import { Text } from '@/components/quiet/Text';
@@ -34,6 +34,8 @@ export default function InventoryScreen() {
   const insets = useSafeAreaInsets();
   const list = useRef<FlashListRef<InventoryItem>>(null);
   const scrollTop = useScrollTop(list);
+  // Two columns on phones, more on tablets and in landscape
+  const columns = Math.max(2, Math.floor((useContentWidth() - 2 * GUTTER) / 200));
 
   // A different inventory starts unfiltered
   const resetView = useInventoryView(state => state.reset);
@@ -173,7 +175,7 @@ export default function InventoryScreen() {
       <FlashList
         ref={list}
         data={isEmpty ? [] : items}
-        numColumns={2}
+        numColumns={columns}
         keyExtractor={itemKey}
         renderItem={({ item, index }) => <ItemCard item={item} index={index} formatPrice={formatPrice} onPress={openItem} />}
         ListHeaderComponent={header}
@@ -205,6 +207,8 @@ function Summary({ items, history, rank, appid, formatPrice }: {
   const change = oldest ? total - oldest.inventoryValue : null;
   const changePct = oldest ? percentChange(oldest.inventoryValue, total) : null;
   const since = oldest ? new Date(oldest.searchedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+  // One row of four when there's room, two rows of two on phones
+  const statWidth = useContentWidth() >= 600 ? '25%' : '50%';
 
   const stats: { label: string; value: string; color?: string }[] = [
     { label: 'Items', value: count.toLocaleString('en-US') },
@@ -245,7 +249,7 @@ function Summary({ items, history, rank, appid, formatPrice }: {
 
       <Animated.View entering={FadeIn.duration(500).delay(200)} style={styles.stats}>
         {stats.map(stat => (
-          <View key={stat.label} style={styles.stat}>
+          <View key={stat.label} style={[ styles.stat, { width: statWidth } ]}>
             <Text size={12} color={q.dim}>{stat.label}</Text>
             <Text size={24} weight="light" tracking={-0.02} tabular color={stat.color ?? q.text} numberOfLines={1} adjustsFontSizeToFit>{stat.value}</Text>
           </View>
