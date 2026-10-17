@@ -2,14 +2,14 @@
   "expo": {
     "name": "Steam Inventory Value",
     "slug": "siv",
-    "version": "5.1.0",
+    "version": "5.2.0",
     "orientation": "default",
     "icon": "./assets/icons/siv.png",
     "scheme": "siv",
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.rsds.steaminventoryvalue",
-      "versionCode": 2010000187,
+      "versionCode": 2010000188,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/siv-foreground.png",
         "backgroundColor": "#FFFFFF"

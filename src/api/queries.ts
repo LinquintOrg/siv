@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 import { api } from './client';
+import type { ItemHistoryRange } from './types';
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -42,6 +43,25 @@ export function useLeaderboard(filters: { appid?: number; search?: string }) {
     initialPageParam: 1,
     getNextPageParam: last => last.pagination.page < last.pagination.totalPages ? last.pagination.page + 1 : undefined,
     staleTime: 5 * MINUTE,
+  });
+}
+
+/** The last checked value of each game a profile has on the leaderboard, most valuable first */
+export function useProfileGames(steamid: string) {
+  return useQuery({
+    queryKey: [ 'profileGames', steamid ],
+    queryFn: async () => (await api.leaderboard({ steamid, limit: 100 })).entries.map(e => ({ ...e, appid: Number(e.appid) })),
+    staleTime: 5 * MINUTE,
+  });
+}
+
+/** An item's market page; the last range stays on screen while another loads */
+export function useMarketItem(appid: number, hash: string, range: ItemHistoryRange) {
+  return useQuery({
+    queryKey: [ 'marketItem', appid, hash, range ],
+    queryFn: () => api.item(appid, hash, range),
+    staleTime: 10 * MINUTE,
+    placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[2] === hash ? previous : undefined),
   });
 }
 
