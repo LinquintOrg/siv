@@ -6,10 +6,11 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useInventory, useInventoryGames, useProfile } from '@/api/queries';
-import type { InventoryHistoryEntry, InventoryItem } from '@/api/types';
+import type { InventoryChange, InventoryHistoryEntry, InventoryItem } from '@/api/types';
 import { CountingValue } from '@/components/inventory/CountingValue';
 import { HistoryChart } from '@/components/inventory/HistoryChart';
 import { ItemCard } from '@/components/inventory/ItemCard';
+import { OtherGames } from '@/components/inventory/OtherGames';
 import { Avatar, DashedSelect, IconButton, Pill, Skeleton, ToggleChip, UnderlineInput } from '@/components/quiet/Controls';
 import { StackScreen, useContentWidth } from '@/components/quiet/Screen';
 import { ScrollTopButton, useScrollTop } from '@/components/quiet/ScrollTop';
@@ -123,6 +124,7 @@ export default function InventoryScreen() {
 
   const data = inventory.data;
   const isEmpty = data.items.length === 0;
+  const total = data.items.reduce((sum, item) => sum + (itemPrice(item) ?? 0) * item.amount, 0);
 
   const header = (
     <View style={styles.headerPad}>
@@ -132,10 +134,19 @@ export default function InventoryScreen() {
           <Text size={40} weight="extralight" tracking={-0.045} color={q.faint}>{formatPrice(0)}</Text>
           <Text size={15} color={q.muted} leading={1.6}>No items here. This {gameName} inventory is empty, or it&apos;s private.</Text>
           <Pill label="Try another game" variant="ghost" onPress={() => setSheet('game')} style={styles.emptyAction} />
+          <OtherGames steamid={steamid} appid={+appid} currentValue={0} gameName={gameName} formatPrice={formatPrice} />
         </View>
       ) : (
         <>
-          <Summary items={data.items} history={data.history} rank={data.rank} appid={appid} formatPrice={formatPrice} />
+          <Summary
+            items={data.items}
+            history={data.history}
+            rank={data.rank}
+            last={data.changes === undefined ? undefined : data.changes?.last ?? null}
+            appid={appid}
+            formatPrice={formatPrice}
+          />
+          <OtherGames steamid={steamid} appid={+appid} currentValue={total} gameName={gameName} formatPrice={formatPrice} />
           <View style={styles.toolbar}>
             <View style={styles.toolbarTop}>
               <Text size={14} color={q.muted}>
@@ -190,10 +201,12 @@ export default function InventoryScreen() {
   );
 }
 
-function Summary({ items, history, rank, appid, formatPrice }: {
+function Summary({ items, history, rank, last, appid, formatPrice }: {
   items: InventoryItem[];
   history: InventoryHistoryEntry[];
   rank: number | null;
+  /** The change since the last lookup (the daily leaderboard update doesn't count as one); undefined from an older API */
+  last: InventoryChange | null | undefined;
   appid: string;
   formatPrice: (usd: number | null | undefined) => string;
 }) {
@@ -202,11 +215,13 @@ function Summary({ items, history, rank, appid, formatPrice }: {
   const total = items.reduce((sum, item) => sum + (itemPrice(item) ?? 0) * item.amount, 0);
   const count = items.reduce((sum, item) => sum + item.amount, 0);
   const mostValuable = Math.max(0, ...items.map(item => itemPrice(item) ?? 0));
-  // History is newest first and already includes the current lookup
-  const oldest = history.length > 1 ? history[history.length - 1] : null;
-  const change = oldest ? total - oldest.inventoryValue : null;
-  const changePct = oldest ? percentChange(oldest.inventoryValue, total) : null;
-  const since = oldest ? new Date(oldest.searchedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+  // Against the last lookup, or from an older API the oldest history entry (newest first, this lookup included)
+  const oldest = last === undefined && history.length > 1 ? history[history.length - 1] : null;
+  const before = last ? last.valueThen : oldest?.inventoryValue ?? null;
+  const beforeAt = last ? last.since : oldest?.searchedAt ?? null;
+  const change = before !== null ? total - before : null;
+  const changePct = before !== null ? percentChange(before, total) : null;
+  const since = beforeAt ? new Date(beforeAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
   // One row of four when there's room, two rows of two on phones
   const statWidth = useContentWidth() >= 600 ? '25%' : '50%';
 

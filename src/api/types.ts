@@ -85,10 +85,28 @@ export interface InventoryHistoryEntry {
   searchedAt: string;
 }
 
+/** A change in an inventory's value, split into what prices did and what came and went */
+export interface InventoryChange {
+  since: string;
+  /** Who checked it then: you, anyone looking it up, or the daily leaderboard update */
+  by: 'you' | 'search' | 'cron';
+  valueThen: number;
+  valueNow: number;
+  price: number;
+  added: { count: number; value: number };
+  removed: { count: number; value: number };
+}
+
 export interface InventoryResponse {
   items: InventoryItem[];
   history: InventoryHistoryEntry[];
   rank: number | null;
+  /** Since the last lookup (the daily leaderboard update doesn't count), a week and a month ago */
+  changes?: {
+    last: InventoryChange | null;
+    week: InventoryChange | null;
+    month: InventoryChange | null;
+  } | null;
 }
 
 export interface ExchangeRates {

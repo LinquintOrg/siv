@@ -52,7 +52,7 @@ export const api = {
 
   rates: () => request<ExchangeRates>('/rates'),
 
-  leaderboard: (query: { appid?: number; search?: string; page?: number; limit?: number }) =>
+  leaderboard: (query: { appid?: number; search?: string; steamid?: string; page?: number; limit?: number }) =>
     request<LeaderboardResponse>('/leaderboard', { query }),
 
   musicKits: async () => (await request<{ kits: MusicKit[] }>('/musickits')).kits,

@@ -45,6 +45,15 @@ export function useLeaderboard(filters: { appid?: number; search?: string }) {
   });
 }
 
+/** The last checked value of each game a profile has on the leaderboard, most valuable first */
+export function useProfileGames(steamid: string) {
+  return useQuery({
+    queryKey: [ 'profileGames', steamid ],
+    queryFn: async () => (await api.leaderboard({ steamid, limit: 100 })).entries.map(e => ({ ...e, appid: Number(e.appid) })),
+    staleTime: 5 * MINUTE,
+  });
+}
+
 export function useMusicKits() {
   return useQuery({ queryKey: [ 'musicKits' ], queryFn: api.musicKits, staleTime: HOUR });
 }
