@@ -94,6 +94,7 @@ export default function RootLayout() {
                     <Stack.Screen name="profile/[steamid]/index" />
                     <Stack.Screen name="profile/[steamid]/[appid]/index" />
                     <Stack.Screen name="profile/[steamid]/[appid]/item" />
+                    <Stack.Screen name="market/[appid]/[hash]" />
                   </Stack>
                   <Toaster />
                 </View>

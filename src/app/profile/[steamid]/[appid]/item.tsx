@@ -1,3 +1,4 @@
+import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -11,14 +12,14 @@ import type { InventoryItem, ItemPrice, ItemSticker } from '@/api/types';
 import { FloatBar } from '@/components/inventory/FloatBar';
 import { HistoryChart } from '@/components/inventory/HistoryChart';
 import { RarityGlow } from '@/components/inventory/ItemCard';
-import { IconButton, Pill, Skeleton } from '@/components/quiet/Controls';
+import { IconButton, Pill, Row, Skeleton } from '@/components/quiet/Controls';
 import { StackScreen } from '@/components/quiet/Screen';
 import { Text } from '@/components/quiet/Text';
 import { ErrorView, MessageView } from '@/components/StateViews';
 import { useInventoryView, visibleItems } from '@/stores/inventoryView';
 import { GUTTER, makeStyles, useQ, type Palette } from '@/theme';
 import { useFormatPrice } from '@/utils/currency';
-import { itemImageUrl, itemKey, marketListingUrl, percentChange, steamColor } from '@/utils/steam';
+import { itemImageUrl, itemKey, marketListingUrl, openMarketItem, percentChange, steamColor } from '@/utils/steam';
 
 type Format = (usd: number | null | undefined) => string;
 
@@ -101,6 +102,16 @@ export default function ItemScreen() {
             .map(([ title, list ]) => <Applied key={title} title={title} list={list ?? []} formatPrice={formatPrice} />)}
 
           {price ? <MarketBlocks price={price} formatPrice={formatPrice} /> : null}
+
+          {item.marketable ? (
+            <Row accessibilityLabel="Open the item's market page" onPress={() => openMarketItem(item.appid, item.marketName)}>
+              <View style={styles.flex}>
+                <Text size={16} weight="light">Market page</Text>
+                <Text size={12} color={q.dim}>Full price history, sales and other versions</Text>
+              </View>
+              <Feather name="arrow-right" size={16} color={q.faint} />
+            </Row>
+          ) : null}
 
           <Details item={item} />
 

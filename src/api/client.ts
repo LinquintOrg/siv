@@ -2,12 +2,17 @@ import type {
   ExchangeRates,
   InventoryGame,
   InventoryResponse,
+  ItemHistoryRange,
   LeaderboardResponse,
+  MarketItemPage,
   MusicKit,
   SteamProfile,
 } from './types';
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.linquint.dev';
+
+// The website, for pages the app doesn't have (CS2 cases and collections)
+export const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? 'https://new.linquint.dev';
 
 // Music kit audio files are served statically by the API under /music.
 export const MUSIC_URL = process.env.EXPO_PUBLIC_MUSIC_URL ?? `${API_URL}/music`;
@@ -54,6 +59,9 @@ export const api = {
 
   leaderboard: (query: { appid?: number; search?: string; steamid?: string; page?: number; limit?: number }) =>
     request<LeaderboardResponse>('/leaderboard', { query }),
+
+  item: (appid: number | string, hash: string, range: ItemHistoryRange) =>
+    request<MarketItemPage>('/item', { query: { appid, hash, range } }),
 
   musicKits: async () => (await request<{ kits: MusicKit[] }>('/musickits')).kits,
 

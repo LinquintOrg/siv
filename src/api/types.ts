@@ -150,3 +150,50 @@ export interface MusicKit {
     stattrak: number | null;
   };
 }
+
+export type ItemHistoryRange = '30d' | '90d' | '1y' | 'all';
+
+/** An item's market page (GET /item): its price summary, history and, for CS2, its versions, cases and related items */
+export interface MarketItemPage {
+  item: {
+    hash: string;
+    appid: number;
+    image: string | null;
+    type: string | null;
+  };
+  game: string | null;
+  price: {
+    latest: number;
+    listed: number | null;
+    updatedAt: string;
+    avg24: number | null;
+    avg7: number | null;
+    avg30: number | null;
+    avg90: number | null;
+    avg365: number | null;
+    min: number | null;
+    max: number | null;
+    p24ago: number | null;
+    p30ago: number | null;
+    p90ago: number | null;
+    yearAgo: number | null;
+    firstSeen: string | null;
+  } | null;
+  /** 24 hour sales, for the items the API checks (the most listed) */
+  sales?: { volume: number; median: number | null; updatedAt: string } | null;
+  variants?: {
+    hash: string;
+    wear: string | null;
+    quality: 'normal' | 'stattrak' | 'souvenir';
+    price: number | null;
+    listed: number | null;
+  }[];
+  containers?: { slug: string; kind: 'case' | 'collection'; name: string }[];
+  related?: { hash: string; image: string | null; price: number; rarity: string; color: string | null }[];
+  history: {
+    range: ItemHistoryRange;
+    bucket: 'day' | 'week';
+    /** [ day or week as "YYYY-MM-DD", average price, average listings ], oldest first */
+    points: [ string, number, number ][];
+  };
+}

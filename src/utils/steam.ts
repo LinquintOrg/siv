@@ -1,3 +1,5 @@
+import { router } from 'expo-router';
+
 import type { InventoryItem } from '@/api/types';
 
 export function itemImageUrl(iconUrl: string, size?: number) {
@@ -7,6 +9,11 @@ export function itemImageUrl(iconUrl: string, size?: number) {
 
 export function marketListingUrl(appid: number, marketName: string) {
   return `https://steamcommunity.com/market/listings/${appid}/${encodeURIComponent(marketName)}`;
+}
+
+/** Opens an item's market page: its price history, statistics and other versions */
+export function openMarketItem(appid: number | string, marketName: string) {
+  router.push({ pathname: '/market/[appid]/[hash]', params: { appid: String(appid), hash: marketName } });
 }
 
 export function profileUrl(steamid: string) {
