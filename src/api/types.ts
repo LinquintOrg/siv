@@ -60,6 +60,8 @@ export interface InventoryItem {
   nameColor: string;
   itemType: string;
   amount: number;
+  /** The first copy's asset ID; copies that differ (float, pattern) are separate items */
+  assetid?: string;
   inspectLink?: string;
   condition?: string;
   rarity?: {

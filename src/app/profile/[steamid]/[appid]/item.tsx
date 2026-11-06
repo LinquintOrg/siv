@@ -331,8 +331,8 @@ const pctLabel = (p: number | null) => (p === null || !Number.isFinite(p) ? '—
 const toneOf = (p: number | null, q: Palette) => (p === null || !Number.isFinite(p) ? q.dim : p >= 0 ? q.accent : q.danger);
 
 /**
- * Steam returns inspect links as templates (%owner_steamid%, %assetid%).
- * The API doesn't expose asset IDs, so links that still have placeholders can't be used.
+ * Steam returns inspect links as templates (%owner_steamid%, %assetid%, %propid:N%). The API fills them in; links
+ * from older API versions that still have placeholders can't be used.
  */
 function resolveInspectLink(link: string | undefined, steamid: string) {
   const resolved = link?.replace('%owner_steamid%', steamid);

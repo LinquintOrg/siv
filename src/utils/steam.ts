@@ -24,9 +24,9 @@ export function profileUrl(steamid: string) {
   return `https://steamcommunity.com/profiles/${steamid}`;
 }
 
-/** Stable key for an inventory item (one entry per classid/instanceid pair). */
-export function itemKey(item: Pick<InventoryItem, 'classid' | 'instanceid'>) {
-  return `${item.classid}_${item.instanceid}`;
+/** Stable key for an inventory item. Copies with different floats or patterns share a classid/instanceid pair */
+export function itemKey(item: Pick<InventoryItem, 'classid' | 'instanceid' | 'assetid'>) {
+  return [ item.classid, item.instanceid, item.assetid ].filter(Boolean).join('_');
 }
 
 export function itemPrice(item: InventoryItem): number | null {
