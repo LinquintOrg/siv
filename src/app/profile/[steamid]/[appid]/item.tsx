@@ -1,5 +1,4 @@
 import { Feather } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo } from 'react';
@@ -12,6 +11,7 @@ import type { InventoryItem, ItemPrice, ItemSticker } from '@/api/types';
 import { FloatBar } from '@/components/inventory/FloatBar';
 import { HistoryChart } from '@/components/inventory/HistoryChart';
 import { RarityGlow } from '@/components/inventory/ItemCard';
+import { ItemImage } from '@/components/ItemImage';
 import { IconButton, Pill, Row, Skeleton } from '@/components/quiet/Controls';
 import { StackScreen } from '@/components/quiet/Screen';
 import { Text } from '@/components/quiet/Text';
@@ -19,7 +19,7 @@ import { ErrorView, MessageView } from '@/components/StateViews';
 import { useInventoryView, visibleItems } from '@/stores/inventoryView';
 import { GUTTER, makeStyles, useQ, type Palette } from '@/theme';
 import { useFormatPrice } from '@/utils/currency';
-import { itemImageUrl, itemKey, marketListingUrl, openMarketItem, percentChange, steamColor } from '@/utils/steam';
+import { itemKey, marketListingUrl, openMarketItem, percentChange, steamColor } from '@/utils/steam';
 
 type Format = (usd: number | null | undefined) => string;
 
@@ -164,8 +164,9 @@ function Hero({ item }: { item: InventoryItem }) {
       <RarityGlow color={steamColor(item.rarity?.color)} opacity={0.18} />
       <Animated.View style={[ styles.heroImageWrap, revealStyle ]}>
         <Animated.View style={[ styles.heroImage, floatStyle ]}>
-          <Image
-            source={{ uri: itemImageUrl(item.iconUrl, 512) }}
+          <ItemImage
+            iconUrl={item.iconUrl}
+            size={512}
             style={styles.heroImage}
             contentFit="contain"
             onLoad={reveal}
@@ -212,7 +213,7 @@ function Applied({ title, list, formatPrice }: { title: string; list: readonly I
       </View>
       {list.map((sticker, i) => (
         <View key={`${sticker.longName}-${i}`} style={styles.stickerRow}>
-          <Image source={{ uri: sticker.img }} style={styles.sticker} contentFit="contain" />
+          <ItemImage uri={sticker.img} style={styles.sticker} contentFit="contain" />
           <Text size={14} style={styles.flex} numberOfLines={2}>{sticker.name}</Text>
           <Text size={14} color={q.muted} tabular>{formatPrice(sticker.price || null)}</Text>
         </View>

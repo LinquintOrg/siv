@@ -1,13 +1,13 @@
-import { Image } from 'expo-image';
 import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import type { InventoryItem } from '@/api/types';
+import { ItemImage } from '@/components/ItemImage';
 import { Text } from '@/components/quiet/Text';
 import { makeStyles, useQ } from '@/theme';
-import { itemImageUrl, itemPrice, steamColor } from '@/utils/steam';
+import { itemPrice, steamColor } from '@/utils/steam';
 
 /** Soft rarity-coloured glow behind an item image. A gradient, not a blur, so it stays cheap. */
 export function RarityGlow({ color, opacity = 0.14 }: { color?: string; opacity?: number }) {
@@ -62,7 +62,7 @@ export const ItemCard = memo(({ item, index, formatPrice, onPress }: Props) => {
           <>
             <View style={[ styles.stage, pressed && styles.stagePressed ]}>
               <RarityGlow color={rarity} />
-              <Image source={{ uri: itemImageUrl(item.iconUrl, 256) }} style={styles.image} contentFit="contain" recyclingKey={item.iconUrl} transition={150} />
+              <ItemImage iconUrl={item.iconUrl} size={256} style={styles.image} contentFit="contain" recyclingKey={item.iconUrl} transition={150} />
               {rarity ? <View style={[ styles.rarityDot, { backgroundColor: rarity } ]} /> : null}
               {item.amount > 1 ? <Text size={11} mono color={q.muted} style={styles.amount}>×{item.amount}</Text> : null}
               {applied > 0 ? (

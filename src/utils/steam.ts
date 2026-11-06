@@ -2,8 +2,12 @@ import { router } from 'expo-router';
 
 import type { InventoryItem } from '@/api/types';
 
+/** Steam's image CDN; item icons (`icon_url` / `image`) are paths under it */
+export const STEAM_IMAGE_BASE = 'https://community.cloudflare.steamstatic.com/economy/image/';
+
+/** Full URL of a Steam item icon; `size` has Steam's CDN resize it to a square that size. Use ItemImage to show one */
 export function itemImageUrl(iconUrl: string, size?: number) {
-  const base = `https://community.cloudflare.steamstatic.com/economy/image/${iconUrl}`;
+  const base = `${STEAM_IMAGE_BASE}${iconUrl}`;
   return size ? `${base}/${size}fx${size}f` : base;
 }
 

@@ -1,5 +1,4 @@
 import { Feather } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
@@ -11,13 +10,14 @@ import { ApiError, WEB_URL } from '@/api/client';
 import { useMarketItem } from '@/api/queries';
 import type { ItemHistoryRange, MarketItemPage } from '@/api/types';
 import { HistoryChart } from '@/components/inventory/HistoryChart';
+import { ItemImage } from '@/components/ItemImage';
 import { Pill, Row, Skeleton } from '@/components/quiet/Controls';
 import { StackScreen } from '@/components/quiet/Screen';
 import { Text } from '@/components/quiet/Text';
 import { ErrorView, MessageView } from '@/components/StateViews';
 import { GUTTER, makeStyles, useQ, type Palette } from '@/theme';
 import { useFormatPrice } from '@/utils/currency';
-import { itemImageUrl, marketListingUrl, percentChange } from '@/utils/steam';
+import { marketListingUrl, percentChange } from '@/utils/steam';
 
 type Format = (usd: number | null | undefined) => string;
 type Variant = NonNullable<MarketItemPage['variants']>[number];
@@ -88,9 +88,7 @@ export default function MarketItemScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Animated.View key={data.item.hash} entering={FadeIn.duration(300)} style={styles.stack}>
           <View style={styles.hero}>
-            {data.item.image ? (
-              <Image source={{ uri: itemImageUrl(data.item.image, 512) }} style={styles.heroImage} contentFit="contain" transition={250} />
-            ) : null}
+            <ItemImage iconUrl={data.item.image} size={512} style={styles.heroImage} contentFit="contain" transition={250} />
           </View>
 
           <View style={styles.titleBlock}>
@@ -181,7 +179,7 @@ export default function MarketItemScreen() {
                     style={({ pressed }) => [ styles.relatedCard, { opacity: pressed ? 0.7 : 1 } ]}
                   >
                     <View style={[ styles.relatedImage, item.color ? { borderBottomColor: item.color } : null ]}>
-                      {item.image ? <Image source={{ uri: itemImageUrl(item.image, 256) }} style={styles.relatedArt} contentFit="contain" /> : null}
+                      <ItemImage iconUrl={item.image} size={256} style={styles.relatedArt} contentFit="contain" />
                     </View>
                     <Text size={13} numberOfLines={2} leading={1.3}>{item.hash}</Text>
                     <Text size={13} color={q.dim} tabular>{formatPrice(item.price)}</Text>
