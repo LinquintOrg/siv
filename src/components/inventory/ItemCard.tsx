@@ -47,7 +47,7 @@ export const ItemCard = memo(({ item, index, formatPrice, onPress }: Props) => {
   const nameColor = item.nameColor && item.nameColor.toLowerCase() !== 'd2d2d2' ? steamColor(item.nameColor) : q.text;
   const applied = Math.min(6, (item.stickers?.length ?? 0) + (item.patches?.length ?? 0) + (item.charms?.length ?? 0));
   const float = item.skinProps?.float ? Number(item.skinProps.float) : null;
-  const wear = [ item.condition, float !== null && Number.isFinite(float) ? float.toFixed(4) : null ].filter(Boolean).join(' · ');
+  const wear = [ item.phase, item.condition, float !== null && Number.isFinite(float) ? float.toFixed(4) : null ].filter(Boolean).join(' · ');
   const priceLabel = price === null ? 'No price' : formatPrice(price * item.amount);
 
   return (
