@@ -2,8 +2,12 @@ import { router } from 'expo-router';
 
 import type { InventoryItem } from '@/api/types';
 
+/** Steam's image CDN; item icons (`icon_url` / `image`) are paths under it */
+export const STEAM_IMAGE_BASE = 'https://community.cloudflare.steamstatic.com/economy/image/';
+
+/** Full URL of a Steam item icon; `size` has Steam's CDN resize it to a square that size. Use ItemImage to show one */
 export function itemImageUrl(iconUrl: string, size?: number) {
-  const base = `https://community.cloudflare.steamstatic.com/economy/image/${iconUrl}`;
+  const base = `${STEAM_IMAGE_BASE}${iconUrl}`;
   return size ? `${base}/${size}fx${size}f` : base;
 }
 
@@ -20,9 +24,9 @@ export function profileUrl(steamid: string) {
   return `https://steamcommunity.com/profiles/${steamid}`;
 }
 
-/** Stable key for an inventory item (one entry per classid/instanceid pair). */
-export function itemKey(item: Pick<InventoryItem, 'classid' | 'instanceid'>) {
-  return `${item.classid}_${item.instanceid}`;
+/** Stable key for an inventory item. Copies with different floats or patterns share a classid/instanceid pair */
+export function itemKey(item: Pick<InventoryItem, 'classid' | 'instanceid' | 'assetid'>) {
+  return [ item.classid, item.instanceid, item.assetid ].filter(Boolean).join('_');
 }
 
 export function itemPrice(item: InventoryItem): number | null {

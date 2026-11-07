@@ -5,8 +5,8 @@ import { Pressable, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useInventory, useInventoryGames, useProfile } from '@/api/queries';
-import type { InventoryChange, InventoryHistoryEntry, InventoryItem } from '@/api/types';
+import { useInventory, useInventoryGames, useInventoryHistory, useProfile } from '@/api/queries';
+import type { InventoryChange, InventoryHistoryEntry, InventoryHistoryRange, InventoryItem } from '@/api/types';
 import { CountingValue } from '@/components/inventory/CountingValue';
 import { HistoryChart } from '@/components/inventory/HistoryChart';
 import { ItemCard } from '@/components/inventory/ItemCard';
@@ -14,6 +14,7 @@ import { OtherGames } from '@/components/inventory/OtherGames';
 import { Avatar, DashedSelect, IconButton, Pill, Skeleton, ToggleChip, UnderlineInput } from '@/components/quiet/Controls';
 import { StackScreen, useContentWidth } from '@/components/quiet/Screen';
 import { ScrollTopButton, useScrollTop } from '@/components/quiet/ScrollTop';
+import { PeriodChips } from '@/components/quiet/PeriodChips';
 import { OptionSheet } from '@/components/quiet/Sheet';
 import { Text } from '@/components/quiet/Text';
 import { ErrorView } from '@/components/StateViews';
@@ -143,6 +144,7 @@ export default function InventoryScreen() {
             history={data.history}
             rank={data.rank}
             last={data.changes === undefined ? undefined : data.changes?.last ?? null}
+            steamid={steamid}
             appid={appid}
             formatPrice={formatPrice}
           />
@@ -201,9 +203,17 @@ export default function InventoryScreen() {
   );
 }
 
-function Summary({ items, history, rank, last, appid, formatPrice }: {
+const VALUE_RANGES: { value: InventoryHistoryRange; label: string }[] = [
+  { value: '30d', label: '30 days' },
+  { value: '90d', label: '90 days' },
+  { value: '1y', label: '1 year' },
+  { value: 'all', label: 'All time' },
+];
+
+function Summary({ items, history, rank, last, steamid, appid, formatPrice }: {
   items: InventoryItem[];
   history: InventoryHistoryEntry[];
+  steamid: string;
   rank: number | null;
   /** The change since the last lookup (the daily leaderboard update doesn't count as one); undefined from an older API */
   last: InventoryChange | null | undefined;
@@ -224,6 +234,11 @@ function Summary({ items, history, rank, last, appid, formatPrice }: {
   const since = beforeAt ? new Date(beforeAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
   // One row of four when there's room, two rows of two on phones
   const statWidth = useContentWidth() >= 600 ? '25%' : '50%';
+  // The value over a chosen period: 30 days comes with the inventory, longer ones are fetched when chosen
+  const [ range, setRange ] = useState<InventoryHistoryRange>('30d');
+  const longer = useInventoryHistory(steamid, +appid, range, { enabled: range !== '30d' });
+  const shown = range === '30d' ? history : longer.data?.history ?? [];
+  const loading = range !== '30d' && (longer.isLoading || longer.isPlaceholderData);
 
   const stats: { label: string; value: string; color?: string }[] = [
     { label: 'Items', value: count.toLocaleString('en-US') },
@@ -255,12 +270,28 @@ function Summary({ items, history, rank, last, appid, formatPrice }: {
         </Animated.View>
       </View>
 
-      <Animated.View entering={FadeIn.duration(500).delay(150)} style={styles.chart}>
-        <HistoryChart
-          points={history.map(h => ({ t: new Date(h.searchedAt).getTime(), value: h.inventoryValue, count: h.itemCount }))}
-          formatPrice={formatPrice}
-        />
-      </Animated.View>
+      {history.length ? (
+        <Animated.View entering={FadeIn.duration(500).delay(150)} style={styles.chart}>
+          <PeriodChips options={VALUE_RANGES} value={range} onChange={setRange} label="Inventory value period" />
+          <View style={[ styles.chartPlot, loading && styles.loading ]}>
+            {shown.length > 1 ? (
+              <HistoryChart
+                key={range}
+                points={shown.map(h => ({ t: new Date(h.searchedAt).getTime(), value: h.inventoryValue, count: h.itemCount }))}
+                formatPrice={formatPrice}
+              />
+            ) : (
+              <Text size={14} color={q.dim}>
+                {loading
+                  ? 'Loading…'
+                  : longer.isError && range !== '30d'
+                    ? 'The inventory history couldn\'t be loaded.'
+                    : range === '30d' ? 'Only one lookup in the last 30 days.' : 'Not enough lookups in this period yet.'}
+              </Text>
+            )}
+          </View>
+        </Animated.View>
+      ) : null}
 
       <Animated.View entering={FadeIn.duration(500).delay(200)} style={styles.stats}>
         {stats.map(stat => (
@@ -340,6 +371,12 @@ const useStyles = makeStyles(q => ({
   },
   chart: {
     marginTop: 28,
+  },
+  chartPlot: {
+    marginTop: 14,
+  },
+  loading: {
+    opacity: 0.5,
   },
   stats: {
     marginTop: 28,

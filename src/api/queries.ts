@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 import { api } from './client';
-import type { ItemHistoryRange } from './types';
+import type { InventoryHistoryRange, ItemHistoryRange } from './types';
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -36,6 +36,18 @@ export function useInventory(steamid: string, appid: number) {
   });
 }
 
+/** The inventory value over a longer period than the inventory brings (30 days); keeps showing the last period while the next loads */
+export function useInventoryHistory(steamid: string, appid: number, range: InventoryHistoryRange, { enabled = true } = {}) {
+  return useQuery({
+    queryKey: [ 'inventoryHistory', steamid, appid, range ],
+    queryFn: () => api.inventoryHistory(steamid, appid, range),
+    staleTime: 5 * MINUTE,
+    enabled,
+    placeholderData: (previous, previousQuery) =>
+      (previousQuery?.queryKey[1] === steamid && previousQuery?.queryKey[2] === appid ? previous : undefined),
+  });
+}
+
 export function useLeaderboard(filters: { appid?: number; search?: string }) {
   return useInfiniteQuery({
     queryKey: [ 'leaderboard', filters ],
@@ -56,11 +68,12 @@ export function useProfileGames(steamid: string) {
 }
 
 /** An item's market page; the last range stays on screen while another loads */
-export function useMarketItem(appid: number, hash: string, range: ItemHistoryRange) {
+export function useMarketItem(appid: number, hash: string, range: ItemHistoryRange, { enabled = true } = {}) {
   return useQuery({
     queryKey: [ 'marketItem', appid, hash, range ],
     queryFn: () => api.item(appid, hash, range),
     staleTime: 10 * MINUTE,
+    enabled,
     placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[2] === hash ? previous : undefined),
   });
 }

@@ -1,5 +1,4 @@
 import { Feather } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
@@ -11,13 +10,16 @@ import { ApiError, WEB_URL } from '@/api/client';
 import { useMarketItem } from '@/api/queries';
 import type { ItemHistoryRange, MarketItemPage } from '@/api/types';
 import { HistoryChart } from '@/components/inventory/HistoryChart';
+import { PriceRanges } from '@/components/inventory/PriceRanges';
+import { ItemImage } from '@/components/ItemImage';
 import { Pill, Row, Skeleton } from '@/components/quiet/Controls';
+import { PeriodChips } from '@/components/quiet/PeriodChips';
 import { StackScreen } from '@/components/quiet/Screen';
 import { Text } from '@/components/quiet/Text';
 import { ErrorView, MessageView } from '@/components/StateViews';
 import { GUTTER, makeStyles, useQ, type Palette } from '@/theme';
 import { useFormatPrice } from '@/utils/currency';
-import { itemImageUrl, marketListingUrl, percentChange } from '@/utils/steam';
+import { marketListingUrl, percentChange } from '@/utils/steam';
 
 type Format = (usd: number | null | undefined) => string;
 type Variant = NonNullable<MarketItemPage['variants']>[number];
@@ -88,9 +90,7 @@ export default function MarketItemScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Animated.View key={data.item.hash} entering={FadeIn.duration(300)} style={styles.stack}>
           <View style={styles.hero}>
-            {data.item.image ? (
-              <Image source={{ uri: itemImageUrl(data.item.image, 512) }} style={styles.heroImage} contentFit="contain" transition={250} />
-            ) : null}
+            <ItemImage iconUrl={data.item.image} size={512} style={styles.heroImage} contentFit="contain" transition={250} />
           </View>
 
           <View style={styles.titleBlock}>
@@ -114,6 +114,11 @@ export default function MarketItemScreen() {
                   {data.sales.median ? `, at a median of ${formatPrice(data.sales.median)}` : ''}
                 </Text>
               ) : null}
+              {data.item.floatRange ? (
+                <Text size={14} color={q.muted} tabular>
+                  Floats {data.item.floatRange.min.toFixed(2)} – {data.item.floatRange.max.toFixed(2)}
+                </Text>
+              ) : null}
             </View>
           ) : (
             <Text size={15} color={q.muted} leading={1.6}>No recent price on the Steam Community Market.</Text>
@@ -126,9 +131,7 @@ export default function MarketItemScreen() {
               <Text size={13} color={q.muted}>Price history</Text>
             </View>
             <View style={styles.chips}>
-              {RANGES.map(option => (
-                <Chip key={option.value} label={option.label} selected={option.value === range} onPress={() => setRange(option.value)} />
-              ))}
+              <PeriodChips options={RANGES} value={range} onChange={setRange} label="Price history period" />
             </View>
             <View style={[ styles.chart, page.isPlaceholderData && styles.loading ]}>
               {points.length > 1 ? (
@@ -181,7 +184,7 @@ export default function MarketItemScreen() {
                     style={({ pressed }) => [ styles.relatedCard, { opacity: pressed ? 0.7 : 1 } ]}
                   >
                     <View style={[ styles.relatedImage, item.color ? { borderBottomColor: item.color } : null ]}>
-                      {item.image ? <Image source={{ uri: itemImageUrl(item.image, 256) }} style={styles.relatedArt} contentFit="contain" /> : null}
+                      <ItemImage iconUrl={item.image} size={256} style={styles.relatedArt} contentFit="contain" />
                     </View>
                     <Text size={13} numberOfLines={2} leading={1.3}>{item.hash}</Text>
                     <Text size={13} color={q.dim} tabular>{formatPrice(item.price)}</Text>
@@ -247,15 +250,18 @@ function Versions({ variants, current, formatPrice, onOpen }: {
 function Statistics({ price, formatPrice }: { price: NonNullable<MarketItemPage['price']>; formatPrice: Format }) {
   const q = useQ();
   const styles = useStyles();
-  const market = [
-    { label: 'Avg 24 h', value: price.avg24 },
-    { label: 'Avg 7 d', value: price.avg7 },
-    { label: 'Avg 30 d', value: price.avg30 },
-    { label: 'Avg 90 d', value: price.avg90 },
-    { label: 'Avg 1 y', value: price.avg365 },
-    { label: 'All-time low', value: price.min },
-    { label: 'All-time high', value: price.max },
-  ].filter(m => m.value != null);
+  // With price ranges, the table has the lows, highs and changes: the 30 day average stays as the typical price
+  const market = (price.ranges
+    ? [ { label: 'Avg 30 d', value: price.avg30 } ]
+    : [
+      { label: 'Avg 24 h', value: price.avg24 },
+      { label: 'Avg 7 d', value: price.avg7 },
+      { label: 'Avg 30 d', value: price.avg30 },
+      { label: 'Avg 90 d', value: price.avg90 },
+      { label: 'Avg 1 y', value: price.avg365 },
+      { label: 'All-time low', value: price.min },
+      { label: 'All-time high', value: price.max },
+    ]).filter(m => m.value != null);
   const history = [
     { label: '24 h ago', from: price.p24ago },
     { label: '30 days ago', from: price.p30ago },
@@ -286,7 +292,14 @@ function Statistics({ price, formatPrice }: { price: NonNullable<MarketItemPage[
         </View>
       </View>
 
-      {history.length ? (
+      {price.ranges ? (
+        <View>
+          <View style={styles.sectionHead}>
+            <Text size={13} color={q.muted}>Price ranges</Text>
+          </View>
+          <PriceRanges ranges={price.ranges} price={price.latest} formatPrice={formatPrice} />
+        </View>
+      ) : history.length ? (
         <View>
           <View style={styles.sectionHead}>
             <Text size={13} color={q.muted}>Price then</Text>

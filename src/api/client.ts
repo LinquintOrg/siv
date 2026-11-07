@@ -1,6 +1,8 @@
 import type {
   ExchangeRates,
   InventoryGame,
+  InventoryHistoryEntry,
+  InventoryHistoryRange,
   InventoryResponse,
   ItemHistoryRange,
   LeaderboardResponse,
@@ -54,6 +56,10 @@ export const api = {
   inventoryGames: async () => (await request<InventoryGame[]>('/games/inventory')).map(g => ({ ...g, appid: Number(g.appid) })),
 
   inventory: (steamid: string, appid: number | string) => request<InventoryResponse>(`/inventory/${steamid}/${appid}`),
+
+  /** The inventory value over a period: every lookup for 30 days, a point per day for 90 days and a year, per week for all time */
+  inventoryHistory: (steamid: string, appid: number | string, range: InventoryHistoryRange) =>
+    request<{ range: InventoryHistoryRange; history: InventoryHistoryEntry[] }>(`/inventory/${steamid}/${appid}/history`, { query: { range } }),
 
   rates: () => request<ExchangeRates>('/rates'),
 

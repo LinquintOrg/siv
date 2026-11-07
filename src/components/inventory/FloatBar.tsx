@@ -12,10 +12,17 @@ const BANDS = [
   { label: 'BS', start: 0.45, end: 1 },
 ];
 
-export function FloatBar({ float, condition }: { float: number; condition?: string }) {
+/**
+ * Where a float sits among the wears, and with `range`, among the floats the skin can have (floats are spread evenly
+ * over its range, so the share above it is how rare a lower float is)
+ */
+export function FloatBar({ float, condition, range }: { float: number; condition?: string; range?: { min: number; max: number } }) {
   const q = useQ();
   const styles = useStyles();
   const active = BANDS.find(b => float < b.end) ?? BANDS[BANDS.length - 1];
+  const shareAbove = range && range.max > range.min
+    ? Math.round(Math.min(1, Math.max(0, (range.max - float) / (range.max - range.min))) * 100)
+    : null;
   return (
     <View style={styles.wrap}>
       <View style={styles.head}>
@@ -29,6 +36,9 @@ export function FloatBar({ float, condition }: { float: number; condition?: stri
             style={[ styles.band, { left: `${b.start * 100}%`, width: `${(b.end - b.start) * 100}%`, backgroundColor: b === active ? q.muted : q.line3 } ]}
           />
         ))}
+        {range ? (
+          <View style={[ styles.range, { left: `${range.min * 100}%`, width: `${Math.max(0.5, (range.max - range.min) * 100)}%` } ]} />
+        ) : null}
         <View style={[ styles.marker, { left: `${Math.min(100, float * 100)}%` } ]} />
       </View>
       <View style={styles.labels} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
@@ -39,6 +49,12 @@ export function FloatBar({ float, condition }: { float: number; condition?: stri
           </View>
         ))}
       </View>
+      {range ? (
+        <Text size={12} color={q.dim} tabular>
+          Range {range.min.toFixed(2)} – {range.max.toFixed(2)}
+          {shareAbove !== null ? ` · lower than ${shareAbove}% of the floats it can have` : ''}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -61,6 +77,13 @@ const useStyles = makeStyles(q => ({
     // Gap between bands
     borderRightWidth: 2,
     borderRightColor: q.bg,
+  },
+  // The floats the skin can have, just under the bands
+  range: {
+    position: 'absolute',
+    top: 5,
+    height: 1,
+    backgroundColor: q.soft,
   },
   marker: {
     position: 'absolute',

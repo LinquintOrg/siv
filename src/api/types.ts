@@ -36,9 +36,22 @@ export interface ItemPrice {
   p30ago?: number | null;
   p90ago?: number | null;
   yearAgo?: number | null;
+  /** Lowest and highest price per period, and the price at its start */
+  ranges?: PriceRanges;
   /** [ day as "YYYY-MM-DD" (UTC), average price, average listings ] for the last 30 days, oldest first */
   daily?: [ string, number, number ][] | null;
 }
+
+export type PriceRangePeriod = '7d' | '30d' | '90d' | '1y' | 'all';
+export interface PriceRange {
+  low: number | null;
+  high: number | null;
+  /** The price at the start of the period, to measure the change from */
+  from: number | null;
+}
+export type PriceRanges = Record<PriceRangePeriod, PriceRange>;
+
+export type InventoryHistoryRange = '30d' | '90d' | '1y' | 'all';
 
 export interface ItemSticker {
   name: string;
@@ -60,6 +73,8 @@ export interface InventoryItem {
   nameColor: string;
   itemType: string;
   amount: number;
+  /** The first copy's asset ID; copies that differ (float, pattern) are separate items */
+  assetid?: string;
   inspectLink?: string;
   condition?: string;
   rarity?: {
@@ -72,6 +87,10 @@ export interface InventoryItem {
     float: string;
     pattern: number;
   };
+  /** CS2 skins: the floats the skin can have */
+  floatRange?: { min: number; max: number };
+  /** CS2 Dopplers: the phase ("Phase 2", "Ruby"...). Steam's price is the same for every phase */
+  phase?: string;
   collection?: string;
   stickers?: ItemSticker[];
   patches?: ItemSticker[];
@@ -160,6 +179,8 @@ export interface MarketItemPage {
     appid: number;
     image: string | null;
     type: string | null;
+    /** CS2 skins: the floats the skin can have */
+    floatRange?: { min: number; max: number };
   };
   game: string | null;
   price: {
@@ -178,6 +199,7 @@ export interface MarketItemPage {
     p90ago: number | null;
     yearAgo: number | null;
     firstSeen: string | null;
+    ranges?: PriceRanges;
   } | null;
   /** 24 hour sales, for the items the API checks (the most listed) */
   sales?: { volume: number; median: number | null; updatedAt: string } | null;

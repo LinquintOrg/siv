@@ -1,25 +1,27 @@
 import { Feather } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Linking, ScrollView, View } from 'react-native';
 import Animated, { Easing, FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useInventory } from '@/api/queries';
-import type { InventoryItem, ItemPrice, ItemSticker } from '@/api/types';
+import { useInventory, useMarketItem } from '@/api/queries';
+import type { InventoryItem, ItemHistoryRange, ItemPrice, ItemSticker } from '@/api/types';
 import { FloatBar } from '@/components/inventory/FloatBar';
 import { HistoryChart } from '@/components/inventory/HistoryChart';
 import { RarityGlow } from '@/components/inventory/ItemCard';
+import { PriceRanges } from '@/components/inventory/PriceRanges';
+import { ItemImage } from '@/components/ItemImage';
 import { IconButton, Pill, Row, Skeleton } from '@/components/quiet/Controls';
+import { PeriodChips } from '@/components/quiet/PeriodChips';
 import { StackScreen } from '@/components/quiet/Screen';
 import { Text } from '@/components/quiet/Text';
 import { ErrorView, MessageView } from '@/components/StateViews';
 import { useInventoryView, visibleItems } from '@/stores/inventoryView';
 import { GUTTER, makeStyles, useQ, type Palette } from '@/theme';
 import { useFormatPrice } from '@/utils/currency';
-import { itemImageUrl, itemKey, marketListingUrl, openMarketItem, percentChange, steamColor } from '@/utils/steam';
+import { itemKey, marketListingUrl, openMarketItem, percentChange, steamColor } from '@/utils/steam';
 
 type Format = (usd: number | null | undefined) => string;
 
@@ -89,19 +91,28 @@ export default function ItemScreen() {
             </View>
             <Text size={30} weight="light" tracking={-0.03} leading={1.12}>{item.name}</Text>
             {item.marketName !== item.name ? <Text size={13} color={q.dim}>{item.marketName}</Text> : null}
+            {item.phase ? (
+              <View style={styles.phase}>
+                <Text size={13}>{item.phase}</Text>
+              </View>
+            ) : null}
           </View>
+
+          {price && item.phase ? (
+            <Text size={13} color={q.dim}>Steam has one price for every phase; rarer phases sell for more.</Text>
+          ) : null}
 
           {price ? <PriceBlock price={price} amount={item.amount} formatPrice={formatPrice} /> : (
             <Text size={15} color={q.muted} leading={1.6}>No Community Market price for this item, so it adds nothing to the inventory value.</Text>
           )}
 
-          {item.skinProps?.float ? <FloatBar float={Number(item.skinProps.float)} condition={item.condition} /> : null}
+          {item.skinProps?.float ? <FloatBar float={Number(item.skinProps.float)} condition={item.condition} range={item.floatRange} /> : null}
 
           {([ [ 'Stickers', item.stickers ], [ 'Patches', item.patches ], [ 'Charms', item.charms ] ] as const)
             .filter(([ , list ]) => list && list.length > 0)
             .map(([ title, list ]) => <Applied key={title} title={title} list={list ?? []} formatPrice={formatPrice} />)}
 
-          {price ? <MarketBlocks price={price} formatPrice={formatPrice} /> : null}
+          {price ? <MarketBlocks price={price} item={item} formatPrice={formatPrice} /> : null}
 
           {item.marketable ? (
             <Row accessibilityLabel="Open the item's market page" onPress={() => openMarketItem(item.appid, item.marketName)}>
@@ -164,8 +175,9 @@ function Hero({ item }: { item: InventoryItem }) {
       <RarityGlow color={steamColor(item.rarity?.color)} opacity={0.18} />
       <Animated.View style={[ styles.heroImageWrap, revealStyle ]}>
         <Animated.View style={[ styles.heroImage, floatStyle ]}>
-          <Image
-            source={{ uri: itemImageUrl(item.iconUrl, 512) }}
+          <ItemImage
+            iconUrl={item.iconUrl}
+            size={512}
             style={styles.heroImage}
             contentFit="contain"
             onLoad={reveal}
@@ -212,7 +224,7 @@ function Applied({ title, list, formatPrice }: { title: string; list: readonly I
       </View>
       {list.map((sticker, i) => (
         <View key={`${sticker.longName}-${i}`} style={styles.stickerRow}>
-          <Image source={{ uri: sticker.img }} style={styles.sticker} contentFit="contain" />
+          <ItemImage uri={sticker.img} style={styles.sticker} contentFit="contain" />
           <Text size={14} style={styles.flex} numberOfLines={2}>{sticker.name}</Text>
           <Text size={14} color={q.muted} tabular>{formatPrice(sticker.price || null)}</Text>
         </View>
@@ -223,26 +235,36 @@ function Applied({ title, list, formatPrice }: { title: string; list: readonly I
 
 const DAILY_LABELS = { value: 'Price', count: 'Listings', countUnit: 'listings', valueName: 'Average price', countName: 'Listings' };
 
-function MarketBlocks({ price, formatPrice }: { price: ItemPrice; formatPrice: Format }) {
+const CHART_RANGES: { value: ItemHistoryRange; label: string }[] = [
+  { value: '30d', label: '30 days' },
+  { value: '90d', label: '90 days' },
+  { value: '1y', label: '1 year' },
+  { value: 'all', label: 'All time' },
+];
+
+/** A UTC day ("YYYY-MM-DD") as local midnight, so it's labelled with the same day */
+const localDay = (day: string) => {
+  const [ y, m, d ] = day.split('-').map(Number);
+  return new Date(y, m - 1, d).getTime();
+};
+
+function MarketBlocks({ price, item, formatPrice }: { price: ItemPrice; item: InventoryItem; formatPrice: Format }) {
   const q = useQ();
   const styles = useStyles();
   const current = price.price ?? null;
-  // Days are UTC dates; build them as local midnight so they're labelled with the same day
-  const daily = (price.daily ?? []).map(([ day, value, count ]) => {
-    const [ y, m, d ] = day.split('-').map(Number);
-    return { t: new Date(y, m - 1, d).getTime(), value, count };
-  });
-  const monthPct = daily.length > 1 ? percentChange(daily[0].value, daily[daily.length - 1].value) : null;
+  // 30 days comes with the inventory; longer periods come from the item's market page data when chosen
+  const [ range, setRange ] = useState<ItemHistoryRange>('30d');
+  const longer = useMarketItem(item.appid, item.marketName, range, { enabled: range !== '30d' && item.marketable });
+  const daily = range === '30d'
+    ? (price.daily ?? []).map(([ day, value, count ]) => ({ t: localDay(day), value, count }))
+    : (longer.data?.history.points ?? []).map(([ day, value, count ]) => ({ t: localDay(day), value, count }));
+  const rangePct = daily.length > 1 ? percentChange(daily[0].value, daily[daily.length - 1].value) : null;
+  const loading = range !== '30d' && (longer.isLoading || longer.isPlaceholderData);
 
   const market = [
-    { label: 'Avg 24 h', value: formatPrice(price.avg24) },
-    { label: 'Avg 7 d', value: formatPrice(price.avg7) },
     { label: 'Avg 30 d', value: formatPrice(price.avg30) },
-    // Left out until the API has them
-    ...(price.avg90 != null ? [ { label: 'Avg 90 d', value: formatPrice(price.avg90) } ] : []),
-    ...(price.avg365 != null ? [ { label: 'Avg 1 y', value: formatPrice(price.avg365) } ] : []),
-    { label: 'Lowest', value: formatPrice(price.min) },
-    { label: 'Highest', value: formatPrice(price.max) },
+    // Without price ranges (an older API), the all-time low and high are only here
+    ...(price.ranges ? [] : [ { label: 'Lowest', value: formatPrice(price.min) }, { label: 'Highest', value: formatPrice(price.max) } ]),
     { label: 'Listings', value: price.listed ? price.listed.toLocaleString('en-US') : '—' },
   ];
   const history = [
@@ -254,16 +276,26 @@ function MarketBlocks({ price, formatPrice }: { price: ItemPrice; formatPrice: F
 
   return (
     <>
-      {daily.length > 1 ? (
+      {(price.daily?.length ?? 0) > 1 || range !== '30d' ? (
         <View>
-          <Text size={13} color={q.muted} style={styles.gridTitle}>Last 30 days</Text>
-          <View style={styles.daily}>
-            <HistoryChart
-              points={daily}
-              formatPrice={formatPrice}
-              labels={DAILY_LABELS}
-              color={monthPct !== null && monthPct < 0 ? q.danger : q.accent}
-            />
+          <Text size={13} color={q.muted} style={styles.gridTitle}>Price history</Text>
+          <View style={styles.periods}>
+            <PeriodChips options={CHART_RANGES} value={range} onChange={setRange} label="Price history period" />
+          </View>
+          <View style={[ styles.daily, loading && styles.loading ]}>
+            {daily.length > 1 ? (
+              <HistoryChart
+                key={range}
+                points={daily}
+                formatPrice={formatPrice}
+                labels={DAILY_LABELS}
+                color={rangePct !== null && rangePct < 0 ? q.danger : q.accent}
+              />
+            ) : (
+              <Text size={14} color={q.dim}>
+                {loading ? 'Loading…' : longer.isError ? 'The price history couldn\'t be loaded.' : 'Not enough prices in this period yet.'}
+              </Text>
+            )}
           </View>
         </View>
       ) : null}
@@ -280,21 +312,28 @@ function MarketBlocks({ price, formatPrice }: { price: ItemPrice; formatPrice: F
         </View>
       </View>
 
-      <View>
-        <Text size={13} color={q.muted} style={styles.gridTitle}>Price history</Text>
-        <View style={styles.grid}>
-          {history.map(h => {
-            const p = percentChange(h.from, current);
-            return (
-              <View key={h.label} style={[ styles.cell, { width: '50%' } ]}>
-                <Text size={12} color={q.dim}>{h.label}</Text>
-                <Text size={16} tabular>{formatPrice(h.from)}</Text>
-                <Text size={11} mono color={toneOf(p, q)}>{pctLabel(p)}</Text>
-              </View>
-            );
-          })}
+      {price.ranges ? (
+        <View>
+          <Text size={13} color={q.muted} style={styles.gridTitle}>Price ranges</Text>
+          <PriceRanges ranges={price.ranges} price={current} formatPrice={formatPrice} />
         </View>
-      </View>
+      ) : (
+        <View>
+          <Text size={13} color={q.muted} style={styles.gridTitle}>Price history</Text>
+          <View style={styles.grid}>
+            {history.map(h => {
+              const p = percentChange(h.from, current);
+              return (
+                <View key={h.label} style={[ styles.cell, { width: '50%' } ]}>
+                  <Text size={12} color={q.dim}>{h.label}</Text>
+                  <Text size={16} tabular>{formatPrice(h.from)}</Text>
+                  <Text size={11} mono color={toneOf(p, q)}>{pctLabel(p)}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
     </>
   );
 }
@@ -308,6 +347,7 @@ function Details({ item }: { item: InventoryItem }) {
     [ 'Rarity', item.rarity?.name ],
     [ 'Collection', item.collection ],
     [ 'Pattern', item.skinProps ? String(item.skinProps.pattern) : undefined ],
+    [ 'Phase', item.phase ],
     [ 'Name tag', item.nameTag ? `“${item.nameTag}”` : undefined ],
     [ 'Quantity', String(item.amount) ],
     [ 'Tradable', item.tradable ? 'Yes' : 'No' ],
@@ -330,8 +370,8 @@ const pctLabel = (p: number | null) => (p === null || !Number.isFinite(p) ? '—
 const toneOf = (p: number | null, q: Palette) => (p === null || !Number.isFinite(p) ? q.dim : p >= 0 ? q.accent : q.danger);
 
 /**
- * Steam returns inspect links as templates (%owner_steamid%, %assetid%).
- * The API doesn't expose asset IDs, so links that still have placeholders can't be used.
+ * Steam returns inspect links as templates (%owner_steamid%, %assetid%, %propid:N%). The API fills them in; links
+ * from older API versions that still have placeholders can't be used.
  */
 function resolveInspectLink(link: string | undefined, steamid: string) {
   const resolved = link?.replace('%owner_steamid%', steamid);
@@ -392,6 +432,21 @@ const useStyles = makeStyles(q => ({
   },
   titleBlock: {
     gap: 8,
+  },
+  phase: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: q.line3,
+  },
+  periods: {
+    paddingTop: 12,
+  },
+  loading: {
+    opacity: 0.5,
   },
   kicker: {
     flexDirection: 'row',
