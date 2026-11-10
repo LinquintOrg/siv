@@ -36,7 +36,8 @@ Expo Go may work for quick checks, but test on a development build to match rele
 
 Release builds send crashes and errors to Sentry (`src/utils/sentry.ts`); development builds don't. Nothing that
 identifies the user is attached (`sendDefaultPii` is off), a tenth of sessions also report screen load times, and the
-user can turn reports off in Settings › Privacy. The DSN is in `src/utils/sentry.ts` (overridable with
+user can turn reports off in Settings › Privacy: Sentry only starts once the saved settings have loaded and say it's on,
+and closes (native SDK included) when it's turned off. The DSN is in `src/utils/sentry.ts` (overridable with
 `EXPO_PUBLIC_SENTRY_DSN`), because OTA updates don't get the build profile's variables.
 
 Stack traces are only readable with source maps. Uploading them is off for now (`SENTRY_DISABLE_AUTO_UPLOAD` in

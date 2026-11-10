@@ -19,9 +19,8 @@ import { MusicPlayerProvider } from '@/components/MusicPlayer';
 import { Toaster } from '@/components/quiet/Toaster';
 import { useSettings } from '@/stores/settings';
 import { navigationThemes, PaletteContext, palettes, paperThemes, type ColorScheme } from '@/theme';
-import { initSentry, navigationIntegration, Sentry } from '@/utils/sentry';
+import { navigationIntegration, Sentry, syncSentry } from '@/utils/sentry';
 
-initSentry();
 SplashScreen.preventAutoHideAsync();
 
 // Refetch stale queries when the app returns to the foreground
@@ -73,7 +72,13 @@ function RootLayout() {
     SystemUI.setBackgroundColorAsync(q.bg);
   }, [ q.bg ]);
 
-  // Crash reports say which screen they happened on
+  // Crash reports, once the saved settings say whether they're on; they say which screen they happened on
+  const crashReports = useSettings(state => state.crashReports);
+  useEffect(() => {
+    if (hydrated) {
+      syncSentry(crashReports);
+    }
+  }, [ hydrated, crashReports ]);
   useEffect(() => {
     navigationIntegration.registerNavigationContainer(navigationRef);
   }, [ navigationRef ]);

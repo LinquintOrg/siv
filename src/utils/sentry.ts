@@ -14,12 +14,15 @@ export const navigationIntegration = Sentry.reactNavigationIntegration({
   enableTimeToInitialDisplay: !isRunningInExpoGo(),
 });
 
+let started = false;
+
 /**
  * Crash and error reports to Sentry, from release builds only. Nothing that identifies the user is attached (no IP
- * address, no device name), and nothing is sent when crash reports are turned off in the settings. A tenth of
- * sessions also report how long screens take to load.
+ * address, no device name). A tenth of sessions also report how long screens take to load.
+ * Started once the saved settings have loaded, and only while crash reports are on in them (see `syncSentry`).
  */
-export function initSentry() {
+function startSentry() {
+  started = true;
   Sentry.init({
     dsn: DSN,
     enabled: !__DEV__,
@@ -28,10 +31,23 @@ export function initSentry() {
     tracesSampleRate: 0.1,
     integrations: [ navigationIntegration ],
     enableNativeFramesTracking: !isRunningInExpoGo(),
-    // Set in the app's settings. Before the saved settings have loaded this is the default (on)
+    // Nothing is sent once crash reports are turned off, even before Sentry has finished closing
     beforeSend: event => (useSettings.getState().crashReports ? event : null),
     beforeSendTransaction: event => (useSettings.getState().crashReports ? event : null),
   });
+}
+
+/**
+ * Starts or stops Sentry to match the "Send crash reports" setting. Closing it also stops the native SDK, so native
+ * crashes aren't reported either; reports it had waiting stay on the phone until crash reports are turned on again.
+ */
+export function syncSentry(enabled: boolean) {
+  if (enabled && !started) {
+    startSentry();
+  } else if (!enabled && started) {
+    started = false;
+    void Sentry.close();
+  }
 }
 
 export { Sentry };
