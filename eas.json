@@ -6,19 +6,26 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "production": {
       "buildArtifactPaths": [ "android/app/build/outputs/mapping/release/mapping.txt" ],
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.linquint.dev",
-        "EXPO_PUBLIC_MUSIC_URL": "https://api.linquint.dev/music"
+        "EXPO_PUBLIC_MUSIC_URL": "https://api.linquint.dev/music",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   },

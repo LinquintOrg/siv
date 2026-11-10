@@ -2,9 +2,11 @@ import { Feather } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Switch } from 'react-native-paper';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
+import { WEB_URL } from '@/api/client';
 import { Row, SectionTitle } from '@/components/quiet/Controls';
 import { TabScreen } from '@/components/quiet/Screen';
 import { OptionSheet } from '@/components/quiet/Sheet';
@@ -23,7 +25,7 @@ const THEMES: { value: ThemePreference; label: string; sub?: string }[] = [
 
 export default function SettingsScreen() {
   const q = useQ();
-  const { currency, setCurrency, theme, setTheme } = useSettings();
+  const { currency, setCurrency, theme, setTheme, crashReports, setCrashReports } = useSettings();
   const { recent, clearRecent } = useProfiles();
   const showToast = useToast(state => state.show);
   const [ picking, setPicking ] = useState(false);
@@ -81,6 +83,23 @@ export default function SettingsScreen() {
               <Text size={14} color={q.dim} tabular>{recentLabel}</Text>
             </Row>
           )}
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(450).delay(125)} style={styles.section}>
+          <SectionTitle>Privacy</SectionTitle>
+          <Row onPress={() => setCrashReports(!crashReports)} accessibilityLabel={`Send crash reports, ${crashReports ? 'on' : 'off'}`}>
+            <View style={styles.flex}>
+              <Text size={16}>Send crash reports</Text>
+              <Text size={13} color={q.dim} leading={1.5}>
+                When the app crashes or hits an error, what went wrong goes to Sentry, without anything that identifies you
+              </Text>
+            </View>
+            <Switch value={crashReports} onValueChange={setCrashReports} accessibilityLabel="Send crash reports" />
+          </Row>
+          <Row onPress={() => WebBrowser.openBrowserAsync(`${WEB_URL}/privacy`)} accessibilityLabel="Privacy policy">
+            <Text size={16} style={styles.flex}>Privacy policy</Text>
+            <Text size={14} color={q.muted}>linquint.dev ↗</Text>
+          </Row>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(450).delay(150)} style={styles.section}>
