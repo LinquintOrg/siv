@@ -40,14 +40,9 @@ user can turn reports off in Settings › Privacy: Sentry only starts once the s
 and closes (native SDK included) when it's turned off. The DSN is in `src/utils/sentry.ts` (overridable with
 `EXPO_PUBLIC_SENTRY_DSN`), because OTA updates don't get the build profile's variables.
 
-Stack traces are only readable with source maps. Uploading them is off for now (`SENTRY_DISABLE_AUTO_UPLOAD` in
-`eas.json`), since a build without credentials would fail. To turn it on:
-
-1. Create an auth token in Sentry (an organisation token, Settings › Auth Tokens) and add it to the project's environment
-   variables on expo.dev as `SENTRY_AUTH_TOKEN`, with secret visibility, for production
-2. Add `SENTRY_ORG` and `SENTRY_PROJECT` (the organisation and project slugs) to the `production` profile's `env` in
-   `eas.json`, or to the `@sentry/react-native` plugin options in `app.json`
-3. Remove `SENTRY_DISABLE_AUTO_UPLOAD` from the `production` profile
+Production builds upload their source maps to Sentry (organisation and project `domr`, set in the
+`@sentry/react-native` plugin options in `app.json`), using the `SENTRY_AUTH_TOKEN` environment variable of the project on
+expo.dev. Development and preview builds don't (`SENTRY_DISABLE_AUTO_UPLOAD` in `eas.json`).
 
 OTA updates (`eas update`) need their source maps uploaded separately, after the update:
 `npx sentry-expo-upload-sourcemaps dist`.

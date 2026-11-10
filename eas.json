@@ -24,8 +24,7 @@
       "buildArtifactPaths": [ "android/app/build/outputs/mapping/release/mapping.txt" ],
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.linquint.dev",
-        "EXPO_PUBLIC_MUSIC_URL": "https://api.linquint.dev/music",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "EXPO_PUBLIC_MUSIC_URL": "https://api.linquint.dev/music"
       }
     }
   },

@@ -50,7 +50,13 @@
           }
         }
       ],
-      "@sentry/react-native"
+      [
+        "@sentry/react-native",
+        {
+          "organization": "domr",
+          "project": "domr"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
