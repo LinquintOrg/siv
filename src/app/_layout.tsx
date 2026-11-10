@@ -6,7 +6,7 @@ import { Geist_600SemiBold } from '@expo-google-fonts/geist/600SemiBold';
 import { GeistMono_400Regular } from '@expo-google-fonts/geist-mono/400Regular';
 import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
-import { Stack, ThemeProvider } from 'expo-router';
+import { Stack, ThemeProvider, useNavigationContainerRef } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
@@ -19,6 +19,7 @@ import { MusicPlayerProvider } from '@/components/MusicPlayer';
 import { Toaster } from '@/components/quiet/Toaster';
 import { useSettings } from '@/stores/settings';
 import { navigationThemes, PaletteContext, palettes, paperThemes, type ColorScheme } from '@/theme';
+import { navigationIntegration, Sentry, syncSentry } from '@/utils/sentry';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -42,8 +43,9 @@ function useScheme(): ColorScheme {
   return preference;
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [ queryClient ] = useState(() => new QueryClient());
+  const navigationRef = useNavigationContainerRef();
   const [ fontsLoaded, fontError ] = useFonts({
     Geist_200ExtraLight,
     Geist_300Light,
@@ -69,6 +71,17 @@ export default function RootLayout() {
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(q.bg);
   }, [ q.bg ]);
+
+  // Crash reports, once the saved settings say whether they're on; they say which screen they happened on
+  const crashReports = useSettings(state => state.crashReports);
+  useEffect(() => {
+    if (hydrated) {
+      syncSentry(crashReports);
+    }
+  }, [ hydrated, crashReports ]);
+  useEffect(() => {
+    navigationIntegration.registerNavigationContainer(navigationRef);
+  }, [ navigationRef ]);
 
   useEffect(() => {
     if (ready) {
@@ -106,3 +119,6 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+// Catches crashes in the whole app
+export default Sentry.wrap(RootLayout);

@@ -49,6 +49,13 @@
             "enableShrinkResourcesInReleaseBuilds": true
           }
         }
+      ],
+      [
+        "@sentry/react-native",
+        {
+          "organization": "domr",
+          "project": "domr"
+        }
       ]
     ],
     "experiments": {

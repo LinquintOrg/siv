@@ -3,7 +3,7 @@
 Android app for checking the value of Steam inventories. Built with Expo (SDK 57), Expo Router and React Native Paper (Material 3).
 
 The app is a thin client for the [SIVExpress](https://github.com/linquint/SIVExpress) API. It needs no login and holds no API keys.
-Favourites, recent searches and settings are stored on the device.
+Favourites, recent searches and settings are stored on the device. Crash reports go to Sentry (see below).
 
 ## Features
 
@@ -31,6 +31,21 @@ EXPO_PUBLIC_API_URL=http://192.168.1.10:8000 yarn start
 
 Expo Go may work for quick checks, but test on a development build to match release behaviour:
 `eas build --profile development -p android`.
+
+## Crash reports (Sentry)
+
+Release builds send crashes and errors to Sentry (`src/utils/sentry.ts`); development builds don't. Nothing that
+identifies the user is attached (`sendDefaultPii` is off), a tenth of sessions also report screen load times, and the
+user can turn reports off in Settings › Privacy: Sentry only starts once the saved settings have loaded and say it's on,
+and closes (native SDK included) when it's turned off. The DSN is in `src/utils/sentry.ts` (overridable with
+`EXPO_PUBLIC_SENTRY_DSN`), because OTA updates don't get the build profile's variables.
+
+Production builds upload their source maps to Sentry (organisation and project `domr`, set in the
+`@sentry/react-native` plugin options in `app.json`), using the `SENTRY_AUTH_TOKEN` environment variable of the project on
+expo.dev. Development and preview builds don't (`SENTRY_DISABLE_AUTO_UPLOAD` in `eas.json`).
+
+OTA updates (`eas update`) need their source maps uploaded separately, after the update:
+`npx sentry-expo-upload-sourcemaps dist`.
 
 ## Project layout
 
