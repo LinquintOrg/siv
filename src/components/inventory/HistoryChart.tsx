@@ -19,6 +19,15 @@ export interface HistoryPoint {
   count: number;
 }
 
+/** Another money line on the value's scale, e.g. a marketplace's prices. Drawn when it has two points in the period */
+export interface CompareLine {
+  label: string;
+  points: { t: number; value: number }[];
+}
+
+// How far a comparison's point may be from the one being read to show with it
+const COMPARE_NEAR_MS = 36 * 60 * 60 * 1000;
+
 interface Labels {
   value: string;
   count: string;
@@ -33,12 +42,14 @@ const INVENTORY: Labels = { value: 'Value', count: 'Items', countUnit: 'items', 
  * Thin lines of a money value and a count over time, each on its own scale.
  * Hold or drag sideways across it to read a point.
  */
-export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY, color: colorProp, countColor: countColorProp }: {
+export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY, color: colorProp, countColor: countColorProp, compare = [] }: {
   points: HistoryPoint[];
   formatPrice: (usd: number) => string;
   labels?: Labels;
   color?: string;
   countColor?: string;
+  /** More money lines on the value's scale, so the gaps between them show */
+  compare?: CompareLine[];
 }) {
   const q = useQ();
   const styles = useStyles();
@@ -60,7 +71,15 @@ export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY
     const max = Math.max(...series);
     return (v: number) => (max === min ? HEIGHT / 2 : PAD + (1 - (v - min) / (max - min)) * (HEIGHT - PAD * 2));
   };
-  const valueY = scale(points.map(p => p.value));
+  // Each comparison's points inside the value line's period, so they share the x axis
+  const lines = compare
+    .map(line => ({
+      ...line,
+      points: line.points.filter(p => p.t >= points[0].t && p.t <= points[points.length - 1].t).sort((a, b) => a.t - b.t),
+    }))
+    .filter(line => line.points.length >= 2);
+  const valueY = scale([ ...points.map(p => p.value), ...lines.flatMap(line => line.points.map(p => p.value)) ]);
+  const xOf = (t: number) => ((t - points[0].t) / span) * width;
   const countY = scale(points.map(p => p.count));
   const lineOf = (y: (v: number) => number, key: 'value' | 'count') =>
     points.map((p, i) => `${x(i).toFixed(1)},${y(p[key]).toFixed(1)}`).join(' ');
@@ -99,12 +118,29 @@ export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY
 
   const active = scrub !== null ? points[scrub] : null;
   const countLabel = (count: number) => `${count.toLocaleString('en-US')} ${labels.countUnit}`;
+  // Each comparison's nearest point to the one being read, when it's close enough
+  const nearest = (line: CompareLine) => {
+    if (!active) {
+      return null;
+    }
+    const best = line.points.reduce((a, b) => (Math.abs(b.t - active.t) < Math.abs(a.t - active.t) ? b : a));
+    return Math.abs(best.t - active.t) <= COMPARE_NEAR_MS ? best : null;
+  };
+  const compareReadout = lines.map(line => [ line, nearest(line) ] as const).filter(([ , p ]) => p);
   const readout = active
-    ? `${shortDate(active.t)} · ${formatPrice(active.value)} · ${countLabel(active.count)}`
+    ? [
+      shortDate(active.t),
+      formatPrice(active.value),
+      ...compareReadout.map(([ line, p ]) => `${line.label} ${formatPrice(p!.value)}`),
+      countLabel(active.count),
+    ].join(' · ')
     : `Since ${shortDate(points[0].t)}`;
+  const lineColor = (i: number) => (i === 0 ? q.soft : q.muted);
+  const dashed = (i: number) => i % 2 === 1;
   const first = points[0];
   const last = points[points.length - 1];
   const description = `${labels.valueName} from ${formatPrice(first.value)} on ${shortDate(first.t)} to ${formatPrice(last.value)} on ${shortDate(last.t)}. `
+    + lines.map(line => `${line.label} from ${formatPrice(line.points[0].value)} to ${formatPrice(line.points[line.points.length - 1].value)}. `).join('')
     + `${labels.countName} from ${countLabel(first.count)} to ${countLabel(last.count)}.`;
 
   return (
@@ -114,9 +150,18 @@ export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY
         {/* Hidden while reading a point, which needs the whole row on a phone */}
         {active ? null : (
           <View style={styles.legend} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-            {([ [ labels.value, color ], [ labels.count, countColor ] ] as const).map(([ label, swatch ]) => (
+            {[
+              { label: labels.value, swatch: color, dash: false },
+              ...lines.map((line, i) => ({ label: line.label, swatch: lineColor(i), dash: dashed(i) })),
+              { label: labels.count, swatch: countColor, dash: false },
+            ].map(({ label, swatch, dash }) => (
               <View key={label} style={styles.legendItem}>
-                <View style={[ styles.swatch, { backgroundColor: swatch } ]} />
+                {dash ? (
+                  <View style={styles.swatchDashed}>
+                    <View style={[ styles.swatchDash, { backgroundColor: swatch } ]} />
+                    <View style={[ styles.swatchDash, { backgroundColor: swatch } ]} />
+                  </View>
+                ) : <View style={[ styles.swatch, { backgroundColor: swatch } ]} />}
                 <Text size={12} color={q.dim}>{label}</Text>
               </View>
             ))}
@@ -141,6 +186,18 @@ export function HistoryChart({ points: unsorted, formatPrice, labels = INVENTORY
                 strokeLinejoin="round"
                 strokeLinecap="round"
               />
+              {lines.map((line, i) => (
+                <Polyline
+                  key={line.label}
+                  points={line.points.map(p => `${xOf(p.t).toFixed(1)},${valueY(p.value).toFixed(1)}`).join(' ')}
+                  fill="none"
+                  stroke={lineColor(i)}
+                  strokeWidth={1}
+                  strokeDasharray={dashed(i) ? '4 3' : undefined}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+              ))}
               <Polyline points={lineOf(valueY, 'value')} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
             </Svg>
           )}
@@ -173,8 +230,10 @@ const useStyles = makeStyles(q => ({
   },
   top: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
+    rowGap: 6,
   },
   readout: {
     flexShrink: 1,
@@ -182,7 +241,9 @@ const useStyles = makeStyles(q => ({
   },
   legend: {
     flexDirection: 'row',
-    gap: 14,
+    flexWrap: 'wrap',
+    columnGap: 14,
+    rowGap: 4,
   },
   legendItem: {
     flexDirection: 'row',
@@ -191,6 +252,16 @@ const useStyles = makeStyles(q => ({
   },
   swatch: {
     width: 12,
+    height: 2,
+    borderRadius: 1,
+  },
+  swatchDashed: {
+    width: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  swatchDash: {
+    width: 5,
     height: 2,
     borderRadius: 1,
   },

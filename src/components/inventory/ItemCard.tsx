@@ -7,7 +7,7 @@ import type { InventoryItem } from '@/api/types';
 import { ItemImage } from '@/components/ItemImage';
 import { Text } from '@/components/quiet/Text';
 import { makeStyles, useQ } from '@/theme';
-import { itemPrice, steamColor } from '@/utils/steam';
+import { itemPrice, priceSource, steamColor } from '@/utils/steam';
 
 /** Soft rarity-coloured glow behind an item image. A gradient, not a blur, so it stays cheap. */
 export function RarityGlow({ color, opacity = 0.14 }: { color?: string; opacity?: number }) {
@@ -43,6 +43,7 @@ export const ItemCard = memo(({ item, index, formatPrice, onPress }: Props) => {
   const q = useQ();
   const styles = useStyles();
   const price = itemPrice(item);
+  const fromSkinport = priceSource(item) === 'skinport';
   const rarity = steamColor(item.rarity?.color);
   const nameColor = item.nameColor && item.nameColor.toLowerCase() !== 'd2d2d2' ? steamColor(item.nameColor) : q.text;
   const applied = Math.min(6, (item.stickers?.length ?? 0) + (item.patches?.length ?? 0) + (item.charms?.length ?? 0));
@@ -54,7 +55,7 @@ export const ItemCard = memo(({ item, index, formatPrice, onPress }: Props) => {
     <Animated.View entering={index < STAGGERED ? FadeInDown.duration(450).delay(40 + index * 35) : undefined} style={styles.cell}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${item.name}, ${priceLabel}. Show details`}
+        accessibilityLabel={`${item.name}, ${priceLabel}${fromSkinport ? ' on Skinport' : ''}. Show details`}
         onPress={() => onPress(item)}
         style={styles.card}
       >
@@ -76,7 +77,11 @@ export const ItemCard = memo(({ item, index, formatPrice, onPress }: Props) => {
               <Text size={12} color={q.dim} numberOfLines={1}>{item.itemType}</Text>
               {wear ? <Text size={12} color={q.dim} tabular numberOfLines={1}>{wear}</Text> : null}
               <View style={styles.priceRow}>
-                <Text size={14} tabular color={price === null ? q.faint : q.text}>{priceLabel}</Text>
+                <Text size={14} tabular color={price === null ? q.faint : q.text} style={styles.price} numberOfLines={1}>
+                  {priceLabel}
+                  {/* Steam's price is over a month old or missing, so this is Skinport's */}
+                  {fromSkinport ? <Text size={11} color={q.dim}> Skinport</Text> : null}
+                </Text>
                 {!item.tradable ? <Text size={9} mono color={q.faint} tracking={0.06}>NOT TRADABLE</Text> : null}
               </View>
             </View>
@@ -141,6 +146,9 @@ const useStyles = makeStyles(q => ({
   },
   body: {
     gap: 3,
+  },
+  price: {
+    flexShrink: 1,
   },
   priceRow: {
     flexDirection: 'row',

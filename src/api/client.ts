@@ -66,8 +66,9 @@ export const api = {
   leaderboard: (query: { appid?: number; search?: string; steamid?: string; page?: number; limit?: number }) =>
     request<LeaderboardResponse>('/leaderboard', { query }),
 
-  item: (appid: number | string, hash: string, range: ItemHistoryRange) =>
-    request<MarketItemPage>('/item', { query: { appid, hash, range } }),
+  /** `version` picks the Doppler phase whose marketplace prices are charted */
+  item: (appid: number | string, hash: string, range: ItemHistoryRange, version?: string) =>
+    request<MarketItemPage>('/item', { query: { appid, hash, range, ...(version ? { version } : {}) } }),
 
   musicKits: async () => (await request<{ kits: MusicKit[] }>('/musickits')).kits,
 

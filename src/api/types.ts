@@ -53,6 +53,26 @@ export type PriceRanges = Record<PriceRangePeriod, PriceRange>;
 
 export type InventoryHistoryRange = '30d' | '90d' | '1y' | 'all';
 
+/** Marketplaces with prices besides Steam's (CS2, Dota 2 and Rust) */
+export type MarketSource = 'skinport' | 'waxpeer';
+
+/** An item's price on a marketplace, in USD */
+export interface MarketPrice {
+  /** The cheapest listing, or Skinport's suggested price when nothing is listed */
+  price: number;
+  /** The cheapest listing; null when nothing is listed */
+  lowest: number | null;
+  suggested: number | null;
+  /** The highest buy order: about what selling right now gets (Waxpeer) */
+  buyOrder: number | null;
+  listed: number;
+  /** The item's page there (its phase's for Dopplers) */
+  url: string | null;
+}
+
+/** An inventory's value at each marketplace's prices; null where none of its items has one */
+export type MarketValues = Partial<Record<MarketSource, number | null>>;
+
 export interface ItemSticker {
   name: string;
   img: string;
@@ -96,10 +116,19 @@ export interface InventoryItem {
   patches?: ItemSticker[];
   charms?: ItemSticker[];
   price: ItemPrice | { found: false };
+  /** CS2, Dota 2 and Rust: each marketplace with a price, of the item's phase for Dopplers */
+  markets?: Partial<Record<MarketSource, MarketPrice>>;
+  /**
+   * The price the item counts at in the inventory's value: Steam's, or Skinport's when Steam's is over a month old or
+   * missing. Missing when neither has one (and from APIs before it)
+   */
+  valuePrice?: { price: number; source: 'steam' | MarketSource };
 }
 
 export interface InventoryHistoryEntry {
   inventoryValue: number;
+  /** The value at each marketplace's prices; null for lookups from before they were kept */
+  marketValues?: MarketValues | null;
   itemCount: number;
   searchedAt: string;
 }
@@ -126,6 +155,8 @@ export interface InventoryResponse {
     week: InventoryChange | null;
     month: InventoryChange | null;
   } | null;
+  /** CS2, Dota 2 and Rust: the value at each marketplace's prices (Dopplers by phase); null for other games */
+  marketValues?: MarketValues | null;
 }
 
 export interface ExchangeRates {
@@ -216,6 +247,22 @@ export interface MarketItemPage {
     range: ItemHistoryRange;
     bucket: 'day' | 'week';
     /** [ day or week as "YYYY-MM-DD", average price, average listings ], oldest first */
+    points: [ string, number, number ][];
+  };
+  /** CS2, Dota 2 and Rust: each marketplace with a price and its history over the same range */
+  markets?: MarketItemMarket[];
+}
+
+export interface MarketItemMarket extends MarketPrice {
+  source: MarketSource;
+  name: string;
+  updatedAt: string;
+  /** Dopplers: each phase. Empty for other items */
+  versions: (MarketPrice & { version: string })[];
+  history: {
+    /** The phase charted (version=), null for items without phases */
+    version: string | null;
+    /** [ day or week, average price, average listings ], oldest first */
     points: [ string, number, number ][];
   };
 }
