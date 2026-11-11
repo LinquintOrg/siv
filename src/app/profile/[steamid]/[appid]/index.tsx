@@ -6,7 +6,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useInventory, useInventoryGames, useInventoryHistory, useProfile } from '@/api/queries';
-import type { InventoryChange, InventoryHistoryEntry, InventoryHistoryRange, InventoryItem } from '@/api/types';
+import type { InventoryChange, InventoryHistoryEntry, InventoryHistoryRange, InventoryItem, MarketValues } from '@/api/types';
 import { CountingValue } from '@/components/inventory/CountingValue';
 import { HistoryChart } from '@/components/inventory/HistoryChart';
 import { ItemCard } from '@/components/inventory/ItemCard';
@@ -18,10 +18,10 @@ import { PeriodChips } from '@/components/quiet/PeriodChips';
 import { OptionSheet } from '@/components/quiet/Sheet';
 import { Text } from '@/components/quiet/Text';
 import { ErrorView } from '@/components/StateViews';
-import { SORTS, useInventoryView, visibleItems, type SortKey } from '@/stores/inventoryView';
+import { MARKET_SORTS, SORTS, useInventoryView, visibleItems, type SortKey } from '@/stores/inventoryView';
 import { GUTTER, makeStyles, useQ } from '@/theme';
 import { useFormatPrice } from '@/utils/currency';
-import { itemKey, itemPrice, percentChange } from '@/utils/steam';
+import { itemKey, itemPrice, MARKET_NAMES, MARKET_SOURCES, percentChange } from '@/utils/steam';
 
 export default function InventoryScreen() {
   const q = useQ();
@@ -48,6 +48,19 @@ export default function InventoryScreen() {
   const gameName = games.data?.find(g => g.appid === +appid)?.name ?? 'Game';
   const all = inventory.data?.items;
   const items = useMemo(() => visibleItems(all ?? [], view), [ all, view ]);
+  // Sorting by a marketplace's price is offered when an item has a price there
+  const marketSources = useMemo(
+    () => MARKET_SOURCES.filter(source => all?.some(item => item.markets?.[source])),
+    [ all ],
+  );
+  const sortKeys = (Object.keys(SORTS) as SortKey[]).filter(key => !MARKET_SORTS[key] || marketSources.includes(MARKET_SORTS[key]));
+  // A marketplace sort chosen in another inventory doesn't carry over to one without its prices
+  const { sort, setSort } = view;
+  useEffect(() => {
+    if (all && MARKET_SORTS[sort] && !marketSources.includes(MARKET_SORTS[sort])) {
+      setSort('total-desc');
+    }
+  }, [ all, sort, setSort, marketSources ]);
 
   const openItem = useCallback((item: InventoryItem) => {
     router.push({ pathname: '/profile/[steamid]/[appid]/item', params: { steamid, appid, key: itemKey(item) } });
@@ -89,7 +102,7 @@ export default function InventoryScreen() {
         onClose={() => setSheet(null)}
         kicker={gameName}
         title="Sort items"
-        options={(Object.keys(SORTS) as SortKey[]).map(key => ({ value: key, label: SORTS[key] }))}
+        options={sortKeys.map(key => ({ value: key, label: SORTS[key] }))}
         selected={view.sort}
         onSelect={value => {
           view.setSort(value);
@@ -144,6 +157,7 @@ export default function InventoryScreen() {
             history={data.history}
             rank={data.rank}
             last={data.changes === undefined ? undefined : data.changes?.last ?? null}
+            marketValues={data.marketValues ?? null}
             steamid={steamid}
             appid={appid}
             formatPrice={formatPrice}
@@ -210,13 +224,15 @@ const VALUE_RANGES: { value: InventoryHistoryRange; label: string }[] = [
   { value: 'all', label: 'All time' },
 ];
 
-function Summary({ items, history, rank, last, steamid, appid, formatPrice }: {
+function Summary({ items, history, rank, last, marketValues, steamid, appid, formatPrice }: {
   items: InventoryItem[];
   history: InventoryHistoryEntry[];
   steamid: string;
   rank: number | null;
   /** The change since the last lookup (the daily leaderboard update doesn't count as one); undefined from an older API */
   last: InventoryChange | null | undefined;
+  /** CS2, Dota 2 and Rust: the value at each marketplace's prices */
+  marketValues: MarketValues | null;
   appid: string;
   formatPrice: (usd: number | null | undefined) => string;
 }) {
@@ -239,6 +255,16 @@ function Summary({ items, history, rank, last, steamid, appid, formatPrice }: {
   const longer = useInventoryHistory(steamid, +appid, range, { enabled: range !== '30d' });
   const shown = range === '30d' ? history : longer.data?.history ?? [];
   const loading = range !== '30d' && (longer.isLoading || longer.isPlaceholderData);
+  // The value at each marketplace's prices now, and over time for the lookups that stored it
+  const marketTotals = MARKET_SOURCES
+    .filter(source => marketValues?.[source] !== null && marketValues?.[source] !== undefined)
+    .map(source => ({ source, value: marketValues![source]! }));
+  const marketLines = MARKET_SOURCES.map(source => ({
+    label: MARKET_NAMES[source],
+    points: shown
+      .filter(h => h.marketValues?.[source] !== null && h.marketValues?.[source] !== undefined)
+      .map(h => ({ t: new Date(h.searchedAt).getTime(), value: h.marketValues![source]! })),
+  }));
 
   const stats: { label: string; value: string; color?: string }[] = [
     { label: 'Items', value: count.toLocaleString('en-US') },
@@ -268,6 +294,16 @@ function Summary({ items, history, rank, last, steamid, appid, formatPrice }: {
             </Pressable>
           ) : null}
         </Animated.View>
+        {marketTotals.length ? (
+          <Animated.View entering={FadeIn.duration(500).delay(350)} style={styles.marketTotals}>
+            {marketTotals.map(({ source, value }) => (
+              <Text key={source} size={14} color={q.muted}>
+                <Text size={14} tabular>{formatPrice(value)}</Text>
+                {` at ${MARKET_NAMES[source]} prices`}
+              </Text>
+            ))}
+          </Animated.View>
+        ) : null}
       </View>
 
       {history.length ? (
@@ -279,6 +315,7 @@ function Summary({ items, history, rank, last, steamid, appid, formatPrice }: {
                 key={range}
                 points={shown.map(h => ({ t: new Date(h.searchedAt).getTime(), value: h.inventoryValue, count: h.itemCount }))}
                 formatPrice={formatPrice}
+                compare={marketLines}
               />
             ) : (
               <Text size={14} color={q.dim}>
@@ -364,6 +401,9 @@ const useStyles = makeStyles(q => ({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+  },
+  marketTotals: {
+    gap: 4,
   },
   underline: {
     textDecorationLine: 'underline',

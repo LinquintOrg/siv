@@ -68,10 +68,10 @@ export function useProfileGames(steamid: string) {
 }
 
 /** An item's market page; the last range stays on screen while another loads */
-export function useMarketItem(appid: number, hash: string, range: ItemHistoryRange, { enabled = true } = {}) {
+export function useMarketItem(appid: number, hash: string, range: ItemHistoryRange, { enabled = true, version }: { enabled?: boolean; version?: string } = {}) {
   return useQuery({
-    queryKey: [ 'marketItem', appid, hash, range ],
-    queryFn: () => api.item(appid, hash, range),
+    queryKey: [ 'marketItem', appid, hash, range, version ?? '' ],
+    queryFn: () => api.item(appid, hash, range, version),
     staleTime: 10 * MINUTE,
     enabled,
     placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[2] === hash ? previous : undefined),

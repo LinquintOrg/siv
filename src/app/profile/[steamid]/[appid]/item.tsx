@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import Animated, { Easing, FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -21,7 +21,9 @@ import { ErrorView, MessageView } from '@/components/StateViews';
 import { useInventoryView, visibleItems } from '@/stores/inventoryView';
 import { GUTTER, makeStyles, useQ, type Palette } from '@/theme';
 import { useFormatPrice } from '@/utils/currency';
-import { itemKey, marketListingUrl, openMarketItem, percentChange, steamColor } from '@/utils/steam';
+import {
+  itemKey, itemPrice, MARKET_NAMES, MARKET_SOURCES, marketListingUrl, openMarketItem, percentChange, priceSource, steamColor, timeAgo,
+} from '@/utils/steam';
 
 type Format = (usd: number | null | undefined) => string;
 
@@ -75,7 +77,10 @@ export default function ItemScreen() {
     return <StackScreen><MessageView title="Item not found" message="It may have left this inventory." /></StackScreen>;
   }
 
-  const price = item.price.found ? item.price : null;
+  // Steam's market numbers; the price the item counts at can be Skinport's instead (itemPrice)
+  const steam = item.price.found ? item.price : null;
+  const price = itemPrice(item);
+  const hasMarkets = MARKET_SOURCES.some(source => item.markets?.[source]);
 
   return (
     <StackScreen right={right}>
@@ -97,11 +102,7 @@ export default function ItemScreen() {
             ) : null}
           </View>
 
-          {price && item.phase ? (
-            <Text size={13} color={q.dim}>Steam has one price for every phase; rarer phases sell for more.</Text>
-          ) : null}
-
-          {price ? <PriceBlock price={price} amount={item.amount} formatPrice={formatPrice} /> : (
+          {price !== null ? <PriceBlock item={item} steam={steam} price={price} formatPrice={formatPrice} /> : (
             <Text size={15} color={q.muted} leading={1.6}>No Community Market price for this item, so it adds nothing to the inventory value.</Text>
           )}
 
@@ -111,7 +112,7 @@ export default function ItemScreen() {
             .filter(([ , list ]) => list && list.length > 0)
             .map(([ title, list ]) => <Applied key={title} title={title} list={list ?? []} formatPrice={formatPrice} />)}
 
-          {price ? <MarketBlocks price={price} item={item} formatPrice={formatPrice} /> : null}
+          {steam || hasMarkets ? <MarketBlocks steam={steam} item={item} formatPrice={formatPrice} /> : null}
 
           {item.marketable ? (
             <Row accessibilityLabel="Open the item's market page" onPress={() => openMarketItem(item.appid, item.marketName)}>
@@ -192,19 +193,30 @@ function Hero({ item }: { item: InventoryItem }) {
   );
 }
 
-function PriceBlock({ price, amount, formatPrice }: { price: ItemPrice; amount: number; formatPrice: Format }) {
+function PriceBlock({ item, steam, price, formatPrice }: { item: InventoryItem; steam: ItemPrice | null; price: number; formatPrice: Format }) {
   const q = useQ();
   const styles = useStyles();
-  const current = price.price ?? null;
-  const day = percentChange(price.p24ago, current);
+  const fromSkinport = priceSource(item) === 'skinport';
+  // Steam's 24 hour change; not against Skinport's price
+  const day = fromSkinport ? null : percentChange(steam?.p24ago, price);
+  const total = item.amount > 1 ? `${formatPrice(price * item.amount)} for ${item.amount}` : '';
   return (
     <View style={styles.priceBlock}>
-      <Text size={48} weight="extralight" tracking={-0.05} tabular>{formatPrice(current)}</Text>
-      <Text size={14} color={q.muted}>
-        <Text size={14} color={toneOf(day, q)}>{pctLabel(day)}</Text>
-        {' in 24 h'}
-        {amount > 1 && current !== null ? ` · ${formatPrice(current * amount)} for ${amount}` : ''}
-      </Text>
+      <Text size={48} weight="extralight" tracking={-0.05} tabular>{formatPrice(price)}</Text>
+      {fromSkinport ? (
+        <Text size={13} color={q.dim} leading={1.5}>
+          {'Skinport\'s price: '}
+          {steam?.price ? `Steam's last one, ${formatPrice(steam.price)}, is from ${timeAgo(steam.ago)}` : 'Steam has none'}
+          {'. The inventory value counts this one.'}
+        </Text>
+      ) : null}
+      {day !== null || total ? (
+        <Text size={14} color={q.muted}>
+          {day !== null ? <><Text size={14} color={toneOf(day, q)}>{pctLabel(day)}</Text>{' in 24 h'}</> : null}
+          {day !== null && total ? ' · ' : ''}
+          {total}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -245,76 +257,143 @@ const localDay = (day: string) => {
   return new Date(y, m - 1, d).getTime();
 };
 
-function MarketBlocks({ price, item, formatPrice }: { price: ItemPrice; item: InventoryItem; formatPrice: Format }) {
+function MarketBlocks({ steam, item, formatPrice }: { steam: ItemPrice | null; item: InventoryItem; formatPrice: Format }) {
   const q = useQ();
   const styles = useStyles();
-  const current = price.price ?? null;
-  // 30 days comes with the inventory; longer periods come from the item's market page data when chosen
+  const current = itemPrice(item);
+  const markets = MARKET_SOURCES.filter(source => item.markets?.[source]).map(source => ({ source, ...item.markets![source]! }));
+  // 30 days of Steam prices come with the inventory. The item's market page data has longer periods and the
+  // marketplaces' prices (of this phase for Dopplers), so it's fetched for those
   const [ range, setRange ] = useState<ItemHistoryRange>('30d');
-  const longer = useMarketItem(item.appid, item.marketName, range, { enabled: range !== '30d' && item.marketable });
-  const daily = range === '30d'
-    ? (price.daily ?? []).map(([ day, value, count ]) => ({ t: localDay(day), value, count }))
-    : (longer.data?.history.points ?? []).map(([ day, value, count ]) => ({ t: localDay(day), value, count }));
-  const rangePct = daily.length > 1 ? percentChange(daily[0].value, daily[daily.length - 1].value) : null;
-  const loading = range !== '30d' && (longer.isLoading || longer.isPlaceholderData);
+  const page = useMarketItem(item.appid, item.marketName, range, {
+    enabled: item.marketable && (range !== '30d' || markets.length > 0),
+    version: item.phase,
+  });
+  const toPoints = (points: [ string, number, number ][]) => points.map(([ day, value, count ]) => ({ t: localDay(day), value, count }));
+  const steamDaily = range === '30d' ? toPoints(steam?.daily ?? []) : toPoints(page.data?.history.points ?? []);
+  const marketLines = (page.data?.markets ?? []).map(market => ({
+    label: market.history.version ? `${market.name} ${market.history.version}` : market.name,
+    points: toPoints(market.history.points),
+  }));
+  // Without Steam prices (M4A4 | Howl), the first marketplace is the main line
+  const main = steamDaily.length > 1 ? steamDaily : marketLines.find(line => line.points.length > 1)?.points ?? [];
+  const mainLabel = steamDaily.length > 1 ? 'Price' : marketLines.find(line => line.points.length > 1)?.label ?? 'Price';
+  const compare = (steamDaily.length > 1 ? marketLines : marketLines.filter(line => line.label !== mainLabel))
+    .map(line => ({ label: line.label, points: line.points }));
+  const rangePct = main.length > 1 ? percentChange(main[0].value, main[main.length - 1].value) : null;
+  const loading = page.isFetching && (range !== '30d' || page.isPlaceholderData);
+  const showChart = (steam?.daily?.length ?? 0) > 1 || range !== '30d' || markets.length > 0;
 
-  const market = [
-    { label: 'Avg 30 d', value: formatPrice(price.avg30) },
-    // Without price ranges (an older API), the all-time low and high are only here
-    ...(price.ranges ? [] : [ { label: 'Lowest', value: formatPrice(price.min) }, { label: 'Highest', value: formatPrice(price.max) } ]),
-    { label: 'Listings', value: price.listed ? price.listed.toLocaleString('en-US') : '—' },
-  ];
-  const history = [
-    { label: '24 h ago', from: price.p24ago },
-    { label: '30 days ago', from: price.p30ago },
-    { label: '90 days ago', from: price.p90ago },
-    { label: '1 year ago', from: price.yearAgo },
-  ];
+  // Steam's market first, then each marketplace with a price
+  const total = (v: number | null | undefined) =>
+    (item.amount > 1 && v ? [ { label: `×${item.amount}`, value: formatPrice(v * item.amount) } ] : []);
+  const count = (v: number | null | undefined) => (v === null || v === undefined ? '—' : v.toLocaleString('en-US'));
+  const rows: { key: string; name: string; url: string | null; cells: { label: string; value: string }[] }[] = [];
+  if (steam) {
+    rows.push({
+      key: 'steam',
+      name: 'Steam Market',
+      url: null,
+      cells: [
+        { label: 'Price', value: formatPrice(steam.price) },
+        { label: 'Avg 30 d', value: formatPrice(steam.avg30) },
+        // Without price ranges (an older API), the all-time low and high are only here
+        ...(steam.ranges ? [] : [ { label: 'Lowest', value: formatPrice(steam.min) }, { label: 'Highest', value: formatPrice(steam.max) } ]),
+        { label: 'Listings', value: steam.listed ? count(steam.listed) : '—' },
+        { label: 'Updated', value: timeAgo(steam.ago) },
+        ...total(steam.price),
+      ],
+    });
+  }
+  for (const market of markets) {
+    rows.push({
+      key: market.source,
+      name: item.phase ? `${MARKET_NAMES[market.source]} · ${item.phase}` : MARKET_NAMES[market.source],
+      url: market.url,
+      cells: [
+        { label: market.lowest === null ? 'Suggested' : 'Price', value: formatPrice(market.price) },
+        { label: 'Listings', value: count(market.listed) },
+        ...(market.buyOrder ? [ { label: 'Instant sell', value: formatPrice(market.buyOrder) } ] : []),
+        ...total(market.price),
+      ],
+    });
+  }
+  const history = steam ? [
+    { label: '24 h ago', from: steam.p24ago },
+    { label: '30 days ago', from: steam.p30ago },
+    { label: '90 days ago', from: steam.p90ago },
+    { label: '1 year ago', from: steam.yearAgo },
+  ] : [];
 
   return (
     <>
-      {(price.daily?.length ?? 0) > 1 || range !== '30d' ? (
+      {showChart ? (
         <View>
           <Text size={13} color={q.muted} style={styles.gridTitle}>Price history</Text>
           <View style={styles.periods}>
             <PeriodChips options={CHART_RANGES} value={range} onChange={setRange} label="Price history period" />
           </View>
           <View style={[ styles.daily, loading && styles.loading ]}>
-            {daily.length > 1 ? (
+            {main.length > 1 ? (
               <HistoryChart
                 key={range}
-                points={daily}
+                points={main}
                 formatPrice={formatPrice}
-                labels={DAILY_LABELS}
+                labels={{ ...DAILY_LABELS, value: mainLabel }}
                 color={rangePct !== null && rangePct < 0 ? q.danger : q.accent}
+                compare={compare}
               />
             ) : (
               <Text size={14} color={q.dim}>
-                {loading ? 'Loading…' : longer.isError ? 'The price history couldn\'t be loaded.' : 'Not enough prices in this period yet.'}
+                {loading ? 'Loading…' : page.isError && range !== '30d' ? 'The price history couldn\'t be loaded.' : 'Not enough prices in this period yet.'}
               </Text>
             )}
           </View>
         </View>
       ) : null}
 
-      <View>
-        <Text size={13} color={q.muted} style={styles.gridTitle}>Market</Text>
-        <View style={styles.grid}>
-          {market.map(m => (
-            <View key={m.label} style={[ styles.cell, { width: '33.33%' } ]}>
-              <Text size={12} color={q.dim}>{m.label}</Text>
-              <Text size={16} tabular numberOfLines={1} adjustsFontSizeToFit>{m.value}</Text>
+      {rows.length ? (
+        <View>
+          <Text size={13} color={q.muted} style={styles.gridTitle}>Marketplaces</Text>
+          {rows.map((row, i) => (
+            <View key={row.key} style={[ styles.marketplace, i > 0 && styles.marketplaceDivider ]}>
+              {row.url ? (
+                <Pressable
+                  accessibilityRole="link"
+                  accessibilityLabel={`Open the item on ${row.name}`}
+                  hitSlop={8}
+                  onPress={() => WebBrowser.openBrowserAsync(row.url!)}
+                  style={styles.marketplaceLink}
+                >
+                  <Text size={13} color={q.soft} style={styles.underline}>{row.name} ↗</Text>
+                </Pressable>
+              ) : <Text size={13}>{row.name}</Text>}
+              <View style={styles.marketGrid}>
+                {row.cells.map(cell => (
+                  <View key={cell.label} style={[ styles.cell, { width: '33.33%' } ]}>
+                    <Text size={12} color={q.dim}>{cell.label}</Text>
+                    <Text size={15} tabular numberOfLines={1} adjustsFontSizeToFit>{cell.value}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
           ))}
+          {item.phase ? (
+            <Text size={13} color={q.dim} leading={1.5} style={styles.phaseNote}>
+              {markets.length
+                ? 'Steam has one price for every phase; the other marketplaces\' are for this one.'
+                : 'Steam has one price for every phase; rarer phases sell for more.'}
+            </Text>
+          ) : null}
         </View>
-      </View>
+      ) : null}
 
-      {price.ranges ? (
+      {steam?.ranges ? (
         <View>
           <Text size={13} color={q.muted} style={styles.gridTitle}>Price ranges</Text>
-          <PriceRanges ranges={price.ranges} price={current} formatPrice={formatPrice} />
+          <PriceRanges ranges={steam.ranges} price={steam.price ?? null} formatPrice={formatPrice} />
         </View>
-      ) : (
+      ) : history.length ? (
         <View>
           <Text size={13} color={q.muted} style={styles.gridTitle}>Price history</Text>
           <View style={styles.grid}>
@@ -330,7 +409,7 @@ function MarketBlocks({ price, item, formatPrice }: { price: ItemPrice; item: In
             })}
           </View>
         </View>
-      )}
+      ) : null}
     </>
   );
 }
@@ -487,6 +566,31 @@ const useStyles = makeStyles(q => ({
   cell: {
     gap: 3,
     paddingRight: 12,
+  },
+  marketplace: {
+    paddingTop: 14,
+    paddingBottom: 4,
+    gap: 12,
+  },
+  marketplaceDivider: {
+    marginTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: q.line2,
+  },
+  marketplaceLink: {
+    alignSelf: 'flex-start',
+  },
+  underline: {
+    textDecorationLine: 'underline',
+    textDecorationColor: q.line3,
+  },
+  marketGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 12,
+  },
+  phaseNote: {
+    marginTop: 14,
   },
   detailsTitle: {
     marginBottom: 4,
