@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useState } from 'react';
-import { Linking, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import Animated, { Easing, FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -76,7 +76,6 @@ export default function ItemScreen() {
   }
 
   const price = item.price.found ? item.price : null;
-  const inspectLink = resolveInspectLink(item.inspectLink, steamid);
 
   return (
     <StackScreen right={right}>
@@ -135,12 +134,10 @@ export default function ItemScreen() {
         </Animated.View>
       </ScrollView>
 
-      {item.marketable || inspectLink ? (
+      {/* No Inspect button: inspect links open the game, which phones can't run */}
+      {item.marketable ? (
         <View style={[ styles.actions, { paddingBottom: insets.bottom + 14 } ]}>
-          {item.marketable ? (
-            <Pill label="Community Market ↗" style={styles.flex} onPress={() => WebBrowser.openBrowserAsync(marketListingUrl(item.appid, item.marketName))} />
-          ) : null}
-          {inspectLink ? <Pill label="Inspect" variant="ghost" onPress={() => Linking.openURL(inspectLink)} /> : null}
+          <Pill label="Community Market ↗" style={styles.flex} onPress={() => WebBrowser.openBrowserAsync(marketListingUrl(item.appid, item.marketName))} />
         </View>
       ) : null}
     </StackScreen>
@@ -368,15 +365,6 @@ function Details({ item }: { item: InventoryItem }) {
 
 const pctLabel = (p: number | null) => (p === null || !Number.isFinite(p) ? '—' : `${p >= 0 ? '+' : ''}${p.toFixed(1)}%`);
 const toneOf = (p: number | null, q: Palette) => (p === null || !Number.isFinite(p) ? q.dim : p >= 0 ? q.accent : q.danger);
-
-/**
- * Steam returns inspect links as templates (%owner_steamid%, %assetid%, %propid:N%). The API fills them in; links
- * from older API versions that still have placeholders can't be used.
- */
-function resolveInspectLink(link: string | undefined, steamid: string) {
-  const resolved = link?.replace('%owner_steamid%', steamid);
-  return resolved && !/%[a-z_]+%/i.test(resolved) ? resolved : null;
-}
 
 const useStyles = makeStyles(q => ({
   flex: {
